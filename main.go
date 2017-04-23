@@ -31,6 +31,10 @@ func render(state State, term *frontend.TerminalDisplay) {
 
 	term.DrawMessages(state.MessageHistory)
 
+	if state.Mode == "picker" {
+		term.DrawFuzzyPicker([]string{"abc", "def", "ghi"}, 1)
+	}
+
 	term.Render()
 }
 
@@ -67,9 +71,9 @@ func keyboardEvents(state State, term *frontend.TerminalDisplay, screen tcell.Sc
 			case tcell.KeyEscape:
 				state.Mode = "chat"
 
-			// CTRL-P moves to a channel picker, which is a mode for switching channels
+			// CTRL-P moves to a channel picker, which is a mode for switching teams and channels
 			case tcell.KeyCtrlP:
-				state.Mode = "pick-channel"
+				state.Mode = "picker"
 
 			case tcell.KeyEnter:
 				command := string(state.Command)

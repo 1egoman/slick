@@ -55,6 +55,32 @@ func (term *TerminalDisplay) DrawStatusBar(mode string) {
 	term.WriteText(len(mode) + 1, lastRow, "|")
 }
 
+func (term *TerminalDisplay) DrawFuzzyPicker(items []string, selectedIndex int) {
+	width, height := term.screen.Size()
+	bottomPadding := 2 // pad for the status bar and command bar
+	startingRow := height - len(items) - bottomPadding // The top row of the fuzzy picker
+
+	for ct, item := range items {
+		row := startingRow + ct
+
+		// Clear the row.
+		for i := 0; i < width; i++ {
+			char, _, style, _ := term.screen.GetContent(i, row)
+			if char != ' ' || style != tcell.StyleDefault {
+				term.screen.SetCell(i, row, tcell.StyleDefault, ' ')
+			}
+		}
+
+		// Add prefix for selected item
+		if ct == selectedIndex {
+			item = "> "+item
+		}
+
+		// Draw item
+		term.WriteText(0, row, item)
+	}
+}
+
 func (term *TerminalDisplay) DrawCommandBar(
 	command string,
 	cursorPosition int,
