@@ -22,8 +22,8 @@ type State struct {
 
 func render(state State, term *frontend.TerminalDisplay) {
 	term.DrawCommandBar(
-		string(state.Command),              // The command that the user is typing
-		state.CommandCursorPosition,        // The cursor position
+		string(state.Command),           // The command that the user is typing
+		state.CommandCursorPosition,     // The cursor position
 		state.Gateway.SelectedChannel(), // The selected channel
 		state.Gateway.Team(),            // The selected team
 	)
@@ -34,6 +34,7 @@ func render(state State, term *frontend.TerminalDisplay) {
 	term.Render()
 }
 
+// Given a state object populated with a gateway, initialize the state with the gateway.
 func connect(state State, term *frontend.TerminalDisplay) {
 	// Connect to gateway, then refresh properies about it.
 	state.Gateway.Connect()
@@ -49,7 +50,57 @@ func connect(state State, term *frontend.TerminalDisplay) {
 	render(state, term)
 }
 
+func events(state State, term *frontend.TerminalDisplay, screen tcell.Screen, quit chan struct{}) {
+	for {
+		ev := screen.PollEvent()
+		switch ev := ev.(type) {
+		case *tcell.EventKey:
+			switch ev.Key() {
+			case tcell.KeyEscape:
+				close(quit)
+				return
 
+			// case tcell.KeyEnter:
+			//
+
+			// CTRL + L redraws the screen.
+			case tcell.KeyCtrlL:
+				screen.Sync()
+
+			// As characters are typed, add to the message.
+			case tcell.KeyRune:
+				state.Command = append(
+					append(state.Command[:state.CommandCursorPosition], ev.Rune()),
+					state.Command[state.CommandCursorPosition:]...,
+				)
+				state.CommandCursorPosition += 1
+
+			// Backspace removes a character.
+			case tcell.KeyDEL:
+				if state.CommandCursorPosition > 0 {
+					state.Command = append(
+						state.Command[:state.CommandCursorPosition-1],
+						state.Command[state.CommandCursorPosition:]...,
+					)
+					state.CommandCursorPosition -= 1
+				}
+
+			// Arrows right and left move the cursor
+			case tcell.KeyLeft:
+				if state.CommandCursorPosition >= 1 {
+					state.CommandCursorPosition -= 1
+				}
+			case tcell.KeyRight:
+				if state.CommandCursorPosition < len(state.Command) {
+					state.CommandCursorPosition += 1
+				}
+			}
+		case *tcell.EventResize:
+			screen.Sync()
+		}
+		render(state, term)
+	}
+}
 
 func main() {
 	fmt.Println("Loading...")
@@ -71,7 +122,7 @@ func main() {
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 	s, _ := tcell.NewScreen()
 	term := frontend.NewTerminalDisplay(s)
-	s.Init()
+	// s.Init()
 	defer s.Fini() // Make sure we clean up after tcell!
 
 	// Initial render.
@@ -82,75 +133,28 @@ func main() {
 
 	// GOROUTINE: Handle keyboard events.
 	quit := make(chan struct{})
-	go func() {
-		for {
-			ev := s.PollEvent()
-			switch ev := ev.(type) {
-			case *tcell.EventKey:
-				switch ev.Key() {
-				case tcell.KeyEscape:
-					close(quit)
-					return
-
-				// case tcell.KeyEnter:
-				//
-
-				// CTRL + L redraws the screen.
-				case tcell.KeyCtrlL:
-					s.Sync()
-
-				// As characters are typed, add to the message.
-				case tcell.KeyRune:
-					state.Command = append(
-						append(state.Command[:state.CommandCursorPosition], ev.Rune()),
-						state.Command[state.CommandCursorPosition:]...,
-					)
-					state.CommandCursorPosition += 1
-
-				// Backspace removes a character.
-				case tcell.KeyDEL:
-					if state.CommandCursorPosition > 0 {
-						state.Command = append(
-							state.Command[:state.CommandCursorPosition-1],
-							state.Command[state.CommandCursorPosition:]...,
-						)
-						state.CommandCursorPosition -= 1
-					}
-
-				// Arrows right and left move the cursor
-				case tcell.KeyLeft:
-					if state.CommandCursorPosition >= 1 {
-						state.CommandCursorPosition -= 1
-					}
-				case tcell.KeyRight:
-					if state.CommandCursorPosition < len(state.Command) {
-						state.CommandCursorPosition += 1
-					}
-				}
-				render(state, term)
-			case *tcell.EventResize:
-				s.Sync()
-			}
-		}
-	}()
+	go events(state, term, s, quit)
 
 	// // GOROUTINE: Handle connection incoming and outgoing messages
-	go func() {
+	go func(state State) {
+		incoming := state.Gateway.Incoming()
 		for {
-			event := <-state.Gateway.Incoming()
+			fmt.Println("incoming", incoming)
+			event := <-incoming
+			fmt.Println("event")
 
 			switch event.Type {
 			case "hello":
 				state.MessageHistory = append(state.MessageHistory, gateway.Message{
 					Sender: nil,
-					Text: "Got Hello...",
-					Hash: "hello",
+					Text:   "Got Hello...",
+					Hash:   "hello",
 				})
 
 				// Send an outgoing message
 				state.Gateway.Outgoing() <- gateway.Event{
 					Type: "ping",
-					Data: map[string]interface{} {
+					Data: map[string]interface{}{
 						"foo": "bar",
 					},
 				}
@@ -159,7 +163,7 @@ func main() {
 			case "message":
 				if event.Data["channel"] == state.Gateway.SelectedChannel().Id {
 					messageHash := event.Data["ts"].(string)
-					
+
 					// See if the message is already in the history
 					alreadyInHistory := false
 					for _, msg := range state.MessageHistory {
@@ -180,7 +184,7 @@ func main() {
 						var err error
 						sender, err = state.Gateway.UserById(event.Data["user"].(string))
 						if err != nil {
-							panic(err);
+							panic(err)
 						}
 					} else {
 						sender = nil
@@ -189,8 +193,8 @@ func main() {
 					// Add message to history
 					state.MessageHistory = append(state.MessageHistory, gateway.Message{
 						Sender: sender,
-						Text: event.Data["text"].(string),
-						Hash: messageHash,
+						Text:   event.Data["text"].(string),
+						Hash:   messageHash,
 					})
 				}
 
@@ -198,14 +202,14 @@ func main() {
 			case "pong":
 				state.MessageHistory = append(state.MessageHistory, gateway.Message{
 					Sender: nil,
-					Text: "Got Pong...",
-					Hash: "pong",
+					Text:   "Got Pong...",
+					Hash:   "pong",
 				})
 			}
 
 			render(state, term)
 		}
-	}()
+	}(state)
 
 	<-quit
 }

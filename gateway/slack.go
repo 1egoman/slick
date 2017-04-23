@@ -2,7 +2,7 @@ package gateway
 
 import (
 	"encoding/json"
-	// "fmt"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -50,7 +50,10 @@ func (c *SlackConnection) requestConnectionUrl() {
 		Team Team   `json:"team"`
 		Self User   `json:"self"`
 	}
-	json.Unmarshal(body, &connectionBuffer)
+	err = json.Unmarshal(body, &connectionBuffer)
+	if err != nil {
+		panic("Slack response: "+string(body))
+	}
 
 	// Add response data to struct
 	c.url = connectionBuffer.Url
@@ -88,10 +91,10 @@ func (c *SlackConnection) Connect() error {
 			if n, err = c.conn.Read(msgRaw); err != nil {
 				panic(err)
 			}
-			// fmt.Printf("Received in goroutine: %s.\n", msgRaw[:n])
 
 			// Decode into a struct so that we can check message type later
 			json.Unmarshal(msgRaw[:n], &msg)
+			fmt.Printf("Received in goroutine: %+v.\n", msg)
 			incoming <- Event{
 				Direction: "incoming",
 				Type:      msg["type"].(string),
