@@ -287,3 +287,6 @@ func (c *SlackConnection) Team() *Team {
 func (c *SlackConnection) Channels() []Channel {
 	return c.channels
 }
+func (c *SlackConnection) Self() *User {
+	return &c.self
+}

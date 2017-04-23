@@ -59,12 +59,32 @@ func events(state State, term *frontend.TerminalDisplay, screen tcell.Screen, qu
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
 			switch ev.Key() {
-			case tcell.KeyEscape:
+			case tcell.KeyEscape, tcell.KeyCtrlC:
 				close(quit)
 				return
 
-			// case tcell.KeyEnter:
-			//
+			case tcell.KeyEnter:
+				command := string(state.Command)
+				switch {
+				case command == ":q", command == ":quit":
+					close(quit)
+					return
+				default:
+					// By default, just send a message
+					state.Gateway.Outgoing() <- gateway.Event{
+						Type: "message",
+						Direction: "outgoing",
+						Data: map[string]interface{} {
+							"channel": state.Gateway.SelectedChannel().Id,
+							"user": state.Gateway.Self().Id,
+							"text": command,
+						},
+					}
+				}
+				// Clear the command that was typed.
+				state.Command = []rune{}
+				state.CommandCursorPosition = 0
+
 
 			// CTRL + L redraws the screen.
 			case tcell.KeyCtrlL:
@@ -131,7 +151,7 @@ func main() {
 	// Initial render.
 	render(state, term)
 
-	// GOROUTINE: Connect to the server
+	// Connect to the server
 	// Once this goroutine finishes, it closed the connected channel. This is used as a signal by
 	// the gateway events goroutine to start working.
 	connected := make(chan struct{})
@@ -166,9 +186,21 @@ func main() {
 				}
 
 			// When a message is received for the selected channel, add to the message history
-			case "message":
+			// "message" events come in when the gateway receives a message sent by someone else.
+			// "pong" events come in when a message the user just sent is received successfully.
+			case "message", "pong":
 				if event.Data["channel"] == state.Gateway.SelectedChannel().Id {
-					messageHash := event.Data["ts"].(string)
+					// Find a hash for the message, just use the timestamp
+					// In message events, the timestamp is `ts`
+					// In pong events, the timestamp is `event_ts`
+					var messageHash string
+					if data, ok := event.Data["ts"].(string); ok {
+						messageHash = data;
+					} else if data, ok := event.Data["event_ts"].(string); ok {
+						messageHash = data;
+					} else {
+						panic("No ts or event_ts key in message or pong, so can't create a hash for this message!")
+					}
 
 					// See if the message is already in the history
 					alreadyInHistory := false
@@ -203,14 +235,6 @@ func main() {
 						Hash:   messageHash,
 					})
 				}
-
-			// When a pong is received, log it too.
-			case "pong":
-				state.MessageHistory = append(state.MessageHistory, gateway.Message{
-					Sender: nil,
-					Text:   "Got Pong...",
-					Hash:   "pong",
-				})
 			}
 
 			render(state, term)
