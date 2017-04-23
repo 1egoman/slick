@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+
+	"strings"
 
 	"golang.org/x/net/websocket"
 )
@@ -134,15 +137,25 @@ func (c *SlackConnection) Connect() error {
 // Called when the connection becomes active
 func (c *SlackConnection) Refresh() error {
 	var err error
+
+	// Fetch details about all channels
 	c.channels, err = c.FetchChannels()
+	if err != nil {
+		return err
+	}
+
+	// Fetch details about the currently logged in user
+	var user *User
+	user, err = c.UserById(c.Self().Id)
+	if err != nil {
+		return err
+	} else {
+		c.self = *user
+	}
 
 	// Select the first channel, by default
 	if len(c.channels) > 0 {
 		c.selectedChannel = &c.channels[0]
-	}
-
-	if err != nil {
-		return err
 	}
 
 	return nil
@@ -269,6 +282,42 @@ func (c *SlackConnection) UserById(id string) (*User, error) {
 		Skype:    slackUserBuffer.User.Profile.Skype,
 		Phone:    slackUserBuffer.User.Profile.Phone,
 	}, nil
+}
+
+// Send a given message to a given channel. Also, is able to process slash commands.
+// Returns an optional pointer to a response message and an error.
+func (c *SlackConnection) SendMessage(message Message, channel *Channel) (*Message, error) {
+	if strings.HasPrefix(message.Text, "/") {
+		// If the message starts with a slash, it's a slash command.
+		command := strings.Split(message.Text, " ")
+		resp, err := http.Get("https://slack.com/api/chat.command?token=" + c.token + "&channel=" + channel.Id + "&command=" + command[0] + "&text" + strings.Join(command[1:], "%20"))
+		if err != nil {
+			return nil, err
+		}
+
+		body, _ := ioutil.ReadAll(resp.Body)
+		var commandResponse struct {
+			Response string `json:"response"`
+		}
+		err = json.Unmarshal(body, &commandResponse)
+		if err != nil {
+			return nil, err
+		}
+
+		// Return a response message if the response 
+		if len(commandResponse.Response) > 0 {
+			return &Message{
+				Text: commandResponse.Response,
+				Sender: &User{Name: "slackbot"},
+			}, nil
+		} else {
+			return nil, nil
+		}
+	} else {
+		// Otherwise just a plain message
+		_, err := http.Get("https://slack.com/api/chat.postMessage?token=" + c.token + "&channel=" + channel.Id + "&text=" + url.QueryEscape(message.Text) + "&link_names=true&parse=full&unfurl_links=true&as_user=true")
+		return nil, err
+	}
 }
 
 func (c *SlackConnection) SelectedChannel() *Channel {

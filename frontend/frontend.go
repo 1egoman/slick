@@ -1,11 +1,28 @@
 package frontend
 
 import (
-	"fmt"
+	"regexp"
 	"github.com/gdamore/tcell"
+	"github.com/kyokomi/emoji"
 
 	"github.com/1egoman/slime/gateway" // The thing to interface with slack
 )
+
+const bottomPadding = 2; // The amount of lines at the bottom of the window to leave available for status bars.
+
+var usernameRegex = regexp.MustCompile("<@[A-Z0-9]+\\|(.+)>")
+var channelRegex = regexp.MustCompile("<#[A-Z0-9]+\\|(.+)>")
+
+// Given a string to be displayed in the ui, convert it to be printable.
+// 1. Convert emoji codes like :smile: to their emojis.
+// 2. Replace any <@ID|username> tags with @username
+// 2. Replace any <#ID|channel> tags with #channel
+func makePrintWorthy(text string) string {
+	text = emoji.Sprintf(text) // Emojis
+	text = usernameRegex.ReplaceAllString(text, "@$1") // Usernames
+	text = channelRegex.ReplaceAllString(text, "#$1") // Channels
+	return text
+}
 
 type Display interface {
 	DrawStatusBar()
@@ -115,8 +132,29 @@ func (term *TerminalDisplay) DrawCommandBar(
 
 // Draw message history in the channel
 func (term *TerminalDisplay) DrawMessages(messages []gateway.Message) {
-	width, _ := term.screen.Size()
-	for row, msg := range messages {
+	width, height := term.screen.Size()
+
+	// Which row should we start rendering the messages on so thay they'll be at the bottom of the
+	// screen?
+	howManyMessagesCanBeShown := height - bottomPadding
+	topRow := howManyMessagesCanBeShown - len(messages)
+
+	// Cap the max amount of messages that can be shown to the amount of messages we have.
+	if topRow < 0 {
+		howManyMessagesCanBeShown = len(messages)
+	}
+
+	// Loop through all possible places a message can be shown...
+	for ct := 0; ct < howManyMessagesCanBeShown; ct++ {
+		// If not enough messages have been made to fill the screen, try the next message.
+		if ct > len(messages) - 1 {
+			continue
+		}
+
+		// Get the message and the row to show it on
+		msg := messages[ct]
+		row := topRow + ct
+
 		// Clear the row.
 		for i := 0; i < width; i++ {
 			char, _, style, _ := term.screen.GetContent(i, row)
@@ -136,11 +174,9 @@ func (term *TerminalDisplay) DrawMessages(messages []gateway.Message) {
 			}
 		}
 
-		sender = fmt.Sprintf("%d %s", row, sender)
-
 		// Write sender and message to the screen
 		term.WriteTextStyle(0, row, senderStyle, sender)
-		term.WriteText(len(sender)+1, row, msg.Text)
+		term.WriteText(len(sender)+1, row, makePrintWorthy(msg.Text))
 	}
 }
 

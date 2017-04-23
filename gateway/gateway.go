@@ -11,6 +11,8 @@ type Connection interface {
 	Incoming() chan Event
 	Outgoing() chan Event
 
+  SendMessage(Message, *Channel) (*Message, error)
+
 	// Fetch a slice of all channels that are available on this connection
 	Channels() []Channel
 	SelectedChannel() *Channel

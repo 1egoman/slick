@@ -9,35 +9,6 @@ import (
 	"github.com/gdamore/tcell"
 )
 
-type State struct {
-	Mode string
-
-	Command               []rune
-	CommandCursorPosition int
-
-	Gateway gateway.Connection
-
-	MessageHistory []gateway.Message
-}
-
-func render(state State, term *frontend.TerminalDisplay) {
-	term.DrawCommandBar(
-		string(state.Command),           // The command that the user is typing
-		state.CommandCursorPosition,     // The cursor position
-		state.Gateway.SelectedChannel(), // The selected channel
-		state.Gateway.Team(),            // The selected team
-	)
-	term.DrawStatusBar(state.Mode)
-
-	term.DrawMessages(state.MessageHistory)
-
-	if state.Mode == "picker" {
-		term.DrawFuzzyPicker([]string{"abc", "def", "ghi"}, 1)
-	}
-
-	term.Render()
-}
-
 // Given a state object populated with a gateway, initialize the state with the gateway.
 func connect(state *State, term *frontend.TerminalDisplay, connected chan struct{}) {
 	// Connect to gateway, then refresh properies about it.
@@ -57,7 +28,7 @@ func connect(state *State, term *frontend.TerminalDisplay, connected chan struct
 	close(connected)
 }
 
-func keyboardEvents(state State, term *frontend.TerminalDisplay, screen tcell.Screen, quit chan struct{}) {
+func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.Screen, quit chan struct{}) {
 	for {
 		ev := screen.PollEvent()
 		switch ev := ev.(type) {
@@ -73,7 +44,11 @@ func keyboardEvents(state State, term *frontend.TerminalDisplay, screen tcell.Sc
 
 			// CTRL-P moves to a channel picker, which is a mode for switching teams and channels
 			case tcell.KeyCtrlP:
-				state.Mode = "picker"
+				if state.Mode != "picker" {
+					state.Mode = "picker"
+				} else {
+					state.Mode = "chat"
+				}
 
 			case tcell.KeyEnter:
 				command := string(state.Command)
@@ -84,14 +59,20 @@ func keyboardEvents(state State, term *frontend.TerminalDisplay, screen tcell.Sc
 					return
 				default:
 					// By default, just send a message
-					state.Gateway.Outgoing() <- gateway.Event{
-						Type: "message",
-						Direction: "outgoing",
-						Data: map[string]interface{} {
-							"channel": state.Gateway.SelectedChannel().Id,
-							"user": state.Gateway.Self().Id,
-							"text": command,
-						},
+					message := gateway.Message{
+						Sender: state.Gateway.Self(),
+						Text: command,
+					}
+
+					// Sometimes, a message could have a response. This is for example true in the
+					// case of slash commands, sometimes.
+					responseMessage, err := state.Gateway.SendMessage(message, state.Gateway.SelectedChannel())
+
+					if err != nil {
+						panic(err)
+					} else if responseMessage != nil {
+						// Got a response command? Append it to the message history.
+						state.MessageHistory = append(state.MessageHistory, *responseMessage)
 					}
 				}
 				// Clear the command that was typed.
@@ -134,11 +115,11 @@ func keyboardEvents(state State, term *frontend.TerminalDisplay, screen tcell.Sc
 		case *tcell.EventResize:
 			screen.Sync()
 		}
-		render(state, term)
+		render(*state, term)
 	}
 }
 
-func gatewayEvents(state State, term *frontend.TerminalDisplay, connected chan struct{}) {
+func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan struct{}) {
 	// Wait to be connected before handling events.
 	<-connected
 
@@ -163,8 +144,7 @@ func gatewayEvents(state State, term *frontend.TerminalDisplay, connected chan s
 
 		// When a message is received for the selected channel, add to the message history
 		// "message" events come in when the gateway receives a message sent by someone else.
-		// "pong" events come in when a message the user just sent is received successfully.
-		case "message", "pong":
+		case "message":
 			if event.Data["channel"] == state.Gateway.SelectedChannel().Id {
 				// Find a hash for the message, just use the timestamp
 				// In message events, the timestamp is `ts`
@@ -172,10 +152,8 @@ func gatewayEvents(state State, term *frontend.TerminalDisplay, connected chan s
 				var messageHash string
 				if data, ok := event.Data["ts"].(string); ok {
 					messageHash = data;
-				} else if data, ok := event.Data["event_ts"].(string); ok {
-					messageHash = data;
 				} else {
-					panic("No ts or event_ts key in message or pong, so can't create a hash for this message!")
+					panic("No ts key in message so can't create a hash for this message!")
 				}
 
 				// See if the message is already in the history
@@ -213,7 +191,7 @@ func gatewayEvents(state State, term *frontend.TerminalDisplay, connected chan s
 			}
 		}
 
-		render(state, term)
+		render(*state, term)
 	}
 }
 
@@ -247,14 +225,14 @@ func main() {
 	// Once this goroutine finishes, it closed the connected channel. This is used as a signal by
 	// the gateway events goroutine to start working.
 	connected := make(chan struct{})
-	connect(&state, term, connected)
+	go connect(&state, term, connected)
 
 	// GOROUTINE: Handle events coming from the input device (ie, keyboard).
 	quit := make(chan struct{})
-	go keyboardEvents(state, term, s, quit)
+	go keyboardEvents(&state, term, s, quit)
 
 	// GOROUTINE: Handle events coming from slack.
-	go gatewayEvents(state, term, connected)
+	go gatewayEvents(&state, term, connected)
 
 	<-quit
 }
