@@ -4,17 +4,24 @@ package gateway
 type Connection interface {
 	Connect() error
 
-  // Called to "refetch" any persistent resources, such as channels.
+	// Called to "refetch" any persistent resources, such as channels.
 	Refresh() error
 
-  // Fetch a slice of all channels that are available on this connection
-	GetChannels() ([]Channel, error)
-	GetSelectedChannel() *Channel
+	// Get incoming and outgoing message buffers
+	Incoming() chan Event
+	Outgoing() chan Event
 
-  // Given a channel, fetch the message history for that channel
-	GetChannelMessages(Channel) ([]Message, error)
+	// Fetch a slice of all channels that are available on this connection
+	Channels() []Channel
+	SelectedChannel() *Channel
 
-	GetUserById(string) (*User, error)
+	// Fetch the team associated with this connection.
+	Team() *Team
+
+	// Given a channel, fetch the message history for that channel
+	FetchChannelMessages(Channel) ([]Message, error)
+
+	UserById(string) (*User, error)
 }
 
 // Events are emitted when data comes in from a connection
@@ -34,9 +41,9 @@ type Event struct {
 	Type string `json:"type"`
 	Data map[string]interface{}
 
-  // Properties that an event may be associated with.
-	Channel   Channel
-	User      User
+	// Properties that an event may be associated with.
+	Channel Channel
+	User    User
 }
 
 // A user is a human or bot that sends messages on a channel.
@@ -78,4 +85,5 @@ type Message struct {
 	Sender    *User      `json:"sender"`
 	Text      string     `json:"text"`
 	Reactions []Reaction `json:"reactions"`
+	Hash      string     `json:"ts"`
 }

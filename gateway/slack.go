@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"encoding/json"
+	// "fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -21,14 +22,14 @@ type SlackConnection struct {
 	conn  *websocket.Conn
 
 	// Create two message channels, one for incoming messages and one for outgoing messages.
-	Incoming chan Event
-	Outgoing chan Event
+	incoming chan Event
+	outgoing chan Event
 
-	Self User
-	Team Team
+	self User
+	team Team
 
 	// Internal state to store all channels and a pointer to the active one.
-	channels []Channel
+	channels        []Channel
 	selectedChannel *Channel
 }
 
@@ -53,8 +54,8 @@ func (c *SlackConnection) requestConnectionUrl() {
 
 	// Add response data to struct
 	c.url = connectionBuffer.Url
-	c.Self = connectionBuffer.Self
-	c.Team = connectionBuffer.Team
+	c.self = connectionBuffer.Self
+	c.team = connectionBuffer.Team
 }
 
 // Connect to the slack persistent socket.
@@ -73,8 +74,8 @@ func (c *SlackConnection) Connect() error {
 	}
 
 	// Create buffered channels to listen and send messages on
-	c.Incoming = make(chan Event, 5)
-	c.Outgoing = make(chan Event, 5)
+	c.incoming = make(chan Event, 5)
+	c.outgoing = make(chan Event, 5)
 
 	// When messages are received, add them to the incoming buffer.
 	go func(incoming chan Event) {
@@ -97,7 +98,7 @@ func (c *SlackConnection) Connect() error {
 				Data:      msg,
 			}
 		}
-	}(c.Incoming)
+	}(c.incoming)
 
 	// When messages are in the outgoing buffer waiting to be sent, send them.
 	go func(outgoing chan Event) {
@@ -124,7 +125,7 @@ func (c *SlackConnection) Connect() error {
 				panic(err)
 			}
 		}
-	}(c.Outgoing)
+	}(c.outgoing)
 
 	return nil
 }
@@ -132,7 +133,12 @@ func (c *SlackConnection) Connect() error {
 // Called when the connection becomes active
 func (c *SlackConnection) Refresh() error {
 	var err error
-	c.channels, err = c.GetChannels()
+	c.channels, err = c.FetchChannels()
+
+	// Select the first channel, by default
+	if len(c.channels) > 0 {
+		c.selectedChannel = &c.channels[0]
+	}
 
 	if err != nil {
 		return err
@@ -142,7 +148,7 @@ func (c *SlackConnection) Refresh() error {
 }
 
 // Fetch all channels for the given team
-func (c *SlackConnection) GetChannels() ([]Channel, error) {
+func (c *SlackConnection) FetchChannels() ([]Channel, error) {
 	resp, err := http.Get("https://slack.com/api/channels.list?token=" + c.token)
 	if err != nil {
 		return nil, err
@@ -163,7 +169,7 @@ func (c *SlackConnection) GetChannels() ([]Channel, error) {
 	var channelBuffer []Channel
 	var creator *User
 	for _, channel := range slackChannelBuffer.Channels {
-		creator, err = c.GetUserById(channel.CreatorId)
+		creator, err = c.UserById(channel.CreatorId)
 		if err != nil {
 			return nil, err
 		}
@@ -179,7 +185,7 @@ func (c *SlackConnection) GetChannels() ([]Channel, error) {
 }
 
 // Given a channel, return all messages within that channel.
-func (c *SlackConnection) GetChannelMessages(channel Channel) ([]Message, error) {
+func (c *SlackConnection) FetchChannelMessages(channel Channel) ([]Message, error) {
 	resp, err := http.Get("https://slack.com/api/channels.history?token=" + c.token + "&channel=" + channel.Id + "&count=100")
 	if err != nil {
 		return nil, err
@@ -189,7 +195,7 @@ func (c *SlackConnection) GetChannelMessages(channel Channel) ([]Message, error)
 	body, _ := ioutil.ReadAll(resp.Body)
 	var slackMessageBuffer struct {
 		Messages []struct {
-			Timestamp string     `json:"ts"`
+			Ts        string     `json:"ts"`
 			UserId    string     `json:"user"`
 			Text      string     `json:"text"`
 			Reactions []Reaction `json:"reactions"`
@@ -203,8 +209,11 @@ func (c *SlackConnection) GetChannelMessages(channel Channel) ([]Message, error)
 	// Convert to more generic message format
 	var messageBuffer []Message
 	var sender *User
-	for _, msg := range slackMessageBuffer.Messages {
-		sender, err = c.GetUserById(msg.UserId)
+	for i := len(slackMessageBuffer.Messages) - 1; i >= 0; i-- { // loop backwards to reverse the final slice
+		msg := slackMessageBuffer.Messages[i]
+
+		// Get the sender of the message
+		sender, err = c.UserById(msg.UserId)
 		if err != nil {
 			return nil, err
 		}
@@ -213,13 +222,14 @@ func (c *SlackConnection) GetChannelMessages(channel Channel) ([]Message, error)
 			Sender:    sender,
 			Text:      msg.Text,
 			Reactions: msg.Reactions,
+			Hash:      msg.Ts,
 		})
 	}
 
 	return messageBuffer, nil
 }
 
-func (c *SlackConnection) GetUserById(id string) (*User, error) {
+func (c *SlackConnection) UserById(id string) (*User, error) {
 	resp, err := http.Get("https://slack.com/api/users.info?token=" + c.token + "&user=" + id)
 	if err != nil {
 		return nil, err
@@ -260,6 +270,19 @@ func (c *SlackConnection) GetUserById(id string) (*User, error) {
 	}, nil
 }
 
-func (c *SlackConnection) GetSelectedChannel() *Channel {
-	return c.selectedChannel;
+func (c *SlackConnection) SelectedChannel() *Channel {
+	return c.selectedChannel
+}
+
+func (c *SlackConnection) Incoming() chan Event {
+	return c.incoming
+}
+func (c *SlackConnection) Outgoing() chan Event {
+	return c.outgoing
+}
+func (c *SlackConnection) Team() *Team {
+	return &c.team
+}
+func (c *SlackConnection) Channels() []Channel {
+	return c.channels
 }

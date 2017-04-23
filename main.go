@@ -1,7 +1,7 @@
 package main
 
 import (
-	// "fmt"
+	"fmt"
 	"os"
 
 	"github.com/1egoman/slime/frontend" // The thing to draw to the screen
@@ -12,48 +12,75 @@ import (
 type State struct {
 	Mode string
 
-	Command []rune
+	Command               []rune
 	CommandCursorPosition int
 
 	Gateway gateway.Connection
+
+	MessageHistory []gateway.Message
 }
 
-func render(state State, term frontend.TerminalDisplay) {
+func render(state State, term *frontend.TerminalDisplay) {
 	term.DrawCommandBar(
-		string(state.Command), // The command that the user is typing
-		state.CommandCursorPosition, // The cursor position
+		string(state.Command),              // The command that the user is typing
+		state.CommandCursorPosition,        // The cursor position
+		state.Gateway.SelectedChannel(), // The selected channel
+		state.Gateway.Team(),            // The selected team
 	)
 	term.DrawStatusBar()
 
-	term.DrawChannels(state.Gateway)
+	term.DrawMessages(state.MessageHistory)
 
 	term.Render()
 }
 
+func connect(state State, term *frontend.TerminalDisplay) {
+	// Connect to gateway, then refresh properies about it.
+	state.Gateway.Connect()
+	state.Gateway.Refresh()
+
+	// Get messages for the selected channel
+	selectedChannel := state.Gateway.SelectedChannel()
+	if selectedChannel != nil {
+		state.MessageHistory, _ = state.Gateway.FetchChannelMessages(*selectedChannel)
+	}
+
+	// Inital full render. At this point, all data has come in.
+	render(state, term)
+}
+
+
+
 func main() {
+	fmt.Println("Loading...")
 	state := State{
 		// The mode the client is in
 		Mode: "normal",
 
 		// The command the user is typing
-		Command: []rune{},
+		Command:               []rune{},
 		CommandCursorPosition: 0,
 
 		// Connection to the server
 		Gateway: gateway.Slack(os.Getenv("SLACK_TOKEN")),
-	}
 
-	// Connect to gateway, then refresh properies about it.
-	state.Gateway.Connect()
-	state.Gateway.Refresh()
+		// A slice of all messages in the currently active channel
+		MessageHistory: []gateway.Message{},
+	}
 
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 	s, _ := tcell.NewScreen()
 	term := frontend.NewTerminalDisplay(s)
 	s.Init()
+	defer s.Fini() // Make sure we clean up after tcell!
 
-	render(state, *term)
+	// Initial render.
+	render(state, term)
 
+	// Connect to the server
+	go connect(state, term)
+
+	// GOROUTINE: Handle keyboard events.
 	quit := make(chan struct{})
 	go func() {
 		for {
@@ -66,7 +93,7 @@ func main() {
 					return
 
 				// case tcell.KeyEnter:
-                //
+				//
 
 				// CTRL + L redraws the screen.
 				case tcell.KeyCtrlL:
@@ -76,7 +103,7 @@ func main() {
 				case tcell.KeyRune:
 					state.Command = append(
 						append(state.Command[:state.CommandCursorPosition], ev.Rune()),
-						state.Command[state.CommandCursorPosition:]...
+						state.Command[state.CommandCursorPosition:]...,
 					)
 					state.CommandCursorPosition += 1
 
@@ -85,7 +112,7 @@ func main() {
 					if state.CommandCursorPosition > 0 {
 						state.Command = append(
 							state.Command[:state.CommandCursorPosition-1],
-							state.Command[state.CommandCursorPosition:]...
+							state.Command[state.CommandCursorPosition:]...,
 						)
 						state.CommandCursorPosition -= 1
 					}
@@ -100,41 +127,85 @@ func main() {
 						state.CommandCursorPosition += 1
 					}
 				}
-				render(state, *term)
+				render(state, term)
 			case *tcell.EventResize:
 				s.Sync()
 			}
 		}
 	}()
 
-	<-quit
-	s.Fini()
+	// // GOROUTINE: Handle connection incoming and outgoing messages
+	go func() {
+		for {
+			event := <-state.Gateway.Incoming()
 
-	// for {
-	// 	event := <-slack.Incoming
-	//
-	// 	switch event.Type {
-	// 	case "hello":
-	// 		fmt.Println("Hello!")
-	//
-	// 		// Send an outgoing message
-	// 		slack.Outgoing <- gateway.Event{
-	// 			Type: "ping",
-	// 			Data: map[string]interface{} {
-	// 				"foo": "bar",
-	// 			},
-	// 		}
-	//
-	// 		// List all channels
-	// 		channels, _ := slack.Channels()
-	// 		for _, channel := range channels {
-	// 			fmt.Printf("Channel: %+v Creator: %+v\n", channel, channel.Creator)
-	// 		}
-	//
-	// 	case "message":
-	// 		fmt.Println("Message:", event.Data["text"])
-	// 	case "pong":
-	// 		fmt.Println("Got pong!")
-	// 	}
-	// }
+			switch event.Type {
+			case "hello":
+				state.MessageHistory = append(state.MessageHistory, gateway.Message{
+					Sender: nil,
+					Text: "Got Hello...",
+					Hash: "hello",
+				})
+
+				// Send an outgoing message
+				state.Gateway.Outgoing() <- gateway.Event{
+					Type: "ping",
+					Data: map[string]interface{} {
+						"foo": "bar",
+					},
+				}
+
+			// When a message is received for the selected channel, add to the message history
+			case "message":
+				if event.Data["channel"] == state.Gateway.SelectedChannel().Id {
+					messageHash := event.Data["ts"].(string)
+					
+					// See if the message is already in the history
+					alreadyInHistory := false
+					for _, msg := range state.MessageHistory {
+						if msg.Hash == messageHash {
+							// Message with that hash is already in the history, no need to add
+							// again...
+							alreadyInHistory = true
+							break
+						}
+					}
+					if alreadyInHistory {
+						break
+					}
+
+					// Figure out who sent the message
+					var sender *gateway.User
+					if event.Data["user"] != nil {
+						var err error
+						sender, err = state.Gateway.UserById(event.Data["user"].(string))
+						if err != nil {
+							panic(err);
+						}
+					} else {
+						sender = nil
+					}
+
+					// Add message to history
+					state.MessageHistory = append(state.MessageHistory, gateway.Message{
+						Sender: sender,
+						Text: event.Data["text"].(string),
+						Hash: messageHash,
+					})
+				}
+
+			// When a pong is received, log it too.
+			case "pong":
+				state.MessageHistory = append(state.MessageHistory, gateway.Message{
+					Sender: nil,
+					Text: "Got Pong...",
+					Hash: "pong",
+				})
+			}
+
+			render(state, term)
+		}
+	}()
+
+	<-quit
 }
