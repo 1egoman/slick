@@ -36,11 +36,23 @@ func (term *TerminalDisplay) Render() {
 	term.screen.Show()
 }
 
-func (term *TerminalDisplay) DrawStatusBar() {
-	_, height := term.screen.Size()
+func (term *TerminalDisplay) DrawStatusBar(mode string) {
+	width, height := term.screen.Size()
 	lastRow := height - 1
 
-	term.WriteText(0, lastRow, "Foo Bar!")
+	// Clear the row.
+	for i := 0; i < width; i++ {
+		char, _, style, _ := term.screen.GetContent(i, lastRow)
+		if char != ' ' || style != tcell.StyleDefault {
+			term.screen.SetCell(i, lastRow, tcell.StyleDefault, ' ')
+		}
+	}
+
+	// First, draw the mode (ie, chat, channel-picker, etc...)
+	term.WriteText(0, lastRow, mode)
+
+	// Then, draw a seperator
+	term.WriteText(len(mode) + 1, lastRow, "|")
 }
 
 func (term *TerminalDisplay) DrawCommandBar(

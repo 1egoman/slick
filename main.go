@@ -27,7 +27,7 @@ func render(state State, term *frontend.TerminalDisplay) {
 		state.Gateway.SelectedChannel(), // The selected channel
 		state.Gateway.Team(),            // The selected team
 	)
-	term.DrawStatusBar()
+	term.DrawStatusBar(state.Mode)
 
 	term.DrawMessages(state.MessageHistory)
 
@@ -53,19 +53,28 @@ func connect(state *State, term *frontend.TerminalDisplay, connected chan struct
 	close(connected)
 }
 
-func events(state State, term *frontend.TerminalDisplay, screen tcell.Screen, quit chan struct{}) {
+func keyboardEvents(state State, term *frontend.TerminalDisplay, screen tcell.Screen, quit chan struct{}) {
 	for {
 		ev := screen.PollEvent()
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
 			switch ev.Key() {
-			case tcell.KeyEscape, tcell.KeyCtrlC:
+			case tcell.KeyCtrlC:
 				close(quit)
 				return
+
+			// Escape reverts back to chat mode.
+			case tcell.KeyEscape:
+				state.Mode = "chat"
+
+			// CTRL-P moves to a channel picker, which is a mode for switching channels
+			case tcell.KeyCtrlP:
+				state.Mode = "pick-channel"
 
 			case tcell.KeyEnter:
 				command := string(state.Command)
 				switch {
+				// :q or :quit closes the app
 				case command == ":q", command == ":quit":
 					close(quit)
 					return
@@ -125,11 +134,90 @@ func events(state State, term *frontend.TerminalDisplay, screen tcell.Screen, qu
 	}
 }
 
+func gatewayEvents(state State, term *frontend.TerminalDisplay, connected chan struct{}) {
+	// Wait to be connected before handling events.
+	<-connected
+
+	for {
+		event := <-state.Gateway.Incoming()
+
+		switch event.Type {
+		case "hello":
+			state.MessageHistory = append(state.MessageHistory, gateway.Message{
+				Sender: nil,
+				Text:   "Got Hello...",
+				Hash:   "hello",
+			})
+
+			// Send an outgoing message
+			state.Gateway.Outgoing() <- gateway.Event{
+				Type: "ping",
+				Data: map[string]interface{}{
+					"foo": "bar",
+				},
+			}
+
+		// When a message is received for the selected channel, add to the message history
+		// "message" events come in when the gateway receives a message sent by someone else.
+		// "pong" events come in when a message the user just sent is received successfully.
+		case "message", "pong":
+			if event.Data["channel"] == state.Gateway.SelectedChannel().Id {
+				// Find a hash for the message, just use the timestamp
+				// In message events, the timestamp is `ts`
+				// In pong events, the timestamp is `event_ts`
+				var messageHash string
+				if data, ok := event.Data["ts"].(string); ok {
+					messageHash = data;
+				} else if data, ok := event.Data["event_ts"].(string); ok {
+					messageHash = data;
+				} else {
+					panic("No ts or event_ts key in message or pong, so can't create a hash for this message!")
+				}
+
+				// See if the message is already in the history
+				alreadyInHistory := false
+				for _, msg := range state.MessageHistory {
+					if msg.Hash == messageHash {
+						// Message with that hash is already in the history, no need to add
+						// again...
+						alreadyInHistory = true
+						break
+					}
+				}
+				if alreadyInHistory {
+					break
+				}
+
+				// Figure out who sent the message
+				var sender *gateway.User
+				if event.Data["user"] != nil {
+					var err error
+					sender, err = state.Gateway.UserById(event.Data["user"].(string))
+					if err != nil {
+						panic(err)
+					}
+				} else {
+					sender = nil
+				}
+
+				// Add message to history
+				state.MessageHistory = append(state.MessageHistory, gateway.Message{
+					Sender: sender,
+					Text:   event.Data["text"].(string),
+					Hash:   messageHash,
+				})
+			}
+		}
+
+		render(state, term)
+	}
+}
+
 func main() {
 	fmt.Println("Loading...")
 	state := State{
 		// The mode the client is in
-		Mode: "normal",
+		Mode: "chat",
 
 		// The command the user is typing
 		Command:               []rune{},
@@ -157,89 +245,12 @@ func main() {
 	connected := make(chan struct{})
 	connect(&state, term, connected)
 
-	// GOROUTINE: Handle keyboard events.
+	// GOROUTINE: Handle events coming from the input device (ie, keyboard).
 	quit := make(chan struct{})
-	go events(state, term, s, quit)
+	go keyboardEvents(state, term, s, quit)
 
-	// // GOROUTINE: Handle connection incoming and outgoing messages
-	go func(state State, connected chan struct{}) {
-		// Wait to be connected before handling events.
-		<-connected
-
-		for {
-			event := <-state.Gateway.Incoming()
-
-			switch event.Type {
-			case "hello":
-				state.MessageHistory = append(state.MessageHistory, gateway.Message{
-					Sender: nil,
-					Text:   "Got Hello...",
-					Hash:   "hello",
-				})
-
-				// Send an outgoing message
-				state.Gateway.Outgoing() <- gateway.Event{
-					Type: "ping",
-					Data: map[string]interface{}{
-						"foo": "bar",
-					},
-				}
-
-			// When a message is received for the selected channel, add to the message history
-			// "message" events come in when the gateway receives a message sent by someone else.
-			// "pong" events come in when a message the user just sent is received successfully.
-			case "message", "pong":
-				if event.Data["channel"] == state.Gateway.SelectedChannel().Id {
-					// Find a hash for the message, just use the timestamp
-					// In message events, the timestamp is `ts`
-					// In pong events, the timestamp is `event_ts`
-					var messageHash string
-					if data, ok := event.Data["ts"].(string); ok {
-						messageHash = data;
-					} else if data, ok := event.Data["event_ts"].(string); ok {
-						messageHash = data;
-					} else {
-						panic("No ts or event_ts key in message or pong, so can't create a hash for this message!")
-					}
-
-					// See if the message is already in the history
-					alreadyInHistory := false
-					for _, msg := range state.MessageHistory {
-						if msg.Hash == messageHash {
-							// Message with that hash is already in the history, no need to add
-							// again...
-							alreadyInHistory = true
-							break
-						}
-					}
-					if alreadyInHistory {
-						break
-					}
-
-					// Figure out who sent the message
-					var sender *gateway.User
-					if event.Data["user"] != nil {
-						var err error
-						sender, err = state.Gateway.UserById(event.Data["user"].(string))
-						if err != nil {
-							panic(err)
-						}
-					} else {
-						sender = nil
-					}
-
-					// Add message to history
-					state.MessageHistory = append(state.MessageHistory, gateway.Message{
-						Sender: sender,
-						Text:   event.Data["text"].(string),
-						Hash:   messageHash,
-					})
-				}
-			}
-
-			render(state, term)
-		}
-	}(state, connected)
+	// GOROUTINE: Handle events coming from slack.
+	go gatewayEvents(state, term, connected)
 
 	<-quit
 }
