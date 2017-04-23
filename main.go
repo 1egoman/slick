@@ -35,7 +35,7 @@ func render(state State, term *frontend.TerminalDisplay) {
 }
 
 // Given a state object populated with a gateway, initialize the state with the gateway.
-func connect(state State, term *frontend.TerminalDisplay, connected chan struct{}) {
+func connect(state *State, term *frontend.TerminalDisplay, connected chan struct{}) {
 	// Connect to gateway, then refresh properies about it.
 	state.Gateway.Connect()
 	state.Gateway.Refresh()
@@ -47,7 +47,7 @@ func connect(state State, term *frontend.TerminalDisplay, connected chan struct{
 	}
 
 	// Inital full render. At this point, all data has come in.
-	render(state, term)
+	render(*state, term)
 
 	// We're connected!
 	close(connected)
@@ -132,15 +132,17 @@ func main() {
 	render(state, term)
 
 	// GOROUTINE: Connect to the server
+	// Once this goroutine finishes, it closed the connected channel. This is used as a signal by
+	// the gateway events goroutine to start working.
 	connected := make(chan struct{})
-	go connect(state, term, connected)
+	connect(&state, term, connected)
 
 	// GOROUTINE: Handle keyboard events.
 	quit := make(chan struct{})
 	go events(state, term, s, quit)
 
 	// // GOROUTINE: Handle connection incoming and outgoing messages
-	go func(state State) {
+	go func(state State, connected chan struct{}) {
 		// Wait to be connected before handling events.
 		<-connected
 
@@ -213,7 +215,7 @@ func main() {
 
 			render(state, term)
 		}
-	}(state)
+	}(state, connected)
 
 	<-quit
 }
