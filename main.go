@@ -35,7 +35,7 @@ func render(state State, term *frontend.TerminalDisplay) {
 }
 
 // Given a state object populated with a gateway, initialize the state with the gateway.
-func connect(state State, term *frontend.TerminalDisplay) {
+func connect(state State, term *frontend.TerminalDisplay, connected chan struct{}) {
 	// Connect to gateway, then refresh properies about it.
 	state.Gateway.Connect()
 	state.Gateway.Refresh()
@@ -48,6 +48,9 @@ func connect(state State, term *frontend.TerminalDisplay) {
 
 	// Inital full render. At this point, all data has come in.
 	render(state, term)
+
+	// We're connected!
+	close(connected)
 }
 
 func events(state State, term *frontend.TerminalDisplay, screen tcell.Screen, quit chan struct{}) {
@@ -122,14 +125,15 @@ func main() {
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 	s, _ := tcell.NewScreen()
 	term := frontend.NewTerminalDisplay(s)
-	// s.Init()
+	s.Init()
 	defer s.Fini() // Make sure we clean up after tcell!
 
 	// Initial render.
 	render(state, term)
 
-	// Connect to the server
-	go connect(state, term)
+	// GOROUTINE: Connect to the server
+	connected := make(chan struct{})
+	go connect(state, term, connected)
 
 	// GOROUTINE: Handle keyboard events.
 	quit := make(chan struct{})
@@ -137,11 +141,11 @@ func main() {
 
 	// // GOROUTINE: Handle connection incoming and outgoing messages
 	go func(state State) {
-		incoming := state.Gateway.Incoming()
+		// Wait to be connected before handling events.
+		<-connected
+
 		for {
-			fmt.Println("incoming", incoming)
-			event := <-incoming
-			fmt.Println("event")
+			event := <-state.Gateway.Incoming()
 
 			switch event.Type {
 			case "hello":

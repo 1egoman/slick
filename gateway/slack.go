@@ -1,8 +1,8 @@
 package gateway
 
 import (
+	// "fmt"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -63,6 +63,10 @@ func (c *SlackConnection) requestConnectionUrl() {
 
 // Connect to the slack persistent socket.
 func (c *SlackConnection) Connect() error {
+	// Create buffered channels to listen and send messages on
+	c.incoming = make(chan Event, 1)
+	c.outgoing = make(chan Event, 1)
+
 	// Request a connection url with the token in the struct
 	c.requestConnectionUrl()
 
@@ -75,10 +79,6 @@ func (c *SlackConnection) Connect() error {
 	if err != nil {
 		return err
 	}
-
-	// Create buffered channels to listen and send messages on
-	c.incoming = make(chan Event, 5)
-	c.outgoing = make(chan Event, 5)
 
 	// When messages are received, add them to the incoming buffer.
 	go func(incoming chan Event) {
@@ -94,7 +94,6 @@ func (c *SlackConnection) Connect() error {
 
 			// Decode into a struct so that we can check message type later
 			json.Unmarshal(msgRaw[:n], &msg)
-			fmt.Printf("Received in goroutine: %+v.\n", msg)
 			incoming <- Event{
 				Direction: "incoming",
 				Type:      msg["type"].(string),
@@ -121,7 +120,6 @@ func (c *SlackConnection) Connect() error {
 			if err != nil {
 				panic(err)
 			}
-			// fmt.Printf("Writing to slack: %s\n", data)
 
 			// Send it.
 			if _, err = c.conn.Write(data); err != nil {

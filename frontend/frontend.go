@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"fmt"
 	"github.com/gdamore/tcell"
 
 	"github.com/1egoman/slime/gateway" // The thing to interface with slack
@@ -96,6 +97,8 @@ func (term *TerminalDisplay) DrawMessages(messages []gateway.Message) {
 				senderStyle = senderStyle.Foreground(tcell.GetColor("#" + msg.Sender.Color))
 			}
 		}
+
+		sender = fmt.Sprintf("%d %s", row, sender)
 
 		// Write sender and message to the screen
 		term.WriteTextStyle(0, row, senderStyle, sender)
