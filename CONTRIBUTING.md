@@ -4,7 +4,7 @@
             Frontend (`frontend` package)
                ||
                ||
-			Application Logic (`main` package)
+           Application Logic (`main` package)
               //   \\
              //     \\
          Gateway   Gateway
