@@ -15,6 +15,9 @@ func connect(state *State, term *frontend.TerminalDisplay, connected chan struct
 	state.Gateway.Connect()
 	state.Gateway.Refresh()
 
+	// Render gateway details.
+	render(*state, term)
+
 	// Get messages for the selected channel
 	selectedChannel := state.Gateway.SelectedChannel()
 	if selectedChannel != nil {
