@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"fmt"
 	"regexp"
 	"github.com/gdamore/tcell"
 	"github.com/kyokomi/emoji" // convert :smile: to unicode
@@ -77,18 +78,19 @@ func (term *TerminalDisplay) DrawStatusBar(mode string, connections []gateway.Co
 
 	// Then, render each conenction
 	position := len(mode) + 3
-	for _, i := range connections {
+	for index, item := range connections {
 		// How should the connection look?
 		var style tcell.Style
-		if i == activeConnection {
+		if item == activeConnection {
 			style = term.Styles["StatusBarActiveConnection"]
 		} else {
 			style = term.Styles["StatusBarConnection"]
 		}
 
 		// Draw each connection
-		term.WriteTextStyle(position, lastRow, style, i.Name())
-		position += len(i.Name()) + 1
+		label := fmt.Sprintf("%d: %s", index+1, item.Name())
+		term.WriteTextStyle(position, lastRow, style, label)
+		position += len(label) + 1
 	}
 }
 
