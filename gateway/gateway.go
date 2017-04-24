@@ -2,6 +2,9 @@ package gateway
 
 // A Connection is used to represent a message source.
 type Connection interface {
+  // Each connection has a name.
+  Name() string
+
 	Connect() error
 
 	// Called to "refetch" any persistent resources, such as channels.

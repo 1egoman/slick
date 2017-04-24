@@ -64,6 +64,15 @@ func (c *SlackConnection) requestConnectionUrl() {
 	c.team = connectionBuffer.Team
 }
 
+// Return the name of the team.
+func (c *SlackConnection) Name() string {
+	if c.Team() != nil && len(c.Team().Name) != 0 {
+		return c.Team().Name
+	} else {
+		return "(slack loading...)"
+	}
+}
+
 // Connect to the slack persistent socket.
 func (c *SlackConnection) Connect() error {
 	// Create buffered channels to listen and send messages on

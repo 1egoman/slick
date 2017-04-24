@@ -3,7 +3,7 @@ package frontend
 import (
 	"regexp"
 	"github.com/gdamore/tcell"
-	"github.com/kyokomi/emoji"
+	"github.com/kyokomi/emoji" // convert :smile: to unicode
 
 	"github.com/1egoman/slime/gateway" // The thing to interface with slack
 )
@@ -39,6 +39,10 @@ func NewTerminalDisplay(screen tcell.Screen) *TerminalDisplay {
 				Background(tcell.ColorRed).
 				Foreground(tcell.ColorWhite),
 			"CommandBarText": tcell.StyleDefault,
+			"StatusBarActiveConnection": tcell.StyleDefault.
+				Background(tcell.ColorBlue).
+				Foreground(tcell.ColorWhite),
+			"StatusBarConnection": tcell.StyleDefault,
 		},
 	}
 }
@@ -53,7 +57,7 @@ func (term *TerminalDisplay) Render() {
 	term.screen.Show()
 }
 
-func (term *TerminalDisplay) DrawStatusBar(mode string) {
+func (term *TerminalDisplay) DrawStatusBar(mode string, connections []gateway.Connection, activeConnection gateway.Connection) {
 	width, height := term.screen.Size()
 	lastRow := height - 1
 
@@ -70,6 +74,22 @@ func (term *TerminalDisplay) DrawStatusBar(mode string) {
 
 	// Then, draw a seperator
 	term.WriteText(len(mode) + 1, lastRow, "|")
+
+	// Then, render each conenction
+	position := len(mode) + 3
+	for _, i := range connections {
+		// How should the connection look?
+		var style tcell.Style
+		if i == activeConnection {
+			style = term.Styles["StatusBarActiveConnection"]
+		} else {
+			style = term.Styles["StatusBarConnection"]
+		}
+
+		// Draw each connection
+		term.WriteTextStyle(position, lastRow, style, i.Name())
+		position += len(i.Name()) + 1
+	}
 }
 
 func (term *TerminalDisplay) DrawFuzzyPicker(items []string, selectedIndex int) {
