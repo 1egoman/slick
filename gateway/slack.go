@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	// "fmt"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -299,7 +298,8 @@ func (c *SlackConnection) SendMessage(message Message, channel *Channel) (*Messa
 	if strings.HasPrefix(message.Text, "/") {
 		// If the message starts with a slash, it's a slash command.
 		command := strings.Split(message.Text, " ")
-		resp, err := http.Get("https://slack.com/api/chat.command?token=" + c.token + "&channel=" + channel.Id + "&command=" + command[0] + "&text" + strings.Join(command[1:], "%20"))
+		text := url.QueryEscape(strings.Join(command[1:], " "))
+		resp, err := http.Get("https://slack.com/api/chat.command?token=" + c.token + "&channel=" + channel.Id + "&command=" + url.QueryEscape(command[0]) + "&text=" + text)
 		if err != nil {
 			return nil, err
 		}
