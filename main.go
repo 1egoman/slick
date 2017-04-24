@@ -12,16 +12,16 @@ import (
 // Given a state object populated with a gateway, initialize the state with the gateway.
 func connect(state *State, term *frontend.TerminalDisplay, connected chan struct{}) {
 	// Connect to gateway, then refresh properies about it.
-	state.Gateway.Connect()
-	state.Gateway.Refresh()
+	state.ActiveConnection().Connect()
+	state.ActiveConnection().Refresh()
 
 	// Render gateway details.
 	render(*state, term)
 
 	// Get messages for the selected channel
-	selectedChannel := state.Gateway.SelectedChannel()
+	selectedChannel := state.ActiveConnection().SelectedChannel()
 	if selectedChannel != nil {
-		state.MessageHistory, _ = state.Gateway.FetchChannelMessages(*selectedChannel)
+		state.MessageHistory, _ = state.ActiveConnection().FetchChannelMessages(*selectedChannel)
 	}
 
 	// Inital full render. At this point, all data has come in.
@@ -63,13 +63,13 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 				default:
 					// By default, just send a message
 					message := gateway.Message{
-						Sender: state.Gateway.Self(),
+						Sender: state.ActiveConnection().Self(),
 						Text: command,
 					}
 
 					// Sometimes, a message could have a response. This is for example true in the
 					// case of slash commands, sometimes.
-					responseMessage, err := state.Gateway.SendMessage(message, state.Gateway.SelectedChannel())
+					responseMessage, err := state.ActiveConnection().SendMessage(message, state.ActiveConnection().SelectedChannel())
 
 					if err != nil {
 						panic(err)
@@ -127,7 +127,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 	<-connected
 
 	for {
-		event := <-state.Gateway.Incoming()
+		event := <-state.ActiveConnection().Incoming()
 
 		switch event.Type {
 		case "hello":
@@ -138,7 +138,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 			})
 
 			// Send an outgoing message
-			state.Gateway.Outgoing() <- gateway.Event{
+			state.ActiveConnection().Outgoing() <- gateway.Event{
 				Type: "ping",
 				Data: map[string]interface{}{
 					"foo": "bar",
@@ -148,7 +148,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 		// When a message is received for the selected channel, add to the message history
 		// "message" events come in when the gateway receives a message sent by someone else.
 		case "message":
-			if event.Data["channel"] == state.Gateway.SelectedChannel().Id {
+			if event.Data["channel"] == state.ActiveConnection().SelectedChannel().Id {
 				// Find a hash for the message, just use the timestamp
 				// In message events, the timestamp is `ts`
 				// In pong events, the timestamp is `event_ts`
@@ -177,7 +177,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 				var sender *gateway.User
 				if event.Data["user"] != nil {
 					var err error
-					sender, err = state.Gateway.UserById(event.Data["user"].(string))
+					sender, err = state.ActiveConnection().UserById(event.Data["user"].(string))
 					if err != nil {
 						panic(err)
 					}
@@ -209,7 +209,12 @@ func main() {
 		CommandCursorPosition: 0,
 
 		// Connection to the server
-		Gateway: gateway.Slack(os.Getenv("SLACK_TOKEN")),
+		Connections: []gateway.Connection{
+			gateway.Slack(os.Getenv("SLACK_TOKEN")),
+		},
+
+		// Which connection in the connections object is active
+		activeConnection: 0,
 
 		// A slice of all messages in the currently active channel
 		MessageHistory: []gateway.Message{},

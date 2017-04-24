@@ -13,8 +13,8 @@ func render(state State, term *frontend.TerminalDisplay) {
 	term.DrawCommandBar(
 		string(state.Command),           // The command that the user is typing
 		state.CommandCursorPosition,     // The cursor position
-		state.Gateway.SelectedChannel(), // The selected channel
-		state.Gateway.Team(),            // The selected team
+		state.ActiveConnection().SelectedChannel(), // The selected channel
+		state.ActiveConnection().Team(),            // The selected team
 	)
 
 	if state.Mode == "picker" {

@@ -11,8 +11,13 @@ type State struct {
 	Command               []rune
 	CommandCursorPosition int
 
-	Gateway gateway.Connection
-
 	MessageHistory []gateway.Message
+
+	// All the connections that are currently made to outside services.
+	Connections []gateway.Connection
+	activeConnection int
 }
 
+func (s *State) ActiveConnection() gateway.Connection {
+	return s.Connections[s.activeConnection]
+}
