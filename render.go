@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"github.com/1egoman/slime/frontend"
 )
 
@@ -10,6 +11,8 @@ func render(state *State, term *frontend.TerminalDisplay) {
 	// If the user switched connections, then refresh
 	if state.ConnectionIsStale() {
 		state.SyncActiveConnection()
+		log.Printf("User swiching to new active connection: %s", state.ActiveConnection().Name())
+
 		go func() {
 			if err := state.ActiveConnection().Refresh(); err != nil {
 				panic(err)

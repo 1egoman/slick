@@ -1,8 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"os"
+	"log"
+	"time"
 
 	"github.com/1egoman/slime/frontend" // The thing to draw to the screen
 	"github.com/1egoman/slime/gateway"  // The thing to interface with slack
@@ -27,9 +28,11 @@ func connect(state *State, term *frontend.TerminalDisplay, connected chan struct
 
 func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.Screen, quit chan struct{}) {
 	for {
+		log.Println("Got event...")
 		ev := screen.PollEvent()
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
+			log.Printf("Keypress: %+v", ev.Name())
 			switch {
 			case ev.Key() == tcell.KeyCtrlC:
 				close(quit)
@@ -133,7 +136,21 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 	<-connected
 
 	for {
+		// Before events can run, confirm that the a channel is selected.
+		hasFetchedChannel := state.ActiveConnection().SelectedChannel() != nil
+
+		// Is the channel empty? If so, move to the next ieration.
+		// We want the loop to always be running, so that if the reference that
+		// state.ActiveConnection() points to behind the scenes changes, the we won't be blocking
+		// listening for events on an old reference.
+		if len(state.ActiveConnection().Incoming()) == 0 || !hasFetchedChannel {
+			time.Sleep(100 * time.Millisecond) // Sleep to lower the speef od the loop for debugging reasons.
+			continue
+		}
+
+		// Now that we know there are events, grab one and handle it.
 		event := <-state.ActiveConnection().Incoming()
+		log.Printf("Received event: %+v", event)
 
 		switch event.Type {
 		case "hello":
@@ -154,7 +171,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 		// When a message is received for the selected channel, add to the message history
 		// "message" events come in when the gateway receives a message sent by someone else.
 		case "message":
-			if event.Data["channel"] == state.ActiveConnection().SelectedChannel().Id {
+			if channel := state.ActiveConnection().SelectedChannel(); event.Data["channel"] == channel.Id {
 				// Find a hash for the message, just use the timestamp
 				// In message events, the timestamp is `ts`
 				// In pong events, the timestamp is `event_ts`
@@ -197,6 +214,9 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 					Text:   event.Data["text"].(string),
 					Hash:   messageHash,
 				})
+			} else {
+				// 1
+				log.Printf("Channel value", channel)
 			}
 		}
 
@@ -205,7 +225,16 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 }
 
 func main() {
-	fmt.Println("Loading...")
+	// Configure logger to log to file
+	logFile, err := os.Create("./log")
+	if err != nil {
+		panic(err)
+	}
+	defer logFile.Close()
+	log.SetOutput(logFile)
+	log.SetFlags(log.Lshortfile)
+	log.Println("Starting Slime...")
+
 	state := &State{
 		// The mode the client is in
 		Mode: "chat",

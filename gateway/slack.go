@@ -1,7 +1,7 @@
 package gateway
 
 import (
-	"fmt"
+	"log"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -15,12 +15,6 @@ import (
 func Slack(token string) *SlackConnection {
 	return &SlackConnection{
 		token: token,
-		messageHistory: []Message{
-			Message{Text: "Foo", Sender: &User{Name: "rgausnet"}},
-			Message{Text: "Bar", Sender: &User{Name: "rgausnet"}},
-			Message{Text: "Baz", Sender: &User{Name: "rgausnet"}},
-			Message{Text: "Qix", Sender: &User{Name: "rgausnet"}},
-		},
 	}
 }
 
@@ -84,12 +78,14 @@ func (c *SlackConnection) Name() string {
 
 // Connect to the slack persistent socket.
 func (c *SlackConnection) Connect() error {
+	log.Println("Requesting slack team connection url...")
 	// Create buffered channels to listen and send messages on
 	c.incoming = make(chan Event, 1)
 	c.outgoing = make(chan Event, 1)
 
 	// Request a connection url with the token in the struct
 	c.requestConnectionUrl()
+	log.Printf("Got slack connection url for team %s: %s", c.Team().Name, c.url)
 
 	// FIXME: what does this mean?
 	origin := "http://localhost/"
@@ -100,6 +96,7 @@ func (c *SlackConnection) Connect() error {
 	if err != nil {
 		return err
 	}
+	log.Printf("Slack connection %s made!", c.Team().Name)
 
 	// When messages are received, add them to the incoming buffer.
 	go func(incoming chan Event) {
@@ -115,6 +112,7 @@ func (c *SlackConnection) Connect() error {
 
 			// Decode into a struct so that we can check message type later
 			json.Unmarshal(msgRaw[:n], &msg)
+			log.Printf("INCOMING %s: %s", c.Team().Name, msgRaw[:n])
 			incoming <- Event{
 				Direction: "incoming",
 				Type:      msg["type"].(string),
@@ -141,6 +139,7 @@ func (c *SlackConnection) Connect() error {
 			if err != nil {
 				panic(err)
 			}
+			log.Printf("OUTGOING %s: %s", c.Team().Name, data)
 
 			// Send it.
 			if _, err = c.conn.Write(data); err != nil {
@@ -175,10 +174,17 @@ func (c *SlackConnection) Refresh() error {
 	if len(c.channels) > 0 {
 		c.selectedChannel = &c.channels[0]
 
-		// Fetch Message history
-		c.messageHistory, err = c.FetchChannelMessages(*c.selectedChannel)
-		if err != nil {
-			return err
+		// Fetch Message history, if the emssage history is empty.
+		if len(c.messageHistory) == 0 {
+			log.Printf(
+				"Fetching message history for team %s and channel %s",
+				c.Team().Name,
+				c.SelectedChannel().Name,
+			)
+			c.messageHistory, err = c.FetchChannelMessages(*c.selectedChannel)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
