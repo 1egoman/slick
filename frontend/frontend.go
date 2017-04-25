@@ -168,6 +168,14 @@ func (term *TerminalDisplay) DrawMessages(messages []gateway.Message) {
 
 	// Loop through all possible places a message can be shown...
 	for ct := 0; ct < howManyMessagesCanBeShown; ct++ {
+		// Clear the row.
+		for i := 0; i < width; i++ {
+			char, _, style, _ := term.screen.GetContent(i, topRow + ct)
+			if char != ' ' || style != tcell.StyleDefault {
+				term.screen.SetCell(i, topRow + ct, tcell.StyleDefault, ' ')
+			}
+		}
+
 		// If not enough messages have been made to fill the screen, try the next message.
 		if ct > len(messages) - 1 {
 			continue
@@ -176,14 +184,6 @@ func (term *TerminalDisplay) DrawMessages(messages []gateway.Message) {
 		// Get the message and the row to show it on
 		msg := messages[ct]
 		row := topRow + ct
-
-		// Clear the row.
-		for i := 0; i < width; i++ {
-			char, _, style, _ := term.screen.GetContent(i, row)
-			if char != ' ' || style != tcell.StyleDefault {
-				term.screen.SetCell(i, row, tcell.StyleDefault, ' ')
-			}
-		}
 
 		// Get the name of the sender, and the sender's color
 		sender := "(anon)"

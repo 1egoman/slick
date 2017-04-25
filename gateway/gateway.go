@@ -14,6 +14,9 @@ type Connection interface {
 	Incoming() chan Event
 	Outgoing() chan Event
 
+  MessageHistory() []Message
+  AppendMessageHistory(message Message)
+  ClearMessageHistory()
   SendMessage(Message, *Channel) (*Message, error)
 
 	// Fetch a slice of all channels that are available on this connection

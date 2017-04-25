@@ -6,8 +6,19 @@ import (
 
 // Given application state and a frontend, render the state to the screen.
 // This function is called whenever something in state is changed.
-func render(state State, term *frontend.TerminalDisplay) {
-	term.DrawMessages(state.MessageHistory)
+func render(state *State, term *frontend.TerminalDisplay) {
+	// If the user switched connections, then refresh
+	if state.ConnectionIsStale() {
+		state.SyncActiveConnection()
+		go func() {
+			if err := state.ActiveConnection().Refresh(); err != nil {
+				panic(err)
+			}
+			render(state, term)
+		}()
+	}
+
+	term.DrawMessages(state.ActiveConnection().MessageHistory())
 
 	term.DrawStatusBar(
 		state.Mode, // Which mode we're currently in

@@ -14,6 +14,12 @@ import (
 func Slack(token string) *SlackConnection {
 	return &SlackConnection{
 		token: token,
+		messageHistory: []Message{
+			Message{Text: "Foo", Sender: &User{Name: "rgausnet"}},
+			Message{Text: "Bar", Sender: &User{Name: "rgausnet"}},
+			Message{Text: "Baz", Sender: &User{Name: "rgausnet"}},
+			Message{Text: "Qix", Sender: &User{Name: "rgausnet"}},
+		},
 	}
 }
 
@@ -33,6 +39,9 @@ type SlackConnection struct {
 	// Internal state to store all channels and a pointer to the active one.
 	channels        []Channel
 	selectedChannel *Channel
+
+	// Internal state to store message history of the active channel
+	messageHistory []Message
 }
 
 func (c *SlackConnection) requestConnectionUrl() {
@@ -164,6 +173,12 @@ func (c *SlackConnection) Refresh() error {
 	// Select the first channel, by default
 	if len(c.channels) > 0 {
 		c.selectedChannel = &c.channels[0]
+
+		// Fetch Message history
+		c.messageHistory, err = c.FetchChannelMessages(*c.selectedChannel)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -214,17 +229,24 @@ func (c *SlackConnection) FetchChannelMessages(channel Channel) ([]Message, erro
 	}
 
 	// Parse slack messages
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 	var slackMessageBuffer struct {
 		Messages []struct {
 			Ts        string     `json:"ts"`
 			UserId    string     `json:"user"`
 			Text      string     `json:"text"`
-			Reactions []Reaction `json:"reactions"`
+			/* Reactions struct{ */
+			/* 	Name string `json:"name"` */
+				Users []string 
+			/* } `json:"reactions"` */
 		} `json:"messages"`
 		hasMore bool `json:"has_more"`
 	}
 	if err = json.Unmarshal(body, &slackMessageBuffer); err != nil {
+		panic(err)
 		return nil, err
 	}
 
@@ -243,7 +265,7 @@ func (c *SlackConnection) FetchChannelMessages(channel Channel) ([]Message, erro
 		messageBuffer = append(messageBuffer, Message{
 			Sender:    sender,
 			Text:      msg.Text,
-			Reactions: msg.Reactions,
+			Reactions: []Reaction{},
 			Hash:      msg.Ts,
 		})
 	}
@@ -290,6 +312,16 @@ func (c *SlackConnection) UserById(id string) (*User, error) {
 		Skype:    slackUserBuffer.User.Profile.Skype,
 		Phone:    slackUserBuffer.User.Profile.Phone,
 	}, nil
+}
+
+func (c *SlackConnection) MessageHistory() []Message {
+	return c.messageHistory;
+}
+func (c *SlackConnection) AppendMessageHistory(message Message) {
+	c.messageHistory = append(c.messageHistory, message)
+}
+func (c *SlackConnection) ClearMessageHistory() {
+	c.messageHistory = []Message{}
 }
 
 // Send a given message to a given channel. Also, is able to process slash commands.

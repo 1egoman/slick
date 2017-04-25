@@ -11,21 +11,15 @@ import (
 
 // Given a state object populated with a gateway, initialize the state with the gateway.
 func connect(state *State, term *frontend.TerminalDisplay, connected chan struct{}) {
-	// Connect to gateway, then refresh properies about it.
-	state.ActiveConnection().Connect()
-	state.ActiveConnection().Refresh()
-
-	// Render gateway details.
-	render(*state, term)
-
-	// Get messages for the selected channel
-	selectedChannel := state.ActiveConnection().SelectedChannel()
-	if selectedChannel != nil {
-		state.MessageHistory, _ = state.ActiveConnection().FetchChannelMessages(*selectedChannel)
+	// Connect to all gateways on start.
+	for _, connection := range state.Connections {
+		if err := connection.Connect(); err != nil {
+			panic(err)
+		}
 	}
 
-	// Inital full render. At this point, all data has come in.
-	render(*state, term)
+	// Render initial state.
+	render(state, term)
 
 	// We're connected!
 	close(connected)
@@ -36,24 +30,40 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 		ev := screen.PollEvent()
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
-			switch ev.Key() {
-			case tcell.KeyCtrlC:
+			switch {
+			case ev.Key() == tcell.KeyCtrlC:
 				close(quit)
 				return
 
 			// Escape reverts back to chat mode.
-			case tcell.KeyEscape:
+			case ev.Key() == tcell.KeyEscape:
 				state.Mode = "chat"
 
 			// CTRL-P moves to a channel picker, which is a mode for switching teams and channels
-			case tcell.KeyCtrlP:
+			case ev.Key() == tcell.KeyCtrlP:
 				if state.Mode != "picker" {
 					state.Mode = "picker"
 				} else {
 					state.Mode = "chat"
 				}
 
-			case tcell.KeyEnter:
+			// CTRL + L redraws the screen.
+			case ev.Key() == tcell.KeyCtrlL:
+				screen.Sync()
+
+			//
+			// MOVEMENT BETWEEN CONNECTIONS
+			//
+			case ev.Key() == tcell.KeyCtrlQ:
+				state.SetPrevActiveConnection()
+			case ev.Key() == tcell.KeyCtrlW:
+				state.SetNextActiveConnection()
+
+			//
+			// COMMAND BAR
+			//
+
+			case ev.Key() == tcell.KeyEnter:
 				command := string(state.Command)
 				switch {
 				// :q or :quit closes the app
@@ -75,7 +85,7 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 						panic(err)
 					} else if responseMessage != nil {
 						// Got a response command? Append it to the message history.
-						state.MessageHistory = append(state.MessageHistory, *responseMessage)
+						state.ActiveConnection().AppendMessageHistory(*responseMessage)
 					}
 				}
 				// Clear the command that was typed.
@@ -83,12 +93,8 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 				state.CommandCursorPosition = 0
 
 
-			// CTRL + L redraws the screen.
-			case tcell.KeyCtrlL:
-				screen.Sync()
-
 			// As characters are typed, add to the message.
-			case tcell.KeyRune:
+			case ev.Key() == tcell.KeyRune:
 				state.Command = append(
 					append(state.Command[:state.CommandCursorPosition], ev.Rune()),
 					state.Command[state.CommandCursorPosition:]...,
@@ -96,7 +102,7 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 				state.CommandCursorPosition += 1
 
 			// Backspace removes a character.
-			case tcell.KeyDEL:
+			case ev.Key() == tcell.KeyDEL:
 				if state.CommandCursorPosition > 0 {
 					state.Command = append(
 						state.Command[:state.CommandCursorPosition-1],
@@ -106,11 +112,11 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 				}
 
 			// Arrows right and left move the cursor
-			case tcell.KeyLeft:
+			case ev.Key() == tcell.KeyLeft:
 				if state.CommandCursorPosition >= 1 {
 					state.CommandCursorPosition -= 1
 				}
-			case tcell.KeyRight:
+			case ev.Key() == tcell.KeyRight:
 				if state.CommandCursorPosition < len(state.Command) {
 					state.CommandCursorPosition += 1
 				}
@@ -118,7 +124,7 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 		case *tcell.EventResize:
 			screen.Sync()
 		}
-		render(*state, term)
+		render(state, term)
 	}
 }
 
@@ -131,7 +137,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 
 		switch event.Type {
 		case "hello":
-			state.MessageHistory = append(state.MessageHistory, gateway.Message{
+			state.ActiveConnection().AppendMessageHistory(gateway.Message{
 				Sender: nil,
 				Text:   "Got Hello...",
 				Hash:   "hello",
@@ -161,7 +167,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 
 				// See if the message is already in the history
 				alreadyInHistory := false
-				for _, msg := range state.MessageHistory {
+				for _, msg := range state.ActiveConnection().MessageHistory() {
 					if msg.Hash == messageHash {
 						// Message with that hash is already in the history, no need to add
 						// again...
@@ -186,7 +192,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 				}
 
 				// Add message to history
-				state.MessageHistory = append(state.MessageHistory, gateway.Message{
+				state.ActiveConnection().AppendMessageHistory(gateway.Message{
 					Sender: sender,
 					Text:   event.Data["text"].(string),
 					Hash:   messageHash,
@@ -194,13 +200,13 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 			}
 		}
 
-		render(*state, term)
+		render(state, term)
 	}
 }
 
 func main() {
 	fmt.Println("Loading...")
-	state := State{
+	state := &State{
 		// The mode the client is in
 		Mode: "chat",
 
@@ -210,14 +216,13 @@ func main() {
 
 		// Connection to the server
 		Connections: []gateway.Connection{
-			gateway.Slack(os.Getenv("SLACK_TOKEN")),
+			gateway.Slack(os.Getenv("SLACK_TOKEN_TWO")), // Uncommonspace
+			gateway.Slack(os.Getenv("SLACK_TOKEN_ONE")), // Gaus Family
 		},
 
 		// Which connection in the connections object is active
 		activeConnection: 0,
-
-		// A slice of all messages in the currently active channel
-		MessageHistory: []gateway.Message{},
+		connectionSynced: false,
 	}
 
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
@@ -233,14 +238,14 @@ func main() {
 	// Once this goroutine finishes, it closed the connected channel. This is used as a signal by
 	// the gateway events goroutine to start working.
 	connected := make(chan struct{})
-	go connect(&state, term, connected)
+	go connect(state, term, connected)
 
 	// GOROUTINE: Handle events coming from the input device (ie, keyboard).
 	quit := make(chan struct{})
-	go keyboardEvents(&state, term, s, quit)
+	go keyboardEvents(state, term, s, quit)
 
 	// GOROUTINE: Handle events coming from slack.
-	go gatewayEvents(&state, term, connected)
+	go gatewayEvents(state, term, connected)
 
 	<-quit
 }
