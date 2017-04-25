@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"fmt"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -253,13 +254,20 @@ func (c *SlackConnection) FetchChannelMessages(channel Channel) ([]Message, erro
 	// Convert to more generic message format
 	var messageBuffer []Message
 	var sender *User
+	cachedUsers := make(map[string]*User)
 	for i := len(slackMessageBuffer.Messages) - 1; i >= 0; i-- { // loop backwards to reverse the final slice
 		msg := slackMessageBuffer.Messages[i]
 
 		// Get the sender of the message
-		sender, err = c.UserById(msg.UserId)
-		if err != nil {
-			return nil, err
+		// Since we're likely to have a lot of the same users, cache them.
+		if cachedUsers[msg.UserId] != nil {
+			sender = cachedUsers[msg.UserId]
+		} else {
+			sender, err = c.UserById(msg.UserId)
+			cachedUsers[msg.UserId] = sender
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		messageBuffer = append(messageBuffer, Message{
