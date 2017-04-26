@@ -6,6 +6,7 @@ import (
 
 	"github.com/1egoman/slime/frontend" // The thing to draw to the screen
 	"github.com/1egoman/slime/gateway"  // The thing to interface with slack
+	"github.com/1egoman/slime/gateway/slack"
 	"github.com/gdamore/tcell"
 )
 
@@ -30,8 +31,8 @@ func main() {
 
 		// Connection to the server
 		Connections: []gateway.Connection{
-			gateway.Slack(os.Getenv("SLACK_TOKEN_TWO")), // Uncommonspace
-			gateway.Slack(os.Getenv("SLACK_TOKEN_ONE")), // Gaus Family
+			gatewaySlack.New(os.Getenv("SLACK_TOKEN_TWO")), // Uncommonspace
+			gatewaySlack.New(os.Getenv("SLACK_TOKEN_ONE")), // Gaus Family
 		},
 
 		// Which connection in the connections object is active

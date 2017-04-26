@@ -1,18 +1,16 @@
-package gateway
+package gatewaySlack
 
 import (
 	"log"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"net/url"
-
-	"strings"
 
 	"golang.org/x/net/websocket"
+	"github.com/1egoman/slime/gateway"
 )
 
-func Slack(token string) *SlackConnection {
+func New(token string) *SlackConnection {
 	return &SlackConnection{
 		token: token,
 	}
@@ -25,18 +23,18 @@ type SlackConnection struct {
 	conn  *websocket.Conn
 
 	// Create two message channels, one for incoming messages and one for outgoing messages.
-	incoming chan Event
-	outgoing chan Event
+	incoming chan gateway.Event
+	outgoing chan gateway.Event
 
-	self User
-	team Team
+	self gateway.User
+	team gateway.Team
 
 	// Internal state to store all channels and a pointer to the active one.
-	channels        []Channel
-	selectedChannel *Channel
+	channels        []gateway.Channel
+	selectedChannel *gateway.Channel
 
 	// Internal state to store message history of the active channel
-	messageHistory []Message
+	messageHistory []gateway.Message
 }
 
 func (c *SlackConnection) requestConnectionUrl() {
@@ -53,8 +51,8 @@ func (c *SlackConnection) requestConnectionUrl() {
 	var connectionBuffer struct {
 		Ok   bool   `json:"ok"`
 		Url  string `json:"url"`
-		Team Team   `json:"team"`
-		Self User   `json:"self"`
+		Team gateway.Team   `json:"team"`
+		Self gateway.User   `json:"self"`
 	}
 	err = json.Unmarshal(body, &connectionBuffer)
 	if err != nil {
@@ -80,8 +78,8 @@ func (c *SlackConnection) Name() string {
 func (c *SlackConnection) Connect() error {
 	log.Println("Requesting slack team connection url...")
 	// Create buffered channels to listen and send messages on
-	c.incoming = make(chan Event, 1)
-	c.outgoing = make(chan Event, 1)
+	c.incoming = make(chan gateway.Event, 1)
+	c.outgoing = make(chan gateway.Event, 1)
 
 	// Request a connection url with the token in the struct
 	c.requestConnectionUrl()
@@ -99,7 +97,7 @@ func (c *SlackConnection) Connect() error {
 	log.Printf("Slack connection %s made!", c.Team().Name)
 
 	// When messages are received, add them to the incoming buffer.
-	go func(incoming chan Event) {
+	go func(incoming chan gateway.Event) {
 		var msgRaw = make([]byte, 512)
 		var msg map[string]interface{}
 		var n int
@@ -113,7 +111,7 @@ func (c *SlackConnection) Connect() error {
 			// Decode into a struct so that we can check message type later
 			json.Unmarshal(msgRaw[:n], &msg)
 			log.Printf("INCOMING %s: %s", c.Team().Name, msgRaw[:n])
-			incoming <- Event{
+			incoming <- gateway.Event{
 				Direction: "incoming",
 				Type:      msg["type"].(string),
 				Data:      msg,
@@ -122,11 +120,11 @@ func (c *SlackConnection) Connect() error {
 	}(c.incoming)
 
 	// When messages are in the outgoing buffer waiting to be sent, send them.
-	go func(outgoing chan Event) {
+	go func(outgoing chan gateway.Event) {
 		// Add a sequential message id to each message sent, so replies can later be tracked.
 		messageId := 0
 
-		var event Event
+		var event gateway.Event
 		for {
 			// Assemble the message to send.
 			event = <-outgoing
@@ -162,7 +160,7 @@ func (c *SlackConnection) Refresh() error {
 	}
 
 	// Fetch details about the currently logged in user
-	var user *User
+	var user *gateway.User
 	user, err = c.UserById(c.Self().Id)
 	if err != nil {
 		return err
@@ -192,7 +190,7 @@ func (c *SlackConnection) Refresh() error {
 }
 
 // Fetch all channels for the given team
-func (c *SlackConnection) FetchChannels() ([]Channel, error) {
+func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 	log.Printf("Fetching list of channels for team %s", c.Team().Name)
 	resp, err := http.Get("https://slack.com/api/channels.list?token=" + c.token)
 	if err != nil {
@@ -211,14 +209,14 @@ func (c *SlackConnection) FetchChannels() ([]Channel, error) {
 	json.Unmarshal(body, &slackChannelBuffer)
 
 	// Convert to more generic message format
-	var channelBuffer []Channel
-	var creator *User
+	var channelBuffer []gateway.Channel
+	var creator *gateway.User
 	for _, channel := range slackChannelBuffer.Channels {
 		creator, err = c.UserById(channel.CreatorId)
 		if err != nil {
 			return nil, err
 		}
-		channelBuffer = append(channelBuffer, Channel{
+		channelBuffer = append(channelBuffer, gateway.Channel{
 			Id:      channel.Id,
 			Name:    channel.Name,
 			Creator: creator,
@@ -230,7 +228,7 @@ func (c *SlackConnection) FetchChannels() ([]Channel, error) {
 }
 
 // Given a channel, return all messages within that channel.
-func (c *SlackConnection) FetchChannelMessages(channel Channel) ([]Message, error) {
+func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel) ([]gateway.Message, error) {
 	log.Printf("Fetching channel messages for team %s", c.Team().Name)
 	resp, err := http.Get("https://slack.com/api/channels.history?token=" + c.token + "&channel=" + channel.Id + "&count=100")
 	if err != nil {
@@ -260,9 +258,9 @@ func (c *SlackConnection) FetchChannelMessages(channel Channel) ([]Message, erro
 	}
 
 	// Convert to more generic message format
-	var messageBuffer []Message
-	var sender *User
-	cachedUsers := make(map[string]*User)
+	var messageBuffer []gateway.Message
+	var sender *gateway.User
+	cachedUsers := make(map[string]*gateway.User)
 	for i := len(slackMessageBuffer.Messages) - 1; i >= 0; i-- { // loop backwards to reverse the final slice
 		msg := slackMessageBuffer.Messages[i]
 
@@ -278,10 +276,10 @@ func (c *SlackConnection) FetchChannelMessages(channel Channel) ([]Message, erro
 			}
 		}
 
-		messageBuffer = append(messageBuffer, Message{
+		messageBuffer = append(messageBuffer, gateway.Message{
 			Sender:    sender,
 			Text:      msg.Text,
-			Reactions: []Reaction{},
+			Reactions: []gateway.Reaction{},
 			Hash:      msg.Ts,
 		})
 	}
@@ -289,7 +287,7 @@ func (c *SlackConnection) FetchChannelMessages(channel Channel) ([]Message, erro
 	return messageBuffer, nil
 }
 
-func (c *SlackConnection) UserById(id string) (*User, error) {
+func (c *SlackConnection) UserById(id string) (*gateway.User, error) {
 	resp, err := http.Get("https://slack.com/api/users.info?token=" + c.token + "&user=" + id)
 	if err != nil {
 		return nil, err
@@ -317,7 +315,7 @@ func (c *SlackConnection) UserById(id string) (*User, error) {
 	}
 
 	// Convert to a generic User
-	return &User{
+	return &gateway.User{
 		Id:       slackUserBuffer.User.Id,
 		Name:     slackUserBuffer.User.Name,
 		Color:    slackUserBuffer.User.Color,
@@ -330,72 +328,32 @@ func (c *SlackConnection) UserById(id string) (*User, error) {
 	}, nil
 }
 
-func (c *SlackConnection) MessageHistory() []Message {
+func (c *SlackConnection) MessageHistory() []gateway.Message {
 	return c.messageHistory;
 }
-func (c *SlackConnection) AppendMessageHistory(message Message) {
+func (c *SlackConnection) AppendMessageHistory(message gateway.Message) {
 	c.messageHistory = append(c.messageHistory, message)
 }
 func (c *SlackConnection) ClearMessageHistory() {
-	c.messageHistory = []Message{}
+	c.messageHistory = []gateway.Message{}
 }
 
-// Send a given message to a given channel. Also, is able to process slash commands.
-// Returns an optional pointer to a response message and an error.
-func (c *SlackConnection) SendMessage(message Message, channel *Channel) (*Message, error) {
-	if strings.HasPrefix(message.Text, "/") {
-		log.Printf("Sending slash command to team %s on channel %s", c.Team().Name)
-		// If the message starts with a slash, it's a slash command.
-		command := strings.Split(message.Text, " ")
-		text := url.QueryEscape(strings.Join(command[1:], " "))
-		resp, err := http.Get("https://slack.com/api/chat.command?token=" + c.token + "&channel=" + channel.Id + "&command=" + url.QueryEscape(command[0]) + "&text=" + text)
-		if err != nil {
-			return nil, err
-		}
-
-		body, _ := ioutil.ReadAll(resp.Body)
-		var commandResponse struct {
-			Response string `json:"response"`
-		}
-		err = json.Unmarshal(body, &commandResponse)
-		if err != nil {
-			return nil, err
-		}
-
-		// Return a response message if the response 
-		if len(commandResponse.Response) > 0 {
-			return &Message{
-				Text: commandResponse.Response,
-				Sender: &User{Name: "slackbot"},
-			}, nil
-		} else {
-			return nil, nil
-		}
-	} else {
-		log.Printf("Sending message to team %s on channel %s", c.Team().Name, channel.Name)
-
-		// Otherwise just a plain message
-		_, err := http.Get("https://slack.com/api/chat.postMessage?token=" + c.token + "&channel=" + channel.Id + "&text=" + url.QueryEscape(message.Text) + "&link_names=true&parse=full&unfurl_links=true&as_user=true")
-		return nil, err
-	}
-}
-
-func (c *SlackConnection) SelectedChannel() *Channel {
+func (c *SlackConnection) SelectedChannel() *gateway.Channel {
 	return c.selectedChannel
 }
 
-func (c *SlackConnection) Incoming() chan Event {
+func (c *SlackConnection) Incoming() chan gateway.Event {
 	return c.incoming
 }
-func (c *SlackConnection) Outgoing() chan Event {
+func (c *SlackConnection) Outgoing() chan gateway.Event {
 	return c.outgoing
 }
-func (c *SlackConnection) Team() *Team {
+func (c *SlackConnection) Team() *gateway.Team {
 	return &c.team
 }
-func (c *SlackConnection) Channels() []Channel {
+func (c *SlackConnection) Channels() []gateway.Channel {
 	return c.channels
 }
-func (c *SlackConnection) Self() *User {
+func (c *SlackConnection) Self() *gateway.User {
 	return &c.self
 }
