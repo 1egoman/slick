@@ -28,7 +28,6 @@ func connect(state *State, term *frontend.TerminalDisplay, connected chan struct
 
 func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.Screen, quit chan struct{}) {
 	for {
-		log.Println("Got event...")
 		ev := screen.PollEvent()
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
@@ -218,6 +217,9 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 				// 1
 				log.Printf("Channel value", channel)
 			}
+
+		case "":
+			log.Printf("Unknown event received: %+v", event)
 		}
 
 		render(state, term)
@@ -277,4 +279,5 @@ func main() {
 	go gatewayEvents(state, term, connected)
 
 	<-quit
+	log.Println("Quitting gracefully...")
 }

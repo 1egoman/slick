@@ -193,6 +193,7 @@ func (c *SlackConnection) Refresh() error {
 
 // Fetch all channels for the given team
 func (c *SlackConnection) FetchChannels() ([]Channel, error) {
+	log.Printf("Fetching list of channels for team %s", c.Team().Name)
 	resp, err := http.Get("https://slack.com/api/channels.list?token=" + c.token)
 	if err != nil {
 		return nil, err
@@ -230,6 +231,7 @@ func (c *SlackConnection) FetchChannels() ([]Channel, error) {
 
 // Given a channel, return all messages within that channel.
 func (c *SlackConnection) FetchChannelMessages(channel Channel) ([]Message, error) {
+	log.Printf("Fetching channel messages for team %s", c.Team().Name)
 	resp, err := http.Get("https://slack.com/api/channels.history?token=" + c.token + "&channel=" + channel.Id + "&count=100")
 	if err != nil {
 		return nil, err
@@ -342,6 +344,7 @@ func (c *SlackConnection) ClearMessageHistory() {
 // Returns an optional pointer to a response message and an error.
 func (c *SlackConnection) SendMessage(message Message, channel *Channel) (*Message, error) {
 	if strings.HasPrefix(message.Text, "/") {
+		log.Printf("Sending slash command to team %s on channel %s", c.Team().Name)
 		// If the message starts with a slash, it's a slash command.
 		command := strings.Split(message.Text, " ")
 		text := url.QueryEscape(strings.Join(command[1:], " "))
@@ -369,6 +372,8 @@ func (c *SlackConnection) SendMessage(message Message, channel *Channel) (*Messa
 			return nil, nil
 		}
 	} else {
+		log.Printf("Sending message to team %s on channel %s", c.Team().Name, channel.Name)
+
 		// Otherwise just a plain message
 		_, err := http.Get("https://slack.com/api/chat.postMessage?token=" + c.token + "&channel=" + channel.Id + "&text=" + url.QueryEscape(message.Text) + "&link_names=true&parse=full&unfurl_links=true&as_user=true")
 		return nil, err
