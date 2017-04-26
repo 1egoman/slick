@@ -54,6 +54,10 @@ type TerminalDisplay struct {
 	Styles map[string]tcell.Style
 }
 
+func (term *TerminalDisplay) Screen() tcell.Screen {
+	return term.screen
+}
+
 func (term *TerminalDisplay) Render() {
 	term.screen.Show()
 }

@@ -45,7 +45,7 @@ func (c *SlackConnection) requestConnectionUrl() {
 	resp, err := http.Get("https://slack.com/api/rtm.connect?token=" + c.token)
 
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	// Decode json body.
@@ -58,7 +58,7 @@ func (c *SlackConnection) requestConnectionUrl() {
 	}
 	err = json.Unmarshal(body, &connectionBuffer)
 	if err != nil {
-		panic("Slack response: "+string(body))
+		log.Fatal("Slack response: "+string(body))
 	}
 
 	// Add response data to struct
@@ -107,7 +107,7 @@ func (c *SlackConnection) Connect() error {
 		for {
 			// Listen for messages, and when some are received, write them to a channel.
 			if n, err = c.conn.Read(msgRaw); err != nil {
-				panic(err)
+				log.Fatal(err)
 			}
 
 			// Decode into a struct so that we can check message type later
@@ -137,13 +137,13 @@ func (c *SlackConnection) Connect() error {
 			// Marshal to json
 			data, err := json.Marshal(event.Data)
 			if err != nil {
-				panic(err)
+				log.Fatal(err)
 			}
 			log.Printf("OUTGOING %s: %s", c.Team().Name, data)
 
 			// Send it.
 			if _, err = c.conn.Write(data); err != nil {
-				panic(err)
+				log.Fatal(err)
 			}
 		}
 	}(c.outgoing)
@@ -255,7 +255,7 @@ func (c *SlackConnection) FetchChannelMessages(channel Channel) ([]Message, erro
 		hasMore bool `json:"has_more"`
 	}
 	if err = json.Unmarshal(body, &slackMessageBuffer); err != nil {
-		panic(err)
+		log.Fatal(err)
 		return nil, err
 	}
 

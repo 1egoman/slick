@@ -15,7 +15,7 @@ func connect(state *State, term *frontend.TerminalDisplay, connected chan struct
 	// Connect to all gateways on start.
 	for _, connection := range state.Connections {
 		if err := connection.Connect(); err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 	}
 
@@ -84,7 +84,7 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 					responseMessage, err := state.ActiveConnection().SendMessage(message, state.ActiveConnection().SelectedChannel())
 
 					if err != nil {
-						panic(err)
+						log.Fatal(err)
 					} else if responseMessage != nil {
 						// Got a response command? Append it to the message history.
 						state.ActiveConnection().AppendMessageHistory(*responseMessage)
@@ -178,7 +178,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 				if data, ok := event.Data["ts"].(string); ok {
 					messageHash = data;
 				} else {
-					panic("No ts key in message so can't create a hash for this message!")
+					log.Fatal("No ts key in message so can't create a hash for this message!")
 				}
 
 				// See if the message is already in the history
@@ -201,7 +201,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 					var err error
 					sender, err = state.ActiveConnection().UserById(event.Data["user"].(string))
 					if err != nil {
-						panic(err)
+						log.Fatal(err)
 					}
 				} else {
 					sender = nil
@@ -230,7 +230,7 @@ func main() {
 	// Configure logger to log to file
 	logFile, err := os.Create("./log")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer logFile.Close()
 	log.SetOutput(logFile)
@@ -269,14 +269,39 @@ func main() {
 	// Once this goroutine finishes, it closed the connected channel. This is used as a signal by
 	// the gateway events goroutine to start working.
 	connected := make(chan struct{})
-	go connect(state, term, connected)
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				s.Fini()
+				panic(r)
+			}
+		}()
+		connect(state, term, connected)
+	}()
 
 	// GOROUTINE: Handle events coming from the input device (ie, keyboard).
 	quit := make(chan struct{})
-	go keyboardEvents(state, term, s, quit)
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				s.Fini()
+				panic(r)
+			}
+		}()
+		keyboardEvents(state, term, s, quit)
+	}()
 
 	// GOROUTINE: Handle events coming from slack.
-	go gatewayEvents(state, term, connected)
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				s.Fini()
+				panic(r)
+			}
+		}()
+
+		gatewayEvents(state, term, connected)
+	}()
 
 	<-quit
 	log.Println("Quitting gracefully...")
