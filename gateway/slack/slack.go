@@ -252,7 +252,6 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel) ([]gatew
 		} `json:"messages"`
 		hasMore bool `json:"has_more"`
 	}
-  log.Println(string(body))
 	if err = json.Unmarshal(body, &slackMessageBuffer); err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -279,8 +278,8 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel) ([]gatew
 
     // Convert the reactions fetched into reaction objects
     reactions := []gateway.Reaction{}
-    reactionUsers := []*gateway.User{}
     for _, reaction := range msg.Reactions {
+      reactionUsers := []*gateway.User{}
       // reaction.Users is an array of string user ids. Convert each into user objects.
       for _, reactionUserId := range reaction.Users {
         if cachedUsers[reactionUserId] != nil {
