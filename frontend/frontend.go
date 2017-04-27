@@ -2,14 +2,14 @@ package frontend
 
 import (
 	"fmt"
-	"regexp"
 	"github.com/gdamore/tcell"
 	"github.com/kyokomi/emoji" // convert :smile: to unicode
+	"regexp"
 
 	"github.com/1egoman/slime/gateway" // The thing to interface with slack
 )
 
-const bottomPadding = 2; // The amount of lines at the bottom of the window to leave available for status bars.
+const bottomPadding = 2 // The amount of lines at the bottom of the window to leave available for status bars.
 
 var usernameRegex = regexp.MustCompile("<@[A-Z0-9]+\\|(.+)>")
 var channelRegex = regexp.MustCompile("<#[A-Z0-9]+\\|(.+)>")
@@ -19,9 +19,9 @@ var channelRegex = regexp.MustCompile("<#[A-Z0-9]+\\|(.+)>")
 // 2. Replace any <@ID|username> tags with @username
 // 2. Replace any <#ID|channel> tags with #channel
 func makePrintWorthy(text string) string {
-	text = emoji.Sprintf(text) // Emojis
+	text = emoji.Sprintf(text)                         // Emojis
 	text = usernameRegex.ReplaceAllString(text, "@$1") // Usernames
-	text = channelRegex.ReplaceAllString(text, "#$1") // Channels
+	text = channelRegex.ReplaceAllString(text, "#$1")  // Channels
 	return text
 }
 
@@ -44,7 +44,7 @@ func NewTerminalDisplay(screen tcell.Screen) *TerminalDisplay {
 				Background(tcell.ColorBlue).
 				Foreground(tcell.ColorWhite),
 			"StatusBarConnection": tcell.StyleDefault,
-			"MessageReaction": tcell.StyleDefault,
+			"MessageReaction":     tcell.StyleDefault,
 		},
 	}
 }
@@ -79,7 +79,7 @@ func (term *TerminalDisplay) DrawStatusBar(mode string, connections []gateway.Co
 	term.WriteText(0, lastRow, mode)
 
 	// Then, draw a seperator
-	term.WriteText(len(mode) + 1, lastRow, "|")
+	term.WriteText(len(mode)+1, lastRow, "|")
 
 	// Then, render each conenction
 	position := len(mode) + 3
@@ -101,7 +101,7 @@ func (term *TerminalDisplay) DrawStatusBar(mode string, connections []gateway.Co
 
 func (term *TerminalDisplay) DrawFuzzyPicker(items []string, selectedIndex int) {
 	width, height := term.screen.Size()
-	bottomPadding := 2 // pad for the status bar and command bar
+	bottomPadding := 2                                 // pad for the status bar and command bar
 	startingRow := height - len(items) - bottomPadding // The top row of the fuzzy picker
 
 	for ct, item := range items {
@@ -117,7 +117,7 @@ func (term *TerminalDisplay) DrawFuzzyPicker(items []string, selectedIndex int) 
 
 		// Add prefix for selected item
 		if ct == selectedIndex {
-			item = "> "+item
+			item = "> " + item
 		}
 
 		// Draw item
@@ -157,8 +157,6 @@ func (term *TerminalDisplay) DrawCommandBar(
 	term.screen.ShowCursor(len(prefix)+1+cursorPosition, row)
 }
 
-
-
 func (term *TerminalDisplay) WriteText(x int, y int, text string) {
 	term.WriteTextStyle(x, y, tcell.StyleDefault, text)
 }
@@ -168,22 +166,19 @@ func (term *TerminalDisplay) WriteTextStyle(x int, y int, style tcell.Style, tex
 	}
 }
 
-
-
-
 // Given a string, partition into sections of size `width`.
 func partitionIntoRows(total string, width int) []string {
 	partitions := []string{}
 	lastIndex := 0
 	for index := 0; index < len(total); index++ {
-		if index % width == 0 {
+		if index%width == 0 {
 			partitions = append(partitions, total[lastIndex:index])
 			lastIndex = index
 		}
 	}
 
 	// Add the last undersized partition if it exists
-	if lastIndex < len(total) - 1 {
+	if lastIndex < len(total)-1 {
 		partitions = append(partitions, total[lastIndex:])
 	}
 

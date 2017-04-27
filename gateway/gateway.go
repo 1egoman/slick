@@ -2,8 +2,8 @@ package gateway
 
 // A Connection is used to represent a message source.
 type Connection interface {
-  // Each connection has a name.
-  Name() string
+	// Each connection has a name.
+	Name() string
 
 	Connect() error
 
@@ -14,10 +14,10 @@ type Connection interface {
 	Incoming() chan Event
 	Outgoing() chan Event
 
-  MessageHistory() []Message
-  AppendMessageHistory(message Message)
-  ClearMessageHistory()
-  SendMessage(Message, *Channel) (*Message, error)
+	MessageHistory() []Message
+	AppendMessageHistory(message Message)
+	ClearMessageHistory()
+	SendMessage(Message, *Channel) (*Message, error)
 
 	// Fetch a slice of all channels that are available on this connection
 	Channels() []Channel
@@ -26,8 +26,8 @@ type Connection interface {
 	// Fetch the team associated with this connection.
 	Team() *Team
 
-  // Fetch user that is authenticated
-  Self() *User
+	// Fetch user that is authenticated
+	Self() *User
 
 	// Given a channel, fetch the message history for that channel
 	FetchChannelMessages(Channel) ([]Message, error)
@@ -87,7 +87,7 @@ type Channel struct {
 
 // A Reaction is an optional subcollection of a message.
 type Reaction struct {
-	Name  string `json:"name"`
+	Name  string  `json:"name"`
 	Users []*User `json:"users"`
 }
 

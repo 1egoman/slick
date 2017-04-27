@@ -16,7 +16,7 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 			log.Printf("Keypress: %+v", ev.Name())
 			switch {
 			case ev.Key() == tcell.KeyCtrlC:
-        log.Println("CLOSE QUIT 1")
+				log.Println("CLOSE QUIT 1")
 				close(quit)
 				return
 
@@ -53,14 +53,14 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 				switch {
 				// :q or :quit closes the app
 				case command == ":q", command == ":quit":
-          log.Println("CLOSE QUIT 2")
+					log.Println("CLOSE QUIT 2")
 					close(quit)
 					return
 				default:
 					// By default, just send a message
 					message := gateway.Message{
 						Sender: state.ActiveConnection().Self(),
-						Text: command,
+						Text:   command,
 					}
 
 					// Sometimes, a message could have a response. This is for example true in the
@@ -77,7 +77,6 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 				// Clear the command that was typed.
 				state.Command = []rune{}
 				state.CommandCursorPosition = 0
-
 
 			// As characters are typed, add to the message.
 			case ev.Key() == tcell.KeyRune:
@@ -111,7 +110,7 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 			screen.Sync()
 		}
 
-    // Render after each loop
+		// Render after each loop
 		render(state, term)
 	}
 }

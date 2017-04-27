@@ -12,7 +12,7 @@ type State struct {
 	CommandCursorPosition int
 
 	// All the connections that are currently made to outside services.
-	Connections []gateway.Connection
+	Connections      []gateway.Connection
 	activeConnection int
 	connectionSynced bool
 
@@ -23,9 +23,8 @@ func (s *State) ActiveConnection() gateway.Connection {
 	return s.Connections[s.activeConnection]
 }
 
-
 // Methods to manage the active connection
-// When the user changes the active connection, 
+// When the user changes the active connection,
 func (s *State) SetActiveConnection(index int) {
 	s.activeConnection = index
 	s.connectionSynced = false
@@ -35,7 +34,7 @@ func (s *State) SetNextActiveConnection() {
 	s.connectionSynced = false
 
 	// Make sure connectino can never get larger than the amount of conenctions
-	if s.activeConnection > len(s.Connections) - 1 {
+	if s.activeConnection > len(s.Connections)-1 {
 		s.activeConnection = len(s.Connections) - 1
 	}
 }

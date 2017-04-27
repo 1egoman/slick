@@ -55,7 +55,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 				// In pong events, the timestamp is `event_ts`
 				var messageHash string
 				if data, ok := event.Data["ts"].(string); ok {
-					messageHash = data;
+					messageHash = data
 				} else {
 					log.Fatal("No ts key in message so can't create a hash for this message!")
 				}
@@ -87,15 +87,15 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 				}
 
 				// Add message to history
-        if text, ok := event.Data["text"].(string); ok {
-          state.ActiveConnection().AppendMessageHistory(gateway.Message{
-            Sender: sender,
-            Text:   text,
-            Hash:   messageHash,
-          })
-        } else {
-          log.Printf("WARN: Tried to append a message without a text element in the body: %+v", event)
-        }
+				if text, ok := event.Data["text"].(string); ok {
+					state.ActiveConnection().AppendMessageHistory(gateway.Message{
+						Sender: sender,
+						Text:   text,
+						Hash:   messageHash,
+					})
+				} else {
+					log.Printf("WARN: Tried to append a message without a text element in the body: %+v", event)
+				}
 			} else {
 				// 1
 				log.Printf("Channel value", channel)

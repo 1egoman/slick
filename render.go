@@ -1,8 +1,8 @@
 package main
 
 import (
-	"log"
 	"github.com/1egoman/slime/frontend"
+	"log"
 )
 
 // Given application state and a frontend, render the state to the screen.
@@ -28,13 +28,13 @@ func render(state *State, term *frontend.TerminalDisplay) {
 	// })
 
 	term.DrawStatusBar(
-		state.Mode, // Which mode we're currently in
-		state.Connections, // A list of all connections
+		state.Mode,               // Which mode we're currently in
+		state.Connections,        // A list of all connections
 		state.ActiveConnection(), // Which conenction is active (to highlight the active one differently)
 	)
 	term.DrawCommandBar(
-		string(state.Command),           // The command that the user is typing
-		state.CommandCursorPosition,     // The cursor position
+		string(state.Command),                      // The command that the user is typing
+		state.CommandCursorPosition,                // The cursor position
 		state.ActiveConnection().SelectedChannel(), // The selected channel
 		state.ActiveConnection().Team(),            // The selected team
 	)
@@ -45,4 +45,3 @@ func render(state *State, term *frontend.TerminalDisplay) {
 
 	term.Render()
 }
-

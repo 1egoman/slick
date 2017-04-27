@@ -21,4 +21,3 @@ func connect(state *State, term *frontend.TerminalDisplay, connected chan struct
 	// We're connected!
 	close(connected)
 }
-

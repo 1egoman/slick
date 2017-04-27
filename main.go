@@ -1,8 +1,8 @@
 package main
 
 import (
-	"os"
 	"log"
+	"os"
 
 	"github.com/1egoman/slime/frontend" // The thing to draw to the screen
 	"github.com/1egoman/slime/gateway"  // The thing to interface with slack

@@ -1,13 +1,13 @@
 package gatewaySlack
 
 import (
-	"log"
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 
-	"golang.org/x/net/websocket"
 	"github.com/1egoman/slime/gateway"
+	"golang.org/x/net/websocket"
 )
 
 func New(token string) *SlackConnection {
@@ -49,14 +49,14 @@ func (c *SlackConnection) requestConnectionUrl() {
 	// Decode json body.
 	body, _ := ioutil.ReadAll(resp.Body)
 	var connectionBuffer struct {
-		Ok   bool   `json:"ok"`
-		Url  string `json:"url"`
-		Team gateway.Team   `json:"team"`
-		Self gateway.User   `json:"self"`
+		Ok   bool         `json:"ok"`
+		Url  string       `json:"url"`
+		Team gateway.Team `json:"team"`
+		Self gateway.User `json:"self"`
 	}
 	err = json.Unmarshal(body, &connectionBuffer)
 	if err != nil {
-		log.Fatal("Slack response: "+string(body))
+		log.Fatal("Slack response: " + string(body))
 	}
 
 	// Add response data to struct
@@ -242,12 +242,12 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel) ([]gatew
 	}
 	var slackMessageBuffer struct {
 		Messages []struct {
-			Ts        string     `json:"ts"`
-			UserId    string     `json:"user"`
-			Text      string     `json:"text"`
-			Reactions []struct{
-        Name string `json:"name"`
-        Users []string `json:"users"`
+			Ts        string `json:"ts"`
+			UserId    string `json:"user"`
+			Text      string `json:"text"`
+			Reactions []struct {
+				Name  string   `json:"name"`
+				Users []string `json:"users"`
 			} `json:"reactions"`
 		} `json:"messages"`
 		hasMore bool `json:"has_more"`
@@ -276,27 +276,27 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel) ([]gatew
 			}
 		}
 
-    // Convert the reactions fetched into reaction objects
-    reactions := []gateway.Reaction{}
-    for _, reaction := range msg.Reactions {
-      reactionUsers := []*gateway.User{}
-      // reaction.Users is an array of string user ids. Convert each into user objects.
-      for _, reactionUserId := range reaction.Users {
-        if cachedUsers[reactionUserId] != nil {
-          reactionUsers = append(reactionUsers, cachedUsers[reactionUserId])
-        } else {
-          var reactionUser *gateway.User
-          reactionUser, err = c.UserById(reactionUserId)
-          if err != nil {
-            return nil, err
-          }
-          reactionUsers = append(reactionUsers, reactionUser)
-        }
-      }
+		// Convert the reactions fetched into reaction objects
+		reactions := []gateway.Reaction{}
+		for _, reaction := range msg.Reactions {
+			reactionUsers := []*gateway.User{}
+			// reaction.Users is an array of string user ids. Convert each into user objects.
+			for _, reactionUserId := range reaction.Users {
+				if cachedUsers[reactionUserId] != nil {
+					reactionUsers = append(reactionUsers, cachedUsers[reactionUserId])
+				} else {
+					var reactionUser *gateway.User
+					reactionUser, err = c.UserById(reactionUserId)
+					if err != nil {
+						return nil, err
+					}
+					reactionUsers = append(reactionUsers, reactionUser)
+				}
+			}
 
-      // Add the final reaction to the collection
-      reactions = append(reactions, gateway.Reaction{Name: reaction.Name, Users: reactionUsers})
-    }
+			// Add the final reaction to the collection
+			reactions = append(reactions, gateway.Reaction{Name: reaction.Name, Users: reactionUsers})
+		}
 
 		messageBuffer = append(messageBuffer, gateway.Message{
 			Sender:    sender,
@@ -351,7 +351,7 @@ func (c *SlackConnection) UserById(id string) (*gateway.User, error) {
 }
 
 func (c *SlackConnection) MessageHistory() []gateway.Message {
-	return c.messageHistory;
+	return c.messageHistory
 }
 func (c *SlackConnection) AppendMessageHistory(message gateway.Message) {
 	c.messageHistory = append(c.messageHistory, message)
