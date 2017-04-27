@@ -1,9 +1,16 @@
 package main
 
 import (
-	"github.com/1egoman/slime/frontend"
 	"log"
+	"fmt"
+	"github.com/1egoman/slime/frontend"
+	"github.com/1egoman/slime/gateway"
 )
+
+type FuzzyPickerReference struct {
+	Channel *gateway.Channel
+	Connection *gateway.Connection
+}
 
 // Given application state and a frontend, render the state to the screen.
 // This function is called whenever something in state is changed.
@@ -40,7 +47,30 @@ func render(state *State, term *frontend.TerminalDisplay) {
 	)
 
 	if state.Mode == "picker" {
-		term.DrawFuzzyPicker([]string{"abc", "def", "ghi"}, 1)
+		items := []FuzzyPickerReference{}
+		stringItems := []string{}
+
+		// Accumulate all channels into `items`, and their respective labels into `stringLabels`
+		for _, connection := range state.Connections {
+			for _, channel := range connection.Channels() {
+				// Add string representation of item to `stringItems`
+				// Follows the pattern of "my-team #my-channel"
+				stringItems = append(stringItems, fmt.Sprintf(
+					"%s #%s",
+					connection.Name(),
+					channel.Name,
+				))
+
+				// Add backing representation of item to `item`
+				items = append(items, FuzzyPickerReference{
+					Channel: &channel,
+					Connection: &connection,
+				})
+			}
+		}
+
+		// Render all connections and channels
+		term.DrawFuzzyPicker(stringItems, 1)
 	}
 
 	term.Render()
