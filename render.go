@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"github.com/1egoman/slime/frontend"
+	"github.com/1egoman/slime/gateway"
 )
 
 // Given application state and a frontend, render the state to the screen.
@@ -21,7 +22,11 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		}()
 	}
 
-	term.DrawMessages(state.ActiveConnection().MessageHistory())
+	// term.DrawMessages(state.ActiveConnection().MessageHistory())
+	term.DrawMessages([]gateway.Message{
+		gateway.Message{Sender: &gateway.User{Name: "Ryan"}, Text: "Foo!"},
+		gateway.Message{Sender: &gateway.User{Name: "Ryan"}, Text: "ghjmkmnjbhgvsbhnjkmnjbhvgrhbjnkmgnjbhvgsjnhgfvakdvg adkvja gdiuvkadbgskbghskubjh kuvjhsu jbhvskufjxb hsiuj"},
+	})
 
 	term.DrawStatusBar(
 		state.Mode, // Which mode we're currently in

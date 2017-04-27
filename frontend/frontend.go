@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"log"
 	"fmt"
 	"regexp"
 	"github.com/gdamore/tcell"
@@ -160,34 +161,37 @@ func (term *TerminalDisplay) DrawCommandBar(
 func (term *TerminalDisplay) DrawMessages(messages []gateway.Message) {
 	width, height := term.screen.Size()
 
-	// Which row should we start rendering the messages on so thay they'll be at the bottom of the
-	// screen?
-	howManyMessagesCanBeShown := height - bottomPadding
-	topRow := howManyMessagesCanBeShown - len(messages)
-
-	// Cap the max amount of messages that can be shown to the amount of messages we have.
-	if topRow < 0 {
-		howManyMessagesCanBeShown = len(messages)
+	// Figure out where to start drawing messages, and for how long to draw them.
+	var topRow int
+	howManyRowsToDisplayMessages := height - bottomPadding
+	if len(messages) > howManyRowsToDisplayMessages {
+		// Whole page is filled with messages
+		topRow = 0
+		messages = messages[howManyRowsToDisplayMessages:]
+	} else {
+		topRow = howManyRowsToDisplayMessages - len(messages)
 	}
+	_ = topRow
 
-	// Loop through all possible places a message can be shown...
-	for ct := 0; ct < howManyMessagesCanBeShown; ct++ {
+	// Loop from the bottom of the window to the top.
+	index := len(messages) - 1
+	for row := howManyRowsToDisplayMessages; row > 0; {
 		// Clear the row.
 		for i := 0; i < width; i++ {
-			char, _, style, _ := term.screen.GetContent(i, topRow + ct)
+			char, _, style, _ := term.screen.GetContent(i, row)
 			if char != ' ' || style != tcell.StyleDefault {
-				term.screen.SetCell(i, topRow + ct, tcell.StyleDefault, ' ')
+				term.screen.SetCell(i, row, tcell.StyleDefault, ' ')
 			}
 		}
 
-		// If not enough messages have been made to fill the screen, try the next message.
-		if ct > len(messages) - 1 {
-			continue
+		// If we run out of messages, we're done!
+		if index < 0 {
+			index -= 1;
+			break
 		}
 
 		// Get the message and the row to show it on
-		msg := messages[ct]
-		row := topRow + ct
+		msg := messages[index]
 
 		// Get the name of the sender, and the sender's color
 		sender := "(anon)"
@@ -200,9 +204,26 @@ func (term *TerminalDisplay) DrawMessages(messages []gateway.Message) {
 			}
 		}
 
-		// Write sender and message to the screen
+		// Calculate how many rows the message requires to render.
+		messageRows := (len(msg.Text) / width) + 1
+
+		log.Println("Draw message on", row, "takes", messageRows, "lines, index", index)
+		// Render the sender and the message
 		term.WriteTextStyle(0, row, senderStyle, sender)
-		term.WriteText(len(sender)+1, row, makePrintWorthy(msg.Text))
+		messageRowWidth := width - len(sender) - 2
+		for rowDelta, messageRow := range partitionIntoRows(msg.Text, messageRowWidth) {
+			log.Printf("Write text on x: %d, y: %d, data: %s", len(sender) + 1, row - messageRows + rowDelta, makePrintWorthy(messageRow))
+			term.WriteTextStyle(
+				len(sender) + 1,
+				row - messageRows + rowDelta,
+				tcell.StyleDefault,
+				makePrintWorthy(messageRow),
+			)
+		}
+
+		// Subtract the message's height.
+		row -= messageRows;
+		index -= 1;
 	}
 }
 
@@ -213,4 +234,26 @@ func (term *TerminalDisplay) WriteTextStyle(x int, y int, style tcell.Style, tex
 	for ct, char := range text {
 		term.screen.SetCell(x+ct, y, style, char)
 	}
+}
+
+
+
+
+// Given a string, partition into sections of size `width`.
+func partitionIntoRows(total string, width int) []string {
+	partitions := []string{}
+	lastIndex := 0
+	for index := 0; index < len(total); index++ {
+		if index % width == 0 {
+			partitions = append(partitions, total[lastIndex:index])
+			lastIndex = index
+		}
+	}
+
+	// Add the last undersized partition if it exists
+	if lastIndex < len(total) - 1 {
+		partitions = append(partitions, total[lastIndex:])
+	}
+
+	return partitions
 }
