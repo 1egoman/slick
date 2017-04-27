@@ -88,7 +88,7 @@ type Channel struct {
 // A Reaction is an optional subcollection of a message.
 type Reaction struct {
 	Name  string `json:"name"`
-	Users []User `json:"users"`
+	Users []*User `json:"users"`
 }
 
 // A Message is a blob of text or media sent by a User within a Channel.

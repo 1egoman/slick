@@ -4,6 +4,7 @@ import (
 	"log"
 	"fmt"
 	"regexp"
+	"strings"
 	"github.com/gdamore/tcell"
 	"github.com/kyokomi/emoji" // convert :smile: to unicode
 
@@ -157,40 +158,29 @@ func (term *TerminalDisplay) DrawCommandBar(
 	term.screen.ShowCursor(len(prefix)+1+cursorPosition, row)
 }
 
+
+
 // Draw message history in the channel
 func (term *TerminalDisplay) DrawMessages(messages []gateway.Message) {
 	width, height := term.screen.Size()
+	log.Println("start")
 
-	// Figure out where to start drawing messages, and for how long to draw them.
-	var topRow int
-	howManyRowsToDisplayMessages := height - bottomPadding
-	if len(messages) > howManyRowsToDisplayMessages {
-		// Whole page is filled with messages
-		topRow = 0
-		messages = messages[howManyRowsToDisplayMessages:]
-	} else {
-		topRow = howManyRowsToDisplayMessages - len(messages)
+
+	for r := 0; r < height - bottomPadding; r++ {
+		// Clear the row.
+		for i := 0; i < width; i++ {
+			char, _, style, _ := term.screen.GetContent(i, r)
+			if char != ' ' || style != tcell.StyleDefault {
+				term.screen.SetCell(i, r, tcell.StyleDefault, ' ')
+			}
+		}
 	}
-	_ = topRow
+
 
 	// Loop from the bottom of the window to the top.
 	index := len(messages) - 1
-	for row := howManyRowsToDisplayMessages; row > 0; {
-		// Clear the row.
-		for i := 0; i < width; i++ {
-			char, _, style, _ := term.screen.GetContent(i, row)
-			if char != ' ' || style != tcell.StyleDefault {
-				term.screen.SetCell(i, row, tcell.StyleDefault, ' ')
-			}
-		}
-
-		// If we run out of messages, we're done!
-		if index < 0 {
-			index -= 1;
-			break
-		}
-
-		// Get the message and the row to show it on
+	row := height - 2
+	for row > 0 && index >= 0 {
 		msg := messages[index]
 
 		// Get the name of the sender, and the sender's color
@@ -205,19 +195,39 @@ func (term *TerminalDisplay) DrawMessages(messages []gateway.Message) {
 		}
 
 		// Calculate how many rows the message requires to render.
-		messageRows := (len(msg.Text) / width) + 1
+		messageColumnWidth := width - len(sender) - 1
+		messageRows := (len(makePrintWorthy(msg.Text)) / messageColumnWidth) + 1
+		if len(msg.Reactions) > 0 {
+			messageRows += 1
+		}
+		log.Println("Message rows", messageRows)
 
-		log.Println("Draw message on", row, "takes", messageRows, "lines, index", index)
 		// Render the sender and the message
-		term.WriteTextStyle(0, row, senderStyle, sender)
-		messageRowWidth := width - len(sender) - 2
-		for rowDelta, messageRow := range partitionIntoRows(msg.Text, messageRowWidth) {
-			log.Printf("Write text on x: %d, y: %d, data: %s", len(sender) + 1, row - messageRows + rowDelta, makePrintWorthy(messageRow))
+		for rowDelta, messageRow := range partitionIntoRows(
+			makePrintWorthy(msg.Text), // Our message to render to the screen
+			messageColumnWidth, // The width of each message row
+		) {
+			if rowDelta == 0 {
+				// Draw the sender on the first row of a message
+				term.WriteTextStyle(0, row - messageRows + 1, senderStyle, sender)
+
+				// Render reactions after message
+				if len(msg.Reactions) > 0 {
+					reactionOffset := len(sender) + 1
+					for _, reaction := range msg.Reactions {
+						reactionEmoji := emoji.Sprintf("%d :"+reaction.Name+":", len(reaction.Users))
+						term.WriteText(reactionOffset, row, reactionEmoji)
+						reactionOffset += len(reactionEmoji)
+					}
+				}
+			}
+
+			// Render the message row.
 			term.WriteTextStyle(
 				len(sender) + 1,
 				row - messageRows + rowDelta,
 				tcell.StyleDefault,
-				makePrintWorthy(messageRow),
+				strings.Trim(messageRow, " "),
 			)
 		}
 
