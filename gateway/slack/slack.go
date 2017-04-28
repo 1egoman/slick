@@ -81,9 +81,9 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 		})
 	}
 
-  // Set the internal state of the component.
-  // This is used by the `connect` step to prelaod a list of channels for the fuzzy picker
-  c.channels = channelBuffer
+	// Set the internal state of the component.
+	// This is used by the `connect` step to prelaod a list of channels for the fuzzy picker
+	c.channels = channelBuffer
 
 	return channelBuffer, nil
 }
@@ -223,6 +223,11 @@ func (c *SlackConnection) ClearMessageHistory() {
 
 func (c *SlackConnection) SelectedChannel() *gateway.Channel {
 	return c.selectedChannel
+}
+func (c *SlackConnection) SetSelectedChannel(channel *gateway.Channel) {
+	c.selectedChannel = channel
+	// When setting a new channel, clear out the message history so that messages will be refetched.
+	c.messageHistory = []gateway.Message{}
 }
 
 func (c *SlackConnection) Incoming() chan gateway.Event {

@@ -21,8 +21,9 @@ type Connection interface {
 
 	// Fetch a slice of all channels that are available on this connection
 	Channels() []Channel
+	FetchChannels() ([]Channel, error)
 	SelectedChannel() *Channel
-  FetchChannels() ([]Channel, error)
+	SetSelectedChannel(*Channel)
 
 	// Fetch the team associated with this connection.
 	Team() *Team

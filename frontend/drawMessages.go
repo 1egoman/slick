@@ -68,7 +68,6 @@ func partitionIntoRows(total string, width int) []string {
 	return partitions
 }
 
-
 // Draw message history in the channel
 func (term *TerminalDisplay) DrawMessages(messages []gateway.Message) {
 	width, height := term.screen.Size()

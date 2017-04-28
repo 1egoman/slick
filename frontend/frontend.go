@@ -105,8 +105,8 @@ func (term *TerminalDisplay) DrawFuzzyPicker(items []string, selectedIndex int) 
 	startingRow := height - len(items) - bottomPadding // The top row of the fuzzy picker
 
 	// Make sure that the item that is selected is never larger then the max item.
-	if selectedIndex > len(items) - 1 {
-		selectedIndex = len(items) -1
+	if selectedIndex > len(items)-1 {
+		selectedIndex = len(items) - 1
 	}
 
 	for ct, item := range items {

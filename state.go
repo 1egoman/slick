@@ -17,6 +17,7 @@ type State struct {
 	connectionSynced bool
 
 	// Fuzzy picker
+	FuzzyPickerSorter       FuzzySorter
 	fuzzyPickerSelectedItem int
 }
 

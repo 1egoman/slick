@@ -48,11 +48,11 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 			// MOVEMENT BETWEEN ITEMS IN THE FUZZY PICKER
 			//
 			case state.Mode == "pick" && ev.Key() == tcell.KeyCtrlJ:
-        if state.fuzzyPickerSelectedItem > 0 {
-          state.fuzzyPickerSelectedItem -= 1
-        }
+				if state.fuzzyPickerSelectedItem > 0 {
+					state.fuzzyPickerSelectedItem -= 1
+				}
 			case state.Mode == "pick" && ev.Key() == tcell.KeyCtrlK:
-        state.fuzzyPickerSelectedItem += 1
+				state.fuzzyPickerSelectedItem += 1
 
 			//
 			// COMMAND BAR
@@ -60,29 +60,78 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 
 			case ev.Key() == tcell.KeyEnter:
 				command := string(state.Command)
-				switch {
-				// :q or :quit closes the app
-				case command == ":q", command == ":quit":
-					log.Println("CLOSE QUIT 2")
-					close(quit)
-					return
-				default:
+
+				if state.Mode == "chat" {
+					// When in chat mode, run a command or send a message.
+					switch {
+					// :q or :quit closes the app
+					case command == ":q", command == ":quit":
+						log.Println("CLOSE QUIT 2")
+						close(quit)
+						return
+
 					// By default, just send a message
-					message := gateway.Message{
-						Sender: state.ActiveConnection().Self(),
-						Text:   command,
+					default:
+						message := gateway.Message{
+							Sender: state.ActiveConnection().Self(),
+							Text:   command,
+						}
+
+						// Sometimes, a message could have a response. This is for example true in the
+						// case of slash commands, sometimes.
+						responseMessage, err := state.ActiveConnection().SendMessage(
+							message,
+							state.ActiveConnection().SelectedChannel(),
+						)
+
+						if err != nil {
+							log.Fatal(err)
+						} else if responseMessage != nil {
+							// Got a response command? Append it to the message history.
+							state.ActiveConnection().AppendMessageHistory(*responseMessage)
+						}
+					}
+				} else if state.Mode == "pick" {
+					// We want to choose the selected option.
+					selectedItem := state.FuzzyPickerSorter.Items[state.fuzzyPickerSelectedItem]
+					selectedConnectionName := selectedItem.Connection
+					selectedChannelName := selectedItem.Channel
+
+					// Find the selected connction's index in the main connection slice
+					selectedConnectionIndex := -1
+					for index, item := range state.Connections {
+						if item.Name() == selectedConnectionName {
+							selectedConnectionIndex = index
+							break
+						}
+					}
+					if selectedConnectionIndex == -1 {
+						log.Fatalf("Tried to select connection %s that isn't in the slice of connections", selectedConnectionName)
 					}
 
-					// Sometimes, a message could have a response. This is for example true in the
-					// case of slash commands, sometimes.
-					responseMessage, err := state.ActiveConnection().SendMessage(message, state.ActiveConnection().SelectedChannel())
-
-					if err != nil {
-						log.Fatal(err)
-					} else if responseMessage != nil {
-						// Got a response command? Append it to the message history.
-						state.ActiveConnection().AppendMessageHistory(*responseMessage)
+					// Find the selected channel's index to the channel list slice
+					var selectedChannel *gateway.Channel
+					for _, item := range state.Connections[selectedConnectionIndex].Channels() {
+						if item.Name == selectedChannelName {
+							selectedChannel = &item
+							break
+						}
 					}
+					if selectedChannel == nil {
+						log.Fatalf(
+							"Tried to select channel %s that isn't in the slice of channels for conenction %s",
+							selectedChannelName,
+							selectedConnectionName,
+						)
+					}
+
+					log.Printf("Selecting connection %s and channel %s", selectedConnectionName, selectedChannel.Name)
+
+					// Set the active connection with the discovered index, and also set a new selected
+					// channel.
+					state.SetActiveConnection(selectedConnectionIndex)
+					state.Connections[selectedConnectionIndex].SetSelectedChannel(selectedChannel)
+					state.Mode = "chat"
 				}
 				// Clear the command that was typed.
 				state.Command = []rune{}

@@ -112,4 +112,3 @@ func (c *SlackConnection) requestConnectionUrl() {
 	c.self = connectionBuffer.Self
 	c.team = connectionBuffer.Team
 }
-

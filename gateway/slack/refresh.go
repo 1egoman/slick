@@ -1,8 +1,8 @@
 package gatewaySlack
 
 import (
-  "log"
 	"github.com/1egoman/slime/gateway" // The thing to interface with slack
+	"log"
 )
 
 // Called when the connection becomes active
@@ -24,11 +24,23 @@ func (c *SlackConnection) Refresh() error {
 		c.self = *user
 	}
 
-	// Select the first channel, by default
 	if len(c.channels) > 0 {
-		c.selectedChannel = &c.channels[0]
 
-		// Fetch Message history, if the emssage history is empty.
+		// If no channel is selected, select a default.
+		if c.selectedChannel == nil {
+			// Try to find the general channel
+			for _, channel := range c.channels {
+				if channel.Name == "general" {
+					c.selectedChannel = &channel
+				}
+			}
+			// or, if that can't be found, select the first one.
+			if c.selectedChannel == nil {
+				c.selectedChannel = &c.channels[0]
+			}
+		}
+
+		// Fetch Message history, if the message history is empty.
 		if len(c.messageHistory) == 0 {
 			log.Printf(
 				"Fetching message history for team %s and channel %s",
@@ -44,4 +56,3 @@ func (c *SlackConnection) Refresh() error {
 
 	return nil
 }
-

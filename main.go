@@ -40,6 +40,7 @@ func main() {
 		connectionSynced: false,
 
 		// Fuzzy picker data
+		FuzzyPickerSorter:       FuzzySorter{},
 		fuzzyPickerSelectedItem: 0,
 	}
 

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"log"
 	"fmt"
+	"log"
 	"sort"
 
 	"github.com/1egoman/slime/frontend"
@@ -55,22 +55,20 @@ func render(state *State, term *frontend.TerminalDisplay) {
 
 				// Add backing representation of item to `item`
 				items = append(items, FuzzyPickerReference{
-					Channel: &channel,
-					Connection: &connection,
+					Channel:    channel.Name,
+					Connection: connection.Name(),
 				})
 			}
 		}
 
 		// Fuzzy sort the items
-		sorter := FuzzySorter{
-			Items: items,
-			StringItems: stringItems,
-			Needle: string(state.Command),
-		}
-		sort.Sort(sorter)
+		state.FuzzyPickerSorter.Items = items
+		state.FuzzyPickerSorter.StringItems = stringItems
+		state.FuzzyPickerSorter.Needle = string(state.Command)
+		sort.Sort(sort.Reverse(state.FuzzyPickerSorter))
 
 		// Render all connections and channels
-		term.DrawFuzzyPicker(sorter.StringItems, state.fuzzyPickerSelectedItem)
+		term.DrawFuzzyPicker(state.FuzzyPickerSorter.StringItems, state.fuzzyPickerSelectedItem)
 	}
 
 	term.Render()
