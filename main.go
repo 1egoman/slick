@@ -38,6 +38,9 @@ func main() {
 		// Which connection in the connections object is active
 		activeConnection: 0,
 		connectionSynced: false,
+
+		// Fuzzy picker data
+		fuzzyPickerSelectedItem: 0,
 	}
 
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)

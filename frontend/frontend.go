@@ -104,8 +104,13 @@ func (term *TerminalDisplay) DrawFuzzyPicker(items []string, selectedIndex int) 
 	bottomPadding := 2                                 // pad for the status bar and command bar
 	startingRow := height - len(items) - bottomPadding // The top row of the fuzzy picker
 
+	// Make sure that the item that is selected is never larger then the max item.
+	if selectedIndex > len(items) - 1 {
+		selectedIndex = len(items) -1
+	}
+
 	for ct, item := range items {
-		row := startingRow + ct
+		row := startingRow + (len(items) - 1) - ct
 
 		// Clear the row.
 		for i := 0; i < width; i++ {
@@ -164,23 +169,4 @@ func (term *TerminalDisplay) WriteTextStyle(x int, y int, style tcell.Style, tex
 	for ct, char := range text {
 		term.screen.SetCell(x+ct, y, style, char)
 	}
-}
-
-// Given a string, partition into sections of size `width`.
-func partitionIntoRows(total string, width int) []string {
-	partitions := []string{}
-	lastIndex := 0
-	for index := 0; index < len(total); index++ {
-		if index%width == 0 {
-			partitions = append(partitions, total[lastIndex:index])
-			lastIndex = index
-		}
-	}
-
-	// Add the last undersized partition if it exists
-	if lastIndex < len(total)-1 {
-		partitions = append(partitions, total[lastIndex:])
-	}
-
-	return partitions
 }

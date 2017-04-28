@@ -3,14 +3,10 @@ package main
 import (
 	"log"
 	"fmt"
-	"github.com/1egoman/slime/frontend"
-	"github.com/1egoman/slime/gateway"
-)
+	"sort"
 
-type FuzzyPickerReference struct {
-	Channel *gateway.Channel
-	Connection *gateway.Connection
-}
+	"github.com/1egoman/slime/frontend"
+)
 
 // Given application state and a frontend, render the state to the screen.
 // This function is called whenever something in state is changed.
@@ -29,10 +25,6 @@ func render(state *State, term *frontend.TerminalDisplay) {
 	}
 
 	term.DrawMessages(state.ActiveConnection().MessageHistory())
-	// term.DrawMessages([]gateway.Message{
-	// 	gateway.Message{Sender: &gateway.User{Name: "Ryan"}, Text: "Foo!"},
-	// 	gateway.Message{Sender: &gateway.User{Name: "Ryan"}, Text: "ghjmkmnjbhgvsbhnjkmnjbhvgrhbjnkmgnjbhvgsjnhgfvakdvg adkvja gdiuvkadbgskbghskubjh kuvjhsu jbhvskufjxb hsiuj"},
-	// })
 
 	term.DrawStatusBar(
 		state.Mode,               // Which mode we're currently in
@@ -46,7 +38,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		state.ActiveConnection().Team(),            // The selected team
 	)
 
-	if state.Mode == "picker" {
+	if state.Mode == "pick" {
 		items := []FuzzyPickerReference{}
 		stringItems := []string{}
 

@@ -16,7 +16,8 @@ type State struct {
 	activeConnection int
 	connectionSynced bool
 
-	IsConnected chan bool
+	// Fuzzy picker
+	fuzzyPickerSelectedItem int
 }
 
 func (s *State) ActiveConnection() gateway.Connection {

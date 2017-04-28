@@ -26,8 +26,8 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 
 			// CTRL-P moves to a channel picker, which is a mode for switching teams and channels
 			case ev.Key() == tcell.KeyCtrlP:
-				if state.Mode != "picker" {
-					state.Mode = "picker"
+				if state.Mode != "pick" {
+					state.Mode = "pick"
 				} else {
 					state.Mode = "chat"
 				}
@@ -43,6 +43,16 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 				state.SetPrevActiveConnection()
 			case ev.Key() == tcell.KeyCtrlW:
 				state.SetNextActiveConnection()
+
+			//
+			// MOVEMENT BETWEEN ITEMS IN THE FUZZY PICKER
+			//
+			case state.Mode == "pick" && ev.Key() == tcell.KeyCtrlJ:
+        if state.fuzzyPickerSelectedItem > 0 {
+          state.fuzzyPickerSelectedItem -= 1
+        }
+			case state.Mode == "pick" && ev.Key() == tcell.KeyCtrlK:
+        state.fuzzyPickerSelectedItem += 1
 
 			//
 			// COMMAND BAR
