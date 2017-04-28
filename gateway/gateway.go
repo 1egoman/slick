@@ -85,6 +85,8 @@ type Channel struct {
 	Name    string `json:"name"`
 	Creator *User  `json:"creator"`
 	Created int    `json:"created"`
+  IsMember bool  `json:"is_member"`
+  IsArchived bool `json:"is_archived"`
 }
 
 // A Reaction is an optional subcollection of a message.

@@ -45,6 +45,12 @@ func NewTerminalDisplay(screen tcell.Screen) *TerminalDisplay {
 				Foreground(tcell.ColorWhite),
 			"StatusBarConnection": tcell.StyleDefault,
 			"MessageReaction":     tcell.StyleDefault,
+
+			"FuzzyPickerTopBorder": tcell.StyleDefault.
+				Background(tcell.ColorGray),
+			"FuzzyPickerActivePrefix": tcell.StyleDefault,
+			"FuzzyPickerChannelNotMember": tcell.StyleDefault.
+				Foreground(tcell.ColorGray),
 		},
 	}
 }
@@ -96,37 +102,6 @@ func (term *TerminalDisplay) DrawStatusBar(mode string, connections []gateway.Co
 		label := fmt.Sprintf("%d: %s", index+1, item.Name())
 		term.WriteTextStyle(position, lastRow, style, label)
 		position += len(label) + 1
-	}
-}
-
-func (term *TerminalDisplay) DrawFuzzyPicker(items []string, selectedIndex int) {
-	width, height := term.screen.Size()
-	bottomPadding := 2                                 // pad for the status bar and command bar
-	startingRow := height - len(items) - bottomPadding // The top row of the fuzzy picker
-
-	// Make sure that the item that is selected is never larger then the max item.
-	if selectedIndex > len(items)-1 {
-		selectedIndex = len(items) - 1
-	}
-
-	for ct, item := range items {
-		row := startingRow + (len(items) - 1) - ct
-
-		// Clear the row.
-		for i := 0; i < width; i++ {
-			char, _, style, _ := term.screen.GetContent(i, row)
-			if char != ' ' || style != tcell.StyleDefault {
-				term.screen.SetCell(i, row, tcell.StyleDefault, ' ')
-			}
-		}
-
-		// Add prefix for selected item
-		if ct == selectedIndex {
-			item = "> " + item
-		}
-
-		// Draw item
-		term.WriteText(0, row, item)
 	}
 }
 

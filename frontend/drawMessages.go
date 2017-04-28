@@ -90,6 +90,7 @@ func (term *TerminalDisplay) DrawMessages(messages []gateway.Message) {
 
 		// Get sender information
 		sender, senderStyle := getSenderInfo(msg)
+    timestamp := msg.Hash
 
 		// Calculate how many rows the message requires to render.
 		messageColumnWidth := width - len(sender) - 1
@@ -105,7 +106,8 @@ func (term *TerminalDisplay) DrawMessages(messages []gateway.Message) {
 		) {
 			if rowDelta == 0 {
 				// Draw the sender on the first row of a message
-				term.WriteTextStyle(0, row-messageRows+1, senderStyle, sender)
+				term.WriteText(0, row-messageRows+1, timestamp)
+				term.WriteTextStyle(len(timestamp) + 1, row-messageRows+1, senderStyle, sender)
 
 				// Render reactions after message
 				if len(msg.Reactions) > 0 {
@@ -120,7 +122,7 @@ func (term *TerminalDisplay) DrawMessages(messages []gateway.Message) {
 
 			// Render the message row.
 			term.WriteTextStyle(
-				len(sender)+1,
+				len(sender)+1+len(timestamp)+1, // Sender and timestamp go before message.
 				row-messageRows+rowDelta,
 				tcell.StyleDefault,
 				strings.Trim(messageRow, " "),

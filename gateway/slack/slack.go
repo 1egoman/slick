@@ -61,6 +61,8 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 			Name      string `json:"name"`
 			CreatorId string `json:"creator"`
 			Created   int    `json:"created"`
+      IsMember  bool   `json:"is_member"`
+      IsArchived  bool   `json:"is_archived"`
 		} `json:"channels"`
 	}
 	json.Unmarshal(body, &slackChannelBuffer)
@@ -78,6 +80,8 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 			Name:    channel.Name,
 			Creator: creator,
 			Created: channel.Created,
+      IsMember: channel.IsMember,
+      IsArchived: channel.IsArchived,
 		})
 	}
 
