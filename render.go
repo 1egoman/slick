@@ -61,8 +61,16 @@ func render(state *State, term *frontend.TerminalDisplay) {
 			}
 		}
 
+		// Fuzzy sort the items
+		sorter := FuzzySorter{
+			Items: items,
+			StringItems: stringItems,
+			Needle: string(state.Command),
+		}
+		sort.Sort(sorter)
+
 		// Render all connections and channels
-		term.DrawFuzzyPicker(stringItems, 1)
+		term.DrawFuzzyPicker(sorter.StringItems, state.fuzzyPickerSelectedItem)
 	}
 
 	term.Render()

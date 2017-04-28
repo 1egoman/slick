@@ -20,4 +20,17 @@ func connect(state *State, term *frontend.TerminalDisplay, connected chan struct
 
 	// We're connected!
 	close(connected)
+
+  // Preload a list of channels for each connection.
+  // WIthout this, a user can't fuzzy pick another connection's channel, since they won't be
+  // loaded yet :O
+	for _, connection := range state.Connections {
+    _, err := connection.FetchChannels()
+    if err != nil {
+      log.Fatal(err)
+    }
+	}
+
+	// Render any changes due to the added connections
+	render(state, term)
 }
