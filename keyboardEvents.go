@@ -39,9 +39,9 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 			//
 			// MOVEMENT BETWEEN CONNECTIONS
 			//
-			case ev.Key() == tcell.KeyCtrlQ:
+			case ev.Key() == tcell.KeyCtrlZ:
 				state.SetPrevActiveConnection()
-			case ev.Key() == tcell.KeyCtrlW:
+			case ev.Key() == tcell.KeyCtrlX:
 				state.SetNextActiveConnection()
 
 			//
@@ -164,6 +164,29 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 				if state.CommandCursorPosition < len(state.Command) {
 					state.CommandCursorPosition += 1
 				}
+
+      //
+      // EDITING OPERATIONS
+      //
+
+      // Ctrl+w deletes a word.
+      case ev.Key() == tcell.KeyCtrlW:
+        lastSpaceIndex := 0
+        for index := state.CommandCursorPosition-1; index >= 0; index-- {
+          if state.Command[index] == ' ' {
+            lastSpaceIndex = index
+            break
+          }
+        }
+
+        state.Command = append(state.Command[:lastSpaceIndex], state.Command[state.CommandCursorPosition:]...)
+        state.CommandCursorPosition = lastSpaceIndex
+
+      // Ctrl+A / Ctrl+E go to the start and end of editing
+      case ev.Key() == tcell.KeyCtrlA:
+        state.CommandCursorPosition = 0
+      case ev.Key() == tcell.KeyCtrlE:
+        state.CommandCursorPosition = len(state.Command)
 			}
 		case *tcell.EventResize:
 			screen.Sync()
