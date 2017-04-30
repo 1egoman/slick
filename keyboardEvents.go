@@ -24,17 +24,38 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 			case ev.Key() == tcell.KeyEscape:
 				state.Mode = "chat"
 
-			// CTRL-P moves to a channel picker, which is a mode for switching teams and channels
-			case ev.Key() == tcell.KeyCtrlP:
+			// 'p' moves to a channel picker, which is a mode for switching teams and channels
+			case ev.Key() == tcell.KeyRune && ev.Rune() == 'p':
 				if state.Mode != "pick" {
 					state.Mode = "pick"
 				} else {
 					state.Mode = "chat"
 				}
+				// 'e' moves to write mode. So does ':'
+			case ev.Key() == tcell.KeyRune && ev.Rune() == 'w':
+				state.Mode = "writ"
+			case ev.Key() == tcell.KeyRune && ev.Rune() == ':':
+				state.Mode = "writ"
+				state.Command = []rune{':'}
+				state.CommandCursorPosition = 1
 
 			// CTRL + L redraws the screen.
-			case ev.Key() == tcell.KeyCtrlL:
+			case state.Mode == "chat" && ev.Key() == tcell.KeyCtrlL:
 				screen.Sync()
+
+				//
+				// MOVEMENT UP AND DOWN THROUGH MESSAGES
+				//
+			case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'j':
+				if state.SelectedMessageIndex > 0 {
+					state.SelectedMessageIndex -= 1
+					log.Printf("Selecting message %s", state.SelectedMessageIndex)
+				}
+			case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'k':
+				if state.SelectedMessageIndex < len(state.ActiveConnection().MessageHistory())-1 {
+					state.SelectedMessageIndex += 1
+					log.Printf("Selecting message %s", state.SelectedMessageIndex)
+				}
 
 			//
 			// MOVEMENT BETWEEN CONNECTIONS
@@ -58,10 +79,10 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 			// COMMAND BAR
 			//
 
-			case ev.Key() == tcell.KeyEnter:
+			case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyEnter:
 				command := string(state.Command)
 
-				if state.Mode == "chat" {
+				if state.Mode == "writ" {
 					// When in chat mode, run a command or send a message.
 					switch {
 					// :q or :quit closes the app
@@ -133,12 +154,13 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 					state.Connections[selectedConnectionIndex].SetSelectedChannel(selectedChannel)
 					state.Mode = "chat"
 				}
-				// Clear the command that was typed.
+				// Clear the command that was typed, and move back to chat mode.
 				state.Command = []rune{}
 				state.CommandCursorPosition = 0
+				state.Mode = "chat"
 
 			// As characters are typed, add to the message.
-			case ev.Key() == tcell.KeyRune:
+			case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyRune:
 				state.Command = append(
 					append(state.Command[:state.CommandCursorPosition], ev.Rune()),
 					state.Command[state.CommandCursorPosition:]...,
@@ -146,47 +168,50 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 				state.CommandCursorPosition += 1
 
 			// Backspace removes a character.
-			case ev.Key() == tcell.KeyDEL:
+			case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyDEL:
 				if state.CommandCursorPosition > 0 {
 					state.Command = append(
 						state.Command[:state.CommandCursorPosition-1],
 						state.Command[state.CommandCursorPosition:]...,
 					)
 					state.CommandCursorPosition -= 1
+				} else {
+					// Backspacing in an ampty command brings the user back to chat mode
+					state.Mode = "chat"
 				}
 
 			// Arrows right and left move the cursor
-			case ev.Key() == tcell.KeyLeft:
+			case (state.Mode == "writ" || state.Mode == "pick") && (ev.Key() == tcell.KeyLeft || ev.Key() == tcell.KeyCtrlH):
 				if state.CommandCursorPosition >= 1 {
 					state.CommandCursorPosition -= 1
 				}
-			case ev.Key() == tcell.KeyRight:
+			case (state.Mode == "writ" || state.Mode == "pick") && (ev.Key() == tcell.KeyRight || ev.Key() == tcell.KeyCtrlL):
 				if state.CommandCursorPosition < len(state.Command) {
 					state.CommandCursorPosition += 1
 				}
 
-      //
-      // EDITING OPERATIONS
-      //
+			//
+			// EDITING OPERATIONS
+			//
 
-      // Ctrl+w deletes a word.
-      case ev.Key() == tcell.KeyCtrlW:
-        lastSpaceIndex := 0
-        for index := state.CommandCursorPosition-1; index >= 0; index-- {
-          if state.Command[index] == ' ' {
-            lastSpaceIndex = index
-            break
-          }
-        }
+			// Ctrl+w deletes a word.
+			case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyCtrlW:
+				lastSpaceIndex := 0
+				for index := state.CommandCursorPosition - 1; index >= 0; index-- {
+					if state.Command[index] == ' ' {
+						lastSpaceIndex = index
+						break
+					}
+				}
 
-        state.Command = append(state.Command[:lastSpaceIndex], state.Command[state.CommandCursorPosition:]...)
-        state.CommandCursorPosition = lastSpaceIndex
+				state.Command = append(state.Command[:lastSpaceIndex], state.Command[state.CommandCursorPosition:]...)
+				state.CommandCursorPosition = lastSpaceIndex
 
-      // Ctrl+A / Ctrl+E go to the start and end of editing
-      case ev.Key() == tcell.KeyCtrlA:
-        state.CommandCursorPosition = 0
-      case ev.Key() == tcell.KeyCtrlE:
-        state.CommandCursorPosition = len(state.Command)
+			// Ctrl+A / Ctrl+E go to the start and end of editing
+			case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyCtrlA:
+				state.CommandCursorPosition = 0
+			case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyCtrlE:
+				state.CommandCursorPosition = len(state.Command)
 			}
 		case *tcell.EventResize:
 			screen.Sync()
