@@ -1,10 +1,12 @@
 package gatewaySlack
 
 import (
+	"log"
+  "strconv"
+
+	"net/http"
 	"encoding/json"
 	"io/ioutil"
-	"log"
-	"net/http"
 
 	"github.com/1egoman/slime/gateway"
 	"golang.org/x/net/websocket"
@@ -163,10 +165,21 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel) ([]gatew
 			reactions = append(reactions, gateway.Reaction{Name: reaction.Name, Users: reactionUsers})
 		}
 
+    // Convert timestamp to float64
+    // I would unmarshal directly into float64, but that doesn't work since slack encodes their
+    // timestamps as strings :/
+    var timestamp float64
+    timestamp, err = strconv.ParseFloat(msg.Ts, 64)
+    if err != nil {
+      log.Fatal(err)
+      return nil, err
+    }
+
 		messageBuffer = append(messageBuffer, gateway.Message{
 			Sender:    sender,
 			Text:      msg.Text,
 			Reactions: reactions,
+			Timestamp: int(timestamp), // this value is in seconds!
 			Hash:      msg.Ts,
 		})
 	}

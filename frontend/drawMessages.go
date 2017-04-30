@@ -2,9 +2,11 @@ package frontend
 
 import (
 	// "log"
+	"strings"
+  "time"
+
 	"github.com/gdamore/tcell"
 	"github.com/kyokomi/emoji" // convert :smile: to unicode
-	"strings"
 
 	"github.com/1egoman/slime/gateway" // The thing to interface with slack
 )
@@ -69,7 +71,10 @@ func partitionIntoRows(total string, width int) []string {
 }
 
 // Draw message history in the channel
-func (term *TerminalDisplay) DrawMessages(messages []gateway.Message) {
+func (term *TerminalDisplay) DrawMessages(
+  messages []gateway.Message, // A list of messages to render
+  selectedMessageIndex int, // Index of selected message (-1 for no selected message)
+) {
 	width, height := term.screen.Size()
 
 	for r := 0; r < height-bottomPadding; r++ {
@@ -90,8 +95,17 @@ func (term *TerminalDisplay) DrawMessages(messages []gateway.Message) {
 
 		// Get sender information
 		sender, senderStyle := getSenderInfo(msg)
-    timestamp := msg.Hash
+
+    timestamp := time.Unix(int64(msg.Timestamp), 0).Format("15:04:05")
     prefixWidth := len(timestamp) + 1 + len(sender) + 1
+
+    // Is the message selected?
+    var messageStyle tcell.Style
+    if index == selectedMessageIndex {
+      messageStyle = term.Styles["MessageSelected"]
+    } else {
+      messageStyle = tcell.StyleDefault
+    }
 
 		// Calculate how many rows the message requires to render.
 		messageColumnWidth := width - prefixWidth
@@ -125,7 +139,7 @@ func (term *TerminalDisplay) DrawMessages(messages []gateway.Message) {
 			term.WriteTextStyle(
 				prefixWidth, // Sender and timestamp go before message.
 				row-messageRows+rowDelta,
-				tcell.StyleDefault,
+				messageStyle,
 				strings.Trim(messageRow, " "),
 			)
 		}

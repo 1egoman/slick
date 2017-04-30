@@ -16,6 +16,9 @@ type State struct {
 	activeConnection int
 	connectionSynced bool
 
+	// Interacting with messages
+	SelectedMessageIndex int
+
 	// Fuzzy picker
 	FuzzyPickerSorter       FuzzySorter
 	fuzzyPickerSelectedItem int

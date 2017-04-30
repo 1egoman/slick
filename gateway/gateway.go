@@ -81,12 +81,12 @@ type Team struct {
 
 // A Channel is a independant stream of messages sent by users.
 type Channel struct {
-	Id      string `json:"id"`
-	Name    string `json:"name"`
-	Creator *User  `json:"creator"`
-	Created int    `json:"created"`
-  IsMember bool  `json:"is_member"`
-  IsArchived bool `json:"is_archived"`
+	Id         string `json:"id"`
+	Name       string `json:"name"`
+	Creator    *User  `json:"creator"`
+	Created    int    `json:"created"`
+	IsMember   bool   `json:"is_member"`
+	IsArchived bool   `json:"is_archived"`
 }
 
 // A Reaction is an optional subcollection of a message.
@@ -100,5 +100,6 @@ type Message struct {
 	Sender    *User      `json:"sender"`
 	Text      string     `json:"text"`
 	Reactions []Reaction `json:"reactions"`
-	Hash      string     `json:"ts"`
+	Hash      string     `json:"hash"`
+	Timestamp int        `json:"timestamp"` // This value is in seconds!
 }

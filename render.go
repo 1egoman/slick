@@ -14,7 +14,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 	// If the user switched connections, then refresh
 	if state.ConnectionIsStale() {
 		state.SyncActiveConnection()
-		log.Printf("User swiching to new active connection: %s", state.ActiveConnection().Name())
+		log.Printf("User switching to new active connection: %s", state.ActiveConnection().Name())
 
 		go func() {
 			if err := state.ActiveConnection().Refresh(); err != nil {
@@ -24,7 +24,10 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		}()
 	}
 
-	term.DrawMessages(state.ActiveConnection().MessageHistory())
+	term.DrawMessages(
+		state.ActiveConnection().MessageHistory(),                                   // List of messages
+		len(state.ActiveConnection().MessageHistory())-1-state.SelectedMessageIndex, // Is a message selected?
+	)
 
 	term.DrawStatusBar(
 		state.Mode,               // Which mode we're currently in
@@ -65,7 +68,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		state.FuzzyPickerSorter.Items = items
 		state.FuzzyPickerSorter.StringItems = stringItems
 		state.FuzzyPickerSorter.Needle = string(state.Command)
-		sort.Sort(sort.Reverse(state.FuzzyPickerSorter))
+		sort.Sort(state.FuzzyPickerSorter)
 
 		// Render all connections and channels
 		term.DrawFuzzyPicker(state.FuzzyPickerSorter.StringItems, state.fuzzyPickerSelectedItem)

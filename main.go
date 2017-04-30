@@ -39,6 +39,9 @@ func main() {
 		activeConnection: 0,
 		connectionSynced: false,
 
+		// Interacting with messages
+		SelectedMessageIndex: 0,
+
 		// Fuzzy picker data
 		FuzzyPickerSorter:       FuzzySorter{},
 		fuzzyPickerSelectedItem: 0,
