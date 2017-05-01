@@ -13,9 +13,11 @@ var cost = &fuzzy.LevenshteinCost{
 // A struct that wraps a collection of string items and norma items, and sorts both based on the
 // closeness of each of `StringItems` to `Needle`.
 type FuzzySorter struct {
-	Items       []FuzzyPickerReference
+  Visible     bool
+	Items       []interface{}
 	StringItems []string
 	Needle      string
+  OnSelected  func(*State)
 }
 
 func (p FuzzySorter) Len() int {
@@ -31,7 +33,28 @@ func (p FuzzySorter) Swap(i, j int) {
 	p.StringItems[i], p.StringItems[j] = p.StringItems[j], p.StringItems[i]
 }
 
-type FuzzyPickerReference struct {
+// Show the fuzzy picker
+func (p *FuzzySorter) Show(callbackOnSelected func(*State)) {
+  p.Visible = true
+  p.OnSelected = callbackOnSelected
+}
+
+// Hide the fuzzy picker and reset to initial state
+func (p *FuzzySorter) Hide() {
+  p.Visible = false
+  p.Items = []interface{}{}
+  p.StringItems = []string{}
+}
+
+type FuzzyPickerConnectionChannelItem struct {
 	Channel    string
 	Connection string
+}
+
+type FuzzyPickerSlashCommandItem struct {
+  Name string
+  Description string
+  Type CommandType
+  Permutations []string
+  Arguments string
 }

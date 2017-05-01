@@ -20,7 +20,7 @@ type State struct {
 	SelectedMessageIndex int
 
 	// Fuzzy picker
-	FuzzyPickerSorter       FuzzySorter
+	FuzzyPicker FuzzySorter
 	fuzzyPickerSelectedItem int
 }
 

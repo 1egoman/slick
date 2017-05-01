@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"sort"
 
@@ -41,37 +40,13 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		state.ActiveConnection().Team(),            // The selected team
 	)
 
-	if state.Mode == "pick" {
-		items := []FuzzyPickerReference{}
-		stringItems := []string{}
-
-		// Accumulate all channels into `items`, and their respective labels into `stringLabels`
-		for _, connection := range state.Connections {
-			for _, channel := range connection.Channels() {
-				// Add string representation of item to `stringItems`
-				// Follows the pattern of "my-team #my-channel"
-				stringItems = append(stringItems, fmt.Sprintf(
-					"%s #%s",
-					connection.Name(),
-					channel.Name,
-				))
-
-				// Add backing representation of item to `item`
-				items = append(items, FuzzyPickerReference{
-					Channel:    channel.Name,
-					Connection: connection.Name(),
-				})
-			}
-		}
-
-		// Fuzzy sort the items
-		state.FuzzyPickerSorter.Items = items
-		state.FuzzyPickerSorter.StringItems = stringItems
-		state.FuzzyPickerSorter.Needle = string(state.Command)
-		sort.Sort(state.FuzzyPickerSorter)
+	if state.FuzzyPicker.Visible {
+		// Sort items by the search command
+		state.FuzzyPicker.Needle = string(state.Command)
+		sort.Sort(state.FuzzyPicker)
 
 		// Render all connections and channels
-		term.DrawFuzzyPicker(state.FuzzyPickerSorter.StringItems, state.fuzzyPickerSelectedItem)
+		term.DrawFuzzyPicker(state.FuzzyPicker.StringItems, state.fuzzyPickerSelectedItem)
 	}
 
 	term.Render()

@@ -43,7 +43,7 @@ func main() {
 		SelectedMessageIndex: 0,
 
 		// Fuzzy picker data
-		FuzzyPickerSorter:       FuzzySorter{},
+		FuzzyPicker:       FuzzySorter{},
 		fuzzyPickerSelectedItem: 0,
 	}
 
