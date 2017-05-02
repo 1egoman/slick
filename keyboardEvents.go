@@ -18,21 +18,128 @@ const (
 
 var commands = []FuzzyPickerSlashCommandItem{
   {
-    Type: SLACK,
-    Name: "Shrug",
-    Description: "Appends a shrug to your message",
-    Permutations: []string{"/shrug"},
-    Arguments: "[your message]",
-  },
-  {
     Type: NATIVE,
     Name: "Quit",
     Description: "Quits slime.",
     Permutations: []string{"/quit", "/q"},
   },
+  {
+    Type: SLACK,
+    Name: "Apps",
+    Permutations: []string{"/apps"},
+    Arguments: "[search term]",
+    Description: "Search for Slack Apps in the App Directory",
+  },
+  {
+    Type: SLACK,
+    Name: "Away",
+    Permutations: []string{"/away"},
+    Arguments: "Toggle your away status",
+  },
+  {
+    Type: SLACK,
+    Name: "Call",
+    Permutations: []string{"/call"},
+    Arguments: "[help]",
+    Description: "Start a call",
+  },
+  {
+    Type: SLACK,
+    Name: "Dnd",
+    Permutations: []string{"/dnd"},
+    Arguments: "[some description of time]",
+    Description: "Starts or ends a Do Not Disturb session",
+  },
+  {
+    Type: SLACK,
+    Name: "Feed",
+    Permutations: []string{"/feed"},
+    Arguments: "help [or subscribe, list, remove...]",
+    Description: "Manage RSS subscriptions",
+  },
+  {
+    Type: SLACK,
+    Name: "Invite",
+    Permutations: []string{"/invite"},
+    Arguments: "@user [channel]",
+    Description: "Invite another member to a channel",
+  },
+  {
+    Type: SLACK,
+    Name: "Invite people",
+    Permutations: []string{"/invite_people"},
+    Arguments: "[name@example.com, ...]",
+    Description: "Invite people to your Slack team",
+  },
+  {
+    Type: SLACK,
+    Name: "Leave",
+    Permutations: []string{"/leave", "/close", "/part"},
+    Description: "Leave a channel",
+  },
+  {
+    Type: SLACK,
+    Name: "Me",
+    Permutations: []string{"/me"},
+    Arguments: "your message",
+    Description: "Displays action text",
+  },
+  {
+    Type: SLACK,
+    Name: "Msg",
+    Permutations: []string{"/msg", "/dm"},
+    Arguments: "[your message]",
+  },
+  {
+    Type: SLACK,
+    Name: "Mute",
+    Permutations: []string{"/mute"},
+    Arguments: "[channel]",
+    Description: "Mutes [channel] or the current channel",
+  },
+  {
+    Type: SLACK,
+    Name: "Remind",
+    Permutations: []string{"/remind"},
+    Arguments: "[@someone or #channel] [what] [when]",
+    Description: "Set a reminder",
+  },
+  {
+    Type: SLACK,
+    Name: "Rename",
+    Permutations: []string{"/rename"},
+    Arguments: "[new name]",
+    Description: "Rename a channel",
+  },
+  {
+    Type: SLACK,
+    Name: "Shrug",
+    Permutations: []string{"/shrug"},
+    Arguments: "[your message]",
+    Description: "Appends ¯\\_(ツ)_/¯ to your message",
+  },
+  {
+    Type: SLACK,
+    Name: "Star",
+    Permutations: []string{"/star"},
+    Arguments: "Stars the current channel or conversation",
+  },
+  {
+    Type: SLACK,
+    Name: "Status",
+    Permutations: []string{"/status"},
+    Arguments: "[clear] or [:your_new_status_emoji:] [your new status message]",
+    Description: "Set or clear your custom status",
+  },
+  {
+    Type: SLACK,
+    Name: "Who",
+    Permutations: []string{"/who"},
+    Description: "List users in the currentl channel or group",
+  },
 }
 
-// When a user picks a connection / channel
+// When a user picks a connection / channel in the fuzzy picker
 func OnPickConnectionChannel(state *State) {
   // Assert that the fuzzy picker that's active is of the right type
   if selectedItem, ok := state.FuzzyPicker.Items[state.fuzzyPickerSelectedItem].(FuzzyPickerConnectionChannelItem); ok {
@@ -81,6 +188,40 @@ func OnPickConnectionChannel(state *State) {
   }
 }
 
+// When the user presses enter in `writ` mode after typing some stuff...
+func OnCommandExecuted(state *State, quit chan struct{}) error {
+  command := string(state.Command)
+  switch {
+  // :q or :quit closes the app
+  case command == ":q", command == ":quit":
+    log.Println("CLOSE QUIT 2")
+    close(quit)
+    return nil
+
+  // By default, just send a message
+  default:
+    message := gateway.Message{
+      Sender: state.ActiveConnection().Self(),
+      Text:   command,
+    }
+
+    // Sometimes, a message could have a response. This is for example true in the
+    // case of slash commands, sometimes.
+    responseMessage, err := state.ActiveConnection().SendMessage(
+      message,
+      state.ActiveConnection().SelectedChannel(),
+    )
+
+    if err != nil {
+      return err
+    } else if responseMessage != nil {
+      // Got a response command? Append it to the message history.
+      state.ActiveConnection().AppendMessageHistory(*responseMessage)
+    }
+  }
+  return nil
+}
+
 func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.Screen, quit chan struct{}) {
 	for {
 		ev := screen.PollEvent()
@@ -113,9 +254,9 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
               // Add string representation of item to `stringItems`
               // Follows the pattern of "my-team #my-channel"
               stringItems = append(stringItems, fmt.Sprintf(
-                "%s #%s",
-                connection.Name(),
+                "#%s %s",
                 channel.Name,
+                connection.Name(),
               ))
 
               // Add backing representation of item to `item`
@@ -134,9 +275,9 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
           state.FuzzyPicker.Hide()
 				}
 				// 'e' moves to write mode. So does ':'
-			case ev.Key() == tcell.KeyRune && ev.Rune() == 'w':
+			case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'w':
 				state.Mode = "writ"
-			case ev.Key() == tcell.KeyRune && ev.Rune() == ':':
+			case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == ':':
 				state.Mode = "writ"
 				state.Command = []rune{':'}
 				state.CommandCursorPosition = 1
@@ -182,47 +323,26 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 			//
 
 			case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyEnter:
-				command := string(state.Command)
-
         if state.FuzzyPicker.Visible {
           state.FuzzyPicker.OnSelected(state)
         } else if state.Mode == "writ" {
-					// When in chat mode, run a command or send a message.
-					switch {
-					// :q or :quit closes the app
-					case command == ":q", command == ":quit":
-						log.Println("CLOSE QUIT 2")
-						close(quit)
-						return
-
-					// By default, just send a message
-					default:
-						message := gateway.Message{
-							Sender: state.ActiveConnection().Self(),
-							Text:   command,
-						}
-
-						// Sometimes, a message could have a response. This is for example true in the
-						// case of slash commands, sometimes.
-						responseMessage, err := state.ActiveConnection().SendMessage(
-							message,
-							state.ActiveConnection().SelectedChannel(),
-						)
-
-						if err != nil {
-							log.Fatal(err)
-						} else if responseMessage != nil {
-							// Got a response command? Append it to the message history.
-							state.ActiveConnection().AppendMessageHistory(*responseMessage)
-						}
-					}
+          err := OnCommandExecuted(state, quit)
+          if err != nil {
+            log.Fatal(err)
+          }
         }
 
-				// Clear the command that was typed, and move back to chat mode.
+				// Clear the command that was typed, and move back to chat mode. Also hide the fuzzy picker
+        // is its open. 
 				state.Command = []rune{}
 				state.CommandCursorPosition = 0
 				state.Mode = "chat"
         state.FuzzyPicker.Hide()
+
+
+			//
+			// EDITING OPERATIONS
+			//
 
 			// As characters are typed, add to the message.
 			case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyRune:
@@ -233,11 +353,14 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 				state.CommandCursorPosition += 1
 
         // Also, take care of autocomplete of slash commands
-        // As the user types, show them above the command bar.
+        // As the user types, show them above the command bar in a fuzzy picker.
         if !state.FuzzyPicker.Visible && state.Command[0] == '/' {
-          // Show the fuzzy picker
+          // When the user presses enter, run the slash command the user typed.
           state.FuzzyPicker.Show(func(state *State) {
-            log.Println("Pressed enter on slash command fuzzy picker!")
+            err := OnCommandExecuted(state, quit)
+            if err != nil {
+              log.Fatal(err)
+            }
           })
 
           // Assemble add the items to the fuzzy sorter.
