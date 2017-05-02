@@ -1,14 +1,8 @@
 package main
 
 import (
-	"github.com/salviati/symutils/fuzzy"
+  "strings"
 )
-
-var cost = &fuzzy.LevenshteinCost{
-	Del:  1,
-	Ins:  1,
-	Subs: 1,
-}
 
 // A struct that wraps a collection of string items and norma items, and sorts both based on the
 // closeness of each of `StringItems` to `Needle`.
@@ -25,7 +19,9 @@ func (p FuzzySorter) Len() int {
 }
 
 func (p FuzzySorter) Less(i, j int) bool {
-	return fuzzy.Levenshtein(p.Needle, p.StringItems[i], cost) > fuzzy.Levenshtein(p.Needle, p.StringItems[j], cost)
+  iItem := p.StringItems[i]
+  jItem := p.StringItems[j]
+  return strings.Index(iItem, p.Needle) > strings.Index(jItem, p.Needle)
 }
 
 func (p FuzzySorter) Swap(i, j int) {

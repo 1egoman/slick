@@ -267,10 +267,6 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
         } else {
           // Backspacing in an empty command box brings the user back to chat mode
           state.Mode = "chat"
-        }
-
-        // If the command box becomes empty, hide the fuzzy picker.
-        if len(state.Command) == 0 {
           state.FuzzyPicker.Hide()
         }
 
@@ -283,10 +279,6 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 				if state.CommandCursorPosition < len(state.Command) {
 					state.CommandCursorPosition += 1
 				}
-
-			//
-			// EDITING OPERATIONS
-			//
 
 			// Ctrl+w deletes a word.
 			case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyCtrlW:
