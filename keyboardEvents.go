@@ -274,12 +274,16 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 					state.Mode = "chat"
           state.FuzzyPicker.Hide()
 				}
-				// 'e' moves to write mode. So does ':'
+				// 'e' moves to write mode. So does ':' and '/'
 			case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'w':
 				state.Mode = "writ"
 			case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == ':':
 				state.Mode = "writ"
 				state.Command = []rune{':'}
+				state.CommandCursorPosition = 1
+			case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == '/':
+				state.Mode = "writ"
+				state.Command = []rune{'/'}
 				state.CommandCursorPosition = 1
 
 			// CTRL + L redraws the screen.
