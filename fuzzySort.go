@@ -8,10 +8,13 @@ import (
 // closeness of each of `StringItems` to `Needle`.
 type FuzzySorter struct {
   Visible     bool
+
 	Items       []interface{}
 	StringItems []string
 	Needle      string
   OnSelected  func(*State)
+
+  ShowItemsStartingAt int
 }
 
 func (p FuzzySorter) Len() int {
@@ -33,6 +36,7 @@ func (p FuzzySorter) Swap(i, j int) {
 func (p *FuzzySorter) Show(callbackOnSelected func(*State)) {
   p.Visible = true
   p.OnSelected = callbackOnSelected
+  p.ShowItemsStartingAt = 0
 }
 
 // Hide the fuzzy picker and reset to initial state

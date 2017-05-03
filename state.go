@@ -22,6 +22,7 @@ type State struct {
 	// Fuzzy picker
 	FuzzyPicker FuzzySorter
 	fuzzyPickerSelectedItem int
+	fuzzyPickerBottomDisplayedItem int
 }
 
 func (s *State) ActiveConnection() gateway.Connection {

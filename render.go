@@ -46,7 +46,11 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		sort.Sort(state.FuzzyPicker)
 
 		// Render all connections and channels
-		term.DrawFuzzyPicker(state.FuzzyPicker.StringItems, state.fuzzyPickerSelectedItem)
+		term.DrawFuzzyPicker(
+			state.FuzzyPicker.StringItems,
+			state.fuzzyPickerSelectedItem,
+			state.fuzzyPickerBottomDisplayedItem,
+		)
 	}
 
 	term.Render()

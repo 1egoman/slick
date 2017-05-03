@@ -318,9 +318,22 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 			case state.FuzzyPicker.Visible && ev.Key() == tcell.KeyCtrlJ:
 				if state.fuzzyPickerSelectedItem > 0 {
 					state.fuzzyPickerSelectedItem -= 1
+          // If we select an item off the screen, show it on the screen by changing the bottommost
+          // item.
+          if state.fuzzyPickerSelectedItem < state.fuzzyPickerBottomDisplayedItem {
+            state.fuzzyPickerBottomDisplayedItem -= 1
+          }
 				}
 			case state.FuzzyPicker.Visible && ev.Key() == tcell.KeyCtrlK:
-				state.fuzzyPickerSelectedItem += 1
+        topDisplayedItem := state.fuzzyPickerBottomDisplayedItem + frontend.FuzzyPickerMaxSize - 1
+				if state.fuzzyPickerSelectedItem < len(state.FuzzyPicker.Items) - 1 {
+          state.fuzzyPickerSelectedItem += 1
+          // If we select an item off the screen, show it on the screen by changing the bottommost
+          // item.
+          if state.fuzzyPickerSelectedItem > topDisplayedItem {
+            state.fuzzyPickerBottomDisplayedItem += 1
+          }
+        }
 
 			//
 			// COMMAND BAR

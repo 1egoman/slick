@@ -1,25 +1,27 @@
 package frontend
 
 import (
+  // "log"
 	"github.com/gdamore/tcell"
 )
 
 // The amount of rows at max that can be in the fuzzy picker.
-const fuzzyPickerMaxSize = 10;
+const FuzzyPickerMaxSize = 10;
 
-func (term *TerminalDisplay) DrawFuzzyPicker(items []string, selectedIndex int) {
+func (term *TerminalDisplay) DrawFuzzyPicker(items []string, selectedIndex int, bottomDisplayedItem int) {
 	width, height := term.screen.Size()
 
-  // If there are over 5 items, truncate the list to 5 items
-  if len(items) > fuzzyPickerMaxSize {
-    items = items[:fuzzyPickerMaxSize]
+  // If there's more than one page of items, only show one page's worth.
+  if len(items) > FuzzyPickerMaxSize {
+    items = items[bottomDisplayedItem:bottomDisplayedItem+FuzzyPickerMaxSize]
   }
+  projectedSelectedIndex := selectedIndex - bottomDisplayedItem
 	bottomPadding := 2                                 // pad for the status bar and command bar
 	startingRow := height - len(items) - bottomPadding // The top row of the fuzzy picker
 
 	// Make sure that the item that is selected is never larger then the max item.
-	if selectedIndex > len(items)-1 {
-		selectedIndex = len(items) - 1
+	if projectedSelectedIndex > len(items)-1 {
+		projectedSelectedIndex = len(items) - 1
 	}
 
   // Above the top of the picker, draw a border.
@@ -39,7 +41,7 @@ func (term *TerminalDisplay) DrawFuzzyPicker(items []string, selectedIndex int) 
 		}
 
 		// Add selected prefix for selected item
-		if ct == selectedIndex {
+		if ct == projectedSelectedIndex {
       term.WriteTextStyle(0, row, term.Styles["FuzzyPickerActivePrefix"], ">")
     }
     // Draw item

@@ -45,6 +45,7 @@ func main() {
 		// Fuzzy picker data
 		FuzzyPicker:       FuzzySorter{},
 		fuzzyPickerSelectedItem: 0,
+		fuzzyPickerBottomDisplayedItem: 0,
 	}
 
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)

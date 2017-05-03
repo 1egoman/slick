@@ -18,14 +18,17 @@ func (c *SlackConnection) Connect() error {
 	c.outgoing = make(chan gateway.Event, 1)
 
 	// Request a connection url with the token in the struct
-	c.requestConnectionUrl()
+	var err error
+  err = c.requestConnectionUrl()
+  if err != nil {
+    return err
+  }
 	log.Printf("Got slack connection url for team %s: %s", c.Team().Name, c.url)
 
 	// FIXME: what does this mean?
 	origin := "http://localhost/"
 
 	// Create a connection to the websocket
-	var err error
 	c.conn, err = websocket.Dial(c.url, "", origin)
 	if err != nil {
 		return err
@@ -85,13 +88,13 @@ func (c *SlackConnection) Connect() error {
 	return nil
 }
 
-func (c *SlackConnection) requestConnectionUrl() {
+func (c *SlackConnection) requestConnectionUrl() error {
 	// Make request to slack's api to get websocket credentials
 	// https://api.slack.com/methods/rtm.connect
 	resp, err := http.Get("https://slack.com/api/rtm.connect?token=" + c.token)
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	// Decode json body.
@@ -104,11 +107,14 @@ func (c *SlackConnection) requestConnectionUrl() {
 	}
 	err = json.Unmarshal(body, &connectionBuffer)
 	if err != nil {
-		log.Fatal("Slack response: " + string(body))
+		log.Println("Slack response: " + string(body))
+		return err
 	}
 
 	// Add response data to struct
 	c.url = connectionBuffer.Url
 	c.self = connectionBuffer.Self
 	c.team = connectionBuffer.Team
+
+  return nil
 }
