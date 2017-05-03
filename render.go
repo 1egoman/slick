@@ -48,8 +48,8 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		// Render all connections and channels
 		term.DrawFuzzyPicker(
 			state.FuzzyPicker.StringItems,
-			state.fuzzyPickerSelectedItem,
-			state.fuzzyPickerBottomDisplayedItem,
+			state.FuzzyPicker.SelectedItem,
+			state.FuzzyPicker.BottomItem,
 		)
 	}
 

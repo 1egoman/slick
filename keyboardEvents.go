@@ -142,7 +142,7 @@ var commands = []FuzzyPickerSlashCommandItem{
 // When a user picks a connection / channel in the fuzzy picker
 func OnPickConnectionChannel(state *State) {
   // Assert that the fuzzy picker that's active is of the right type
-  if selectedItem, ok := state.FuzzyPicker.Items[state.fuzzyPickerSelectedItem].(FuzzyPickerConnectionChannelItem); ok {
+  if selectedItem, ok := state.FuzzyPicker.Items[state.FuzzyPicker.SelectedItem].(FuzzyPickerConnectionChannelItem); ok {
     // We want to choose the selected option.
     selectedConnectionName := selectedItem.Connection
     selectedChannelName := selectedItem.Channel
@@ -222,223 +222,229 @@ func OnCommandExecuted(state *State, quit chan struct{}) error {
   return nil
 }
 
+func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) {
+  switch {
+  case ev.Key() == tcell.KeyCtrlC:
+    log.Println("CLOSE QUIT 1")
+    close(quit)
+    return
+
+  // Escape reverts back to chat mode.
+  case ev.Key() == tcell.KeyEscape:
+    state.Mode = "chat"
+    state.FuzzyPicker.Hide()
+
+  // 'p' moves to a channel picker, which is a mode for switching teams and channels
+  case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'p':
+    if state.Mode != "pick" {
+      state.Mode = "pick"
+      state.FuzzyPicker.Show(OnPickConnectionChannel)
+
+      var items []interface{}
+      stringItems := []string{}
+
+      // Accumulate all channels into `items`, and their respective labels into `stringLabels`
+      for _, connection := range state.Connections {
+        for _, channel := range connection.Channels() {
+          // Add string representation of item to `stringItems`
+          // Follows the pattern of "my-team #my-channel"
+          stringItems = append(stringItems, fmt.Sprintf(
+            "#%s %s",
+            channel.Name,
+            connection.Name(),
+          ))
+
+          // Add backing representation of item to `item`
+          items = append(items, FuzzyPickerConnectionChannelItem{
+            Channel:    channel.Name,
+            Connection: connection.Name(),
+          })
+        }
+      }
+
+      // Fuzzy sort the items
+      state.FuzzyPicker.Items = items
+      state.FuzzyPicker.StringItems = stringItems
+    } else {
+      state.Mode = "chat"
+      state.FuzzyPicker.Hide()
+    }
+    // 'e' moves to write mode. So does ':' and '/'
+  case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'w':
+    state.Mode = "writ"
+  case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == ':':
+    state.Mode = "writ"
+    state.Command = []rune{':'}
+    state.CommandCursorPosition = 1
+  case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == '/':
+    state.Mode = "writ"
+    state.Command = []rune{'/'}
+    state.CommandCursorPosition = 1
+
+    //
+    // MOVEMENT UP AND DOWN THROUGH MESSAGES
+    //
+  case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'j':
+    if state.SelectedMessageIndex > 0 {
+      state.SelectedMessageIndex -= 1
+      log.Printf("Selecting message %s", state.SelectedMessageIndex)
+    }
+  case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'k':
+    if state.SelectedMessageIndex < len(state.ActiveConnection().MessageHistory())-1 {
+      state.SelectedMessageIndex += 1
+      log.Printf("Selecting message %s", state.SelectedMessageIndex)
+    }
+
+  //
+  // MOVEMENT BETWEEN CONNECTIONS
+  //
+  case ev.Key() == tcell.KeyCtrlZ:
+    state.SetPrevActiveConnection()
+  case ev.Key() == tcell.KeyCtrlX:
+    state.SetNextActiveConnection()
+
+  //
+  // MOVEMENT BETWEEN ITEMS IN THE FUZZY PICKER
+  //
+  case state.FuzzyPicker.Visible && ev.Key() == tcell.KeyCtrlJ:
+    if state.FuzzyPicker.SelectedItem > 0 {
+      state.FuzzyPicker.SelectedItem -= 1
+      // If we select an item off the screen, show it on the screen by changing the bottommost
+      // item.
+      if state.FuzzyPicker.SelectedItem < state.FuzzyPicker.BottomItem {
+        state.FuzzyPicker.BottomItem -= 1
+      }
+    }
+  case state.FuzzyPicker.Visible && ev.Key() == tcell.KeyCtrlK:
+    topDisplayedItem := state.FuzzyPicker.BottomItem + frontend.FuzzyPickerMaxSize - 1
+    if state.FuzzyPicker.SelectedItem < len(state.FuzzyPicker.Items) - 1 {
+      state.FuzzyPicker.SelectedItem += 1
+      // If we select an item off the screen, show it on the screen by changing the bottommost
+      // item.
+      if state.FuzzyPicker.SelectedItem > topDisplayedItem {
+        state.FuzzyPicker.BottomItem += 1
+      }
+    }
+
+  //
+  // COMMAND BAR
+  //
+
+  case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyEnter:
+    if state.FuzzyPicker.Visible {
+      state.FuzzyPicker.OnSelected(state)
+    } else if state.Mode == "writ" {
+      err := OnCommandExecuted(state, quit)
+      if err != nil {
+        log.Fatal(err)
+      }
+    }
+
+    // Clear the command that was typed, and move back to chat mode. Also hide the fuzzy picker
+    // is its open. 
+    state.Command = []rune{}
+    state.CommandCursorPosition = 0
+    state.Mode = "chat"
+    state.FuzzyPicker.Hide()
+
+
+  //
+  // EDITING OPERATIONS
+  //
+
+  // As characters are typed, add to the message.
+  case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyRune:
+    state.Command = append(
+      append(state.Command[:state.CommandCursorPosition], ev.Rune()),
+      state.Command[state.CommandCursorPosition:]...,
+    )
+    state.CommandCursorPosition += 1
+
+    // Also, take care of autocomplete of slash commands
+    // As the user types, show them above the command bar in a fuzzy picker.
+    if !state.FuzzyPicker.Visible && state.Command[0] == '/' {
+      // When the user presses enter, run the slash command the user typed.
+      state.FuzzyPicker.Show(func(state *State) {
+        err := OnCommandExecuted(state, quit)
+        if err != nil {
+          log.Fatal(err)
+        }
+      })
+
+      // Assemble add the items to the fuzzy sorter.
+      for _, command := range commands {
+        state.FuzzyPicker.Items = append(state.FuzzyPicker.Items, command)
+        state.FuzzyPicker.StringItems = append(
+          state.FuzzyPicker.StringItems,
+          fmt.Sprintf(
+            "%s %s\t%s - %s", // ie: "/quit (/q)        Quit - quits slime"
+            strings.Join(command.Permutations, " "),
+            command.Arguments,
+            command.Name,
+            command.Description,
+          ),
+        )
+      }
+    }
+
+  // Backspace removes a character.
+  case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyDEL:
+    if state.CommandCursorPosition > 0 {
+      state.Command = append(
+        state.Command[:state.CommandCursorPosition-1],
+        state.Command[state.CommandCursorPosition:]...,
+      )
+      state.CommandCursorPosition -= 1
+    } else {
+      // Backspacing in an empty command box brings the user back to chat mode
+      state.Mode = "chat"
+      state.FuzzyPicker.Hide()
+    }
+
+  // Arrows right and left move the cursor
+  case (state.Mode == "writ" || state.Mode == "pick") && (ev.Key() == tcell.KeyLeft || ev.Key() == tcell.KeyCtrlH):
+    if state.CommandCursorPosition >= 1 {
+      state.CommandCursorPosition -= 1
+    }
+  case (state.Mode == "writ" || state.Mode == "pick") && (ev.Key() == tcell.KeyRight || ev.Key() == tcell.KeyCtrlL):
+    if state.CommandCursorPosition < len(state.Command) {
+      state.CommandCursorPosition += 1
+    }
+
+  // Ctrl+w deletes a word.
+  case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyCtrlW:
+    lastSpaceIndex := 0
+    for index := state.CommandCursorPosition - 1; index >= 0; index-- {
+      if state.Command[index] == ' ' {
+        lastSpaceIndex = index
+        break
+      }
+    }
+
+    state.Command = append(state.Command[:lastSpaceIndex], state.Command[state.CommandCursorPosition:]...)
+    state.CommandCursorPosition = lastSpaceIndex
+
+  // Ctrl+A / Ctrl+E go to the start and end of editing
+  case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyCtrlA:
+    state.CommandCursorPosition = 0
+  case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyCtrlE:
+    state.CommandCursorPosition = len(state.Command)
+  }
+}
+
 func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.Screen, quit chan struct{}) {
 	for {
 		ev := screen.PollEvent()
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
-			log.Printf("Keypress: %+v", ev.Name())
-			switch {
-			case ev.Key() == tcell.KeyCtrlC:
-				log.Println("CLOSE QUIT 1")
-				close(quit)
-				return
+      log.Printf("Keypress: %+v", ev.Name())
 
-			// Escape reverts back to chat mode.
-			case ev.Key() == tcell.KeyEscape:
-				state.Mode = "chat"
-        state.FuzzyPicker.Hide()
-
-			// 'p' moves to a channel picker, which is a mode for switching teams and channels
-			case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'p':
-				if state.Mode != "pick" {
-					state.Mode = "pick"
-          state.FuzzyPicker.Show(OnPickConnectionChannel)
-
-          var items []interface{}
-          stringItems := []string{}
-
-          // Accumulate all channels into `items`, and their respective labels into `stringLabels`
-          for _, connection := range state.Connections {
-            for _, channel := range connection.Channels() {
-              // Add string representation of item to `stringItems`
-              // Follows the pattern of "my-team #my-channel"
-              stringItems = append(stringItems, fmt.Sprintf(
-                "#%s %s",
-                channel.Name,
-                connection.Name(),
-              ))
-
-              // Add backing representation of item to `item`
-              items = append(items, FuzzyPickerConnectionChannelItem{
-                Channel:    channel.Name,
-                Connection: connection.Name(),
-              })
-            }
-          }
-
-          // Fuzzy sort the items
-          state.FuzzyPicker.Items = items
-          state.FuzzyPicker.StringItems = stringItems
-				} else {
-					state.Mode = "chat"
-          state.FuzzyPicker.Hide()
-				}
-				// 'e' moves to write mode. So does ':' and '/'
-			case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'w':
-				state.Mode = "writ"
-			case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == ':':
-				state.Mode = "writ"
-				state.Command = []rune{':'}
-				state.CommandCursorPosition = 1
-			case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == '/':
-				state.Mode = "writ"
-				state.Command = []rune{'/'}
-				state.CommandCursorPosition = 1
-
-			// CTRL + L redraws the screen.
-			case state.Mode == "chat" && ev.Key() == tcell.KeyCtrlL:
-				screen.Sync()
-
-				//
-				// MOVEMENT UP AND DOWN THROUGH MESSAGES
-				//
-			case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'j':
-				if state.SelectedMessageIndex > 0 {
-					state.SelectedMessageIndex -= 1
-					log.Printf("Selecting message %s", state.SelectedMessageIndex)
-				}
-			case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'k':
-				if state.SelectedMessageIndex < len(state.ActiveConnection().MessageHistory())-1 {
-					state.SelectedMessageIndex += 1
-					log.Printf("Selecting message %s", state.SelectedMessageIndex)
-				}
-
-			//
-			// MOVEMENT BETWEEN CONNECTIONS
-			//
-			case ev.Key() == tcell.KeyCtrlZ:
-				state.SetPrevActiveConnection()
-			case ev.Key() == tcell.KeyCtrlX:
-				state.SetNextActiveConnection()
-
-			//
-			// MOVEMENT BETWEEN ITEMS IN THE FUZZY PICKER
-			//
-			case state.FuzzyPicker.Visible && ev.Key() == tcell.KeyCtrlJ:
-				if state.fuzzyPickerSelectedItem > 0 {
-					state.fuzzyPickerSelectedItem -= 1
-          // If we select an item off the screen, show it on the screen by changing the bottommost
-          // item.
-          if state.fuzzyPickerSelectedItem < state.fuzzyPickerBottomDisplayedItem {
-            state.fuzzyPickerBottomDisplayedItem -= 1
-          }
-				}
-			case state.FuzzyPicker.Visible && ev.Key() == tcell.KeyCtrlK:
-        topDisplayedItem := state.fuzzyPickerBottomDisplayedItem + frontend.FuzzyPickerMaxSize - 1
-				if state.fuzzyPickerSelectedItem < len(state.FuzzyPicker.Items) - 1 {
-          state.fuzzyPickerSelectedItem += 1
-          // If we select an item off the screen, show it on the screen by changing the bottommost
-          // item.
-          if state.fuzzyPickerSelectedItem > topDisplayedItem {
-            state.fuzzyPickerBottomDisplayedItem += 1
-          }
-        }
-
-			//
-			// COMMAND BAR
-			//
-
-			case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyEnter:
-        if state.FuzzyPicker.Visible {
-          state.FuzzyPicker.OnSelected(state)
-        } else if state.Mode == "writ" {
-          err := OnCommandExecuted(state, quit)
-          if err != nil {
-            log.Fatal(err)
-          }
-        }
-
-				// Clear the command that was typed, and move back to chat mode. Also hide the fuzzy picker
-        // is its open. 
-				state.Command = []rune{}
-				state.CommandCursorPosition = 0
-				state.Mode = "chat"
-        state.FuzzyPicker.Hide()
-
-
-			//
-			// EDITING OPERATIONS
-			//
-
-			// As characters are typed, add to the message.
-			case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyRune:
-				state.Command = append(
-					append(state.Command[:state.CommandCursorPosition], ev.Rune()),
-					state.Command[state.CommandCursorPosition:]...,
-				)
-				state.CommandCursorPosition += 1
-
-        // Also, take care of autocomplete of slash commands
-        // As the user types, show them above the command bar in a fuzzy picker.
-        if !state.FuzzyPicker.Visible && state.Command[0] == '/' {
-          // When the user presses enter, run the slash command the user typed.
-          state.FuzzyPicker.Show(func(state *State) {
-            err := OnCommandExecuted(state, quit)
-            if err != nil {
-              log.Fatal(err)
-            }
-          })
-
-          // Assemble add the items to the fuzzy sorter.
-          for _, command := range commands {
-            state.FuzzyPicker.Items = append(state.FuzzyPicker.Items, command)
-            state.FuzzyPicker.StringItems = append(
-              state.FuzzyPicker.StringItems,
-              fmt.Sprintf(
-                "%s %s\t%s - %s", // ie: "/quit (/q)        Quit - quits slime"
-                strings.Join(command.Permutations, " "),
-                command.Arguments,
-                command.Name,
-                command.Description,
-              ),
-            )
-          }
-        }
-
-			// Backspace removes a character.
-			case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyDEL:
-				if state.CommandCursorPosition > 0 {
-					state.Command = append(
-						state.Command[:state.CommandCursorPosition-1],
-						state.Command[state.CommandCursorPosition:]...,
-					)
-					state.CommandCursorPosition -= 1
-        } else {
-          // Backspacing in an empty command box brings the user back to chat mode
-          state.Mode = "chat"
-          state.FuzzyPicker.Hide()
-        }
-
-			// Arrows right and left move the cursor
-			case (state.Mode == "writ" || state.Mode == "pick") && (ev.Key() == tcell.KeyLeft || ev.Key() == tcell.KeyCtrlH):
-				if state.CommandCursorPosition >= 1 {
-					state.CommandCursorPosition -= 1
-				}
-			case (state.Mode == "writ" || state.Mode == "pick") && (ev.Key() == tcell.KeyRight || ev.Key() == tcell.KeyCtrlL):
-				if state.CommandCursorPosition < len(state.Command) {
-					state.CommandCursorPosition += 1
-				}
-
-			// Ctrl+w deletes a word.
-			case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyCtrlW:
-				lastSpaceIndex := 0
-				for index := state.CommandCursorPosition - 1; index >= 0; index-- {
-					if state.Command[index] == ' ' {
-						lastSpaceIndex = index
-						break
-					}
-				}
-
-				state.Command = append(state.Command[:lastSpaceIndex], state.Command[state.CommandCursorPosition:]...)
-				state.CommandCursorPosition = lastSpaceIndex
-
-			// Ctrl+A / Ctrl+E go to the start and end of editing
-			case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyCtrlA:
-				state.CommandCursorPosition = 0
-			case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyCtrlE:
-				state.CommandCursorPosition = len(state.Command)
-			}
+      // CTRL + L redraws the screen.
+      if state.Mode == "chat" && ev.Key() == tcell.KeyCtrlL {
+        screen.Sync()
+      } else {
+        HandleKeyboardEvent(ev, state, quit)
+      }
 		case *tcell.EventResize:
 			screen.Sync()
 		}

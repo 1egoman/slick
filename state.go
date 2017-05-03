@@ -1,7 +1,9 @@
 package main
 
 import (
-	"github.com/1egoman/slime/gateway"
+	"os"
+	"github.com/1egoman/slime/gateway"  // The thing to interface with slack
+	"github.com/1egoman/slime/gateway/slack"
 )
 
 // This struct contains the main application state. I have fluxy intentions.
@@ -23,6 +25,37 @@ type State struct {
 	FuzzyPicker FuzzySorter
 	fuzzyPickerSelectedItem int
 	fuzzyPickerBottomDisplayedItem int
+}
+
+func NewInitialState() *State {
+	return NewInitialStateMode("chat")
+}
+
+func NewInitialStateMode(mode string) *State {
+	return &State{
+		// The mode the client is in
+		Mode: mode,
+
+		// The command the user is typing
+		Command:               []rune{},
+		CommandCursorPosition: 0,
+
+		// Connection to the server
+		Connections: []gateway.Connection{
+			gatewaySlack.New(os.Getenv("SLACK_TOKEN_TWO")), // Uncommonspace
+			gatewaySlack.New(os.Getenv("SLACK_TOKEN_ONE")), // Gaus Family
+		},
+
+		// Which connection in the connections object is active
+		activeConnection: 0,
+		connectionSynced: false,
+
+		// Interacting with messages
+		SelectedMessageIndex: 0,
+
+		// Fuzzy picker data
+		FuzzyPicker:       FuzzySorter{},
+	}
 }
 
 func (s *State) ActiveConnection() gateway.Connection {

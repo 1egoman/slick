@@ -5,8 +5,6 @@ import (
 	"os"
 
 	"github.com/1egoman/slime/frontend" // The thing to draw to the screen
-	"github.com/1egoman/slime/gateway"  // The thing to interface with slack
-	"github.com/1egoman/slime/gateway/slack"
 	"github.com/gdamore/tcell"
 )
 
@@ -21,32 +19,7 @@ func main() {
 	log.SetFlags(log.Lshortfile)
 	log.Println("Starting Slime...")
 
-	state := &State{
-		// The mode the client is in
-		Mode: "chat",
-
-		// The command the user is typing
-		Command:               []rune{},
-		CommandCursorPosition: 0,
-
-		// Connection to the server
-		Connections: []gateway.Connection{
-			gatewaySlack.New(os.Getenv("SLACK_TOKEN_TWO")), // Uncommonspace
-			gatewaySlack.New(os.Getenv("SLACK_TOKEN_ONE")), // Gaus Family
-		},
-
-		// Which connection in the connections object is active
-		activeConnection: 0,
-		connectionSynced: false,
-
-		// Interacting with messages
-		SelectedMessageIndex: 0,
-
-		// Fuzzy picker data
-		FuzzyPicker:       FuzzySorter{},
-		fuzzyPickerSelectedItem: 0,
-		fuzzyPickerBottomDisplayedItem: 0,
-	}
+	state := NewInitialState()
 
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 	s, _ := tcell.NewScreen()

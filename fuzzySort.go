@@ -14,7 +14,8 @@ type FuzzySorter struct {
 	Needle      string
   OnSelected  func(*State)
 
-  ShowItemsStartingAt int
+  SelectedItem int
+  BottomItem int
 }
 
 func (p FuzzySorter) Len() int {
@@ -36,7 +37,8 @@ func (p FuzzySorter) Swap(i, j int) {
 func (p *FuzzySorter) Show(callbackOnSelected func(*State)) {
   p.Visible = true
   p.OnSelected = callbackOnSelected
-  p.ShowItemsStartingAt = 0
+  p.SelectedItem = 0
+  p.BottomItem = 0
 }
 
 // Hide the fuzzy picker and reset to initial state
