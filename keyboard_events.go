@@ -139,6 +139,18 @@ var commands = []FuzzyPickerSlashCommandItem{
   },
 }
 
+// When the user presses a key, send a message telling slack that the user is typing.
+func sendTypingIndicator(state *State) {
+  if state.ActiveConnection().SelectedChannel() != nil {
+    state.ActiveConnection().Outgoing() <- gateway.Event{
+      Type: "typing",
+      Data: map[string]interface{}{
+        "channel": state.ActiveConnection().SelectedChannel().Id,
+      },
+    }
+  }
+}
+
 // When a user picks a connection / channel in the fuzzy picker
 func OnPickConnectionChannel(state *State) {
   // Assert that the fuzzy picker that's active is of the right type
@@ -222,6 +234,7 @@ func OnCommandExecuted(state *State, quit chan struct{}) error {
   return nil
 }
 
+// Break out function to handle only keyboard events. Called by `keyboardEvents`.
 func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) {
   switch {
   case ev.Key() == tcell.KeyCtrlC:
@@ -360,6 +373,9 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) {
     )
     state.CommandCursorPosition += 1
 
+    // Send a message on the outgoing channel that the user is typing.
+    sendTypingIndicator(state)
+
     // Also, take care of autocomplete of slash commands
     // As the user types, show them above the command bar in a fuzzy picker.
     if !state.FuzzyPicker.Visible && state.Command[0] == '/' {
@@ -395,6 +411,8 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) {
         state.Command[state.CommandCursorPosition:]...,
       )
       state.CommandCursorPosition -= 1
+      // Send a message on the outgoing channel that the user is typing.
+      sendTypingIndicator(state)
     } else {
       // Backspacing in an empty command box brings the user back to chat mode
       state.Mode = "chat"
