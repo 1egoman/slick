@@ -2,11 +2,11 @@ package gatewaySlack
 
 import (
 	"log"
-  "strconv"
+	"strconv"
 
-	"net/http"
 	"encoding/json"
 	"io/ioutil"
+	"net/http"
 
 	"github.com/1egoman/slime/gateway"
 	"golang.org/x/net/websocket"
@@ -59,12 +59,12 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 	body, _ := ioutil.ReadAll(resp.Body)
 	var slackChannelBuffer struct {
 		Channels []struct {
-			Id        string `json:"id"`
-			Name      string `json:"name"`
-			CreatorId string `json:"creator"`
-			Created   int    `json:"created"`
-      IsMember  bool   `json:"is_member"`
-      IsArchived  bool   `json:"is_archived"`
+			Id         string `json:"id"`
+			Name       string `json:"name"`
+			CreatorId  string `json:"creator"`
+			Created    int    `json:"created"`
+			IsMember   bool   `json:"is_member"`
+			IsArchived bool   `json:"is_archived"`
 		} `json:"channels"`
 	}
 	json.Unmarshal(body, &slackChannelBuffer)
@@ -78,12 +78,12 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 			return nil, err
 		}
 		channelBuffer = append(channelBuffer, gateway.Channel{
-			Id:      channel.Id,
-			Name:    channel.Name,
-			Creator: creator,
-			Created: channel.Created,
-      IsMember: channel.IsMember,
-      IsArchived: channel.IsArchived,
+			Id:         channel.Id,
+			Name:       channel.Name,
+			Creator:    creator,
+			Created:    channel.Created,
+			IsMember:   channel.IsMember,
+			IsArchived: channel.IsArchived,
 		})
 	}
 
@@ -116,11 +116,21 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel) ([]gatew
 				Name  string   `json:"name"`
 				Users []string `json:"users"`
 			} `json:"reactions"`
+			File struct {
+				Name       string `json:"name"`
+				Filetype   string `json:"pretty_type"`
+				User       string `json:"user"`
+				PrivateUrl string `json:"url_private"`
+				Permalink  string `json:"permalink"`
+				Reactions  []struct {
+					Name  string   `json:"name"`
+					Users []string `json:"users"`
+				} `json:"reactions"`
+			} `json:"file,omitempty"`
 		} `json:"messages"`
 		hasMore bool `json:"has_more"`
 	}
 	if err = json.Unmarshal(body, &slackMessageBuffer); err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 
@@ -145,7 +155,11 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel) ([]gatew
 
 		// Convert the reactions fetched into reaction objects
 		reactions := []gateway.Reaction{}
-		for _, reaction := range msg.Reactions {
+		reactionsLocation := msg.Reactions
+		if len(msg.File.Reactions) > 0 {
+			reactionsLocation = msg.File.Reactions
+		}
+		for _, reaction := range reactionsLocation {
 			reactionUsers := []*gateway.User{}
 			// reaction.Users is an array of string user ids. Convert each into user objects.
 			for _, reactionUserId := range reaction.Users {
@@ -165,15 +179,39 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel) ([]gatew
 			reactions = append(reactions, gateway.Reaction{Name: reaction.Name, Users: reactionUsers})
 		}
 
-    // Convert timestamp to float64
-    // I would unmarshal directly into float64, but that doesn't work since slack encodes their
-    // timestamps as strings :/
-    var timestamp float64
-    timestamp, err = strconv.ParseFloat(msg.Ts, 64)
-    if err != nil {
-      log.Fatal(err)
-      return nil, err
-    }
+		var file *gateway.File
+		if len(msg.File.Name) > 0 {
+			// Given a user id, get a reference to the user.
+			var fileUser *gateway.User
+			if cachedUsers[msg.File.User] != nil {
+				fileUser = cachedUsers[msg.File.User]
+			} else {
+				fileUser, err = c.UserById(msg.File.User)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			// Create the file struct representation.
+			file = &gateway.File{
+				Name:       msg.File.Name,
+				Filetype:   msg.File.Filetype,
+				User:       fileUser,
+				PrivateUrl: msg.File.PrivateUrl,
+				Permalink:  msg.File.Permalink,
+			}
+		} else {
+			file = nil
+		}
+
+		// Convert timestamp to float64
+		// I would unmarshal directly into float64, but that doesn't work since slack encodes their
+		// timestamps as strings :/
+		var timestamp float64
+		timestamp, err = strconv.ParseFloat(msg.Ts, 64)
+		if err != nil {
+			return nil, err
+		}
 
 		messageBuffer = append(messageBuffer, gateway.Message{
 			Sender:    sender,
@@ -181,6 +219,7 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel) ([]gatew
 			Reactions: reactions,
 			Timestamp: int(timestamp), // this value is in seconds!
 			Hash:      msg.Ts,
+			File:      file,
 		})
 	}
 

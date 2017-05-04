@@ -2,8 +2,9 @@ package frontend
 
 import (
 	// "log"
+	"fmt"
 	"strings"
-  "time"
+	"time"
 
 	"github.com/gdamore/tcell"
 	"github.com/kyokomi/emoji" // convert :smile: to unicode
@@ -33,6 +34,63 @@ func renderReactions(term *TerminalDisplay, reactions []gateway.Reaction, row in
 
 		// Offset the next reaction.
 		reactionOffset += len(reactionEmoji) + 1
+	}
+}
+
+const abbrevitionThreshhold = 30
+
+func formatAbreviatedLink(link string) string {
+	if strings.HasPrefix(link, "https://") {
+		link = link[8:]
+	}
+	if strings.HasPrefix(link, "http://") {
+		link = link[7:]
+	}
+	if len(link) < abbrevitionThreshhold {
+		return link
+	}
+
+	return fmt.Sprintf(
+		"%s...%s",
+		link[:abbrevitionThreshhold/2],
+		link[len(link)-(abbrevitionThreshhold/2):],
+	)
+}
+
+// Given a pointer to a file and a row to render it on, render it.
+func renderFile(term *TerminalDisplay, file *gateway.File, isSelected bool, row int, leftOffset int) {
+	if file != nil {
+		var messageStyle tcell.Style
+		var messageActions []string
+		if isSelected {
+			messageStyle = term.Styles["MessageSelected"]
+			messageActions = []string{"Open", "Raw"}
+		} else {
+			messageStyle = term.Styles["MessageFile"]
+		}
+
+		fileRow := fmt.Sprintf(
+			"| %s: %s",
+			file.Name,
+			formatAbreviatedLink(file.Permalink),
+		)
+		term.WriteTextStyle(leftOffset, row, messageStyle, fileRow)
+
+		// Render actions that can be done with the message
+		// Uppercase letters in the actions are hgihlighted in a different color (they are the key to
+		// press to do the thing)
+		messageActionOffset := leftOffset + len(fileRow) + 1 // Add a space netween file and actions
+		for _, message := range messageActions {
+			for _, char := range message {
+				if char >= 'A' && char <= 'Z' {
+					term.WriteTextStyle(messageActionOffset, row, term.Styles["MessageActionHighlight"], string(char))
+				} else {
+					term.WriteTextStyle(messageActionOffset, row, term.Styles["MessageAction"], string(char))
+				}
+				messageActionOffset += 1 // Add one space between actions
+			}
+			messageActionOffset += 1 // Add one space between actions
+		}
 	}
 }
 
@@ -72,8 +130,8 @@ func partitionIntoRows(total string, width int) []string {
 
 // Draw message history in the channel
 func (term *TerminalDisplay) DrawMessages(
-  messages []gateway.Message, // A list of messages to render
-  selectedMessageIndex int, // Index of selected message (-1 for no selected message)
+	messages []gateway.Message, // A list of messages to render
+	selectedMessageIndex int, // Index of selected message (-1 for no selected message)
 ) {
 	width, height := term.screen.Size()
 
@@ -96,22 +154,28 @@ func (term *TerminalDisplay) DrawMessages(
 		// Get sender information
 		sender, senderStyle := getSenderInfo(msg)
 
-    timestamp := time.Unix(int64(msg.Timestamp), 0).Format("15:04:05")
-    prefixWidth := len(timestamp) + 1 + len(sender) + 1
+		timestamp := time.Unix(int64(msg.Timestamp), 0).Format("15:04:05")
+		prefixWidth := len(timestamp) + 1 + len(sender) + 1
 
-    // Is the message selected?
-    var messageStyle tcell.Style
-    if index == selectedMessageIndex {
-      messageStyle = term.Styles["MessageSelected"]
-    } else {
-      messageStyle = tcell.StyleDefault
-    }
+		// Is the message selected?
+		var messageStyle tcell.Style
+		if index == selectedMessageIndex {
+			messageStyle = term.Styles["MessageSelected"]
+		} else {
+			messageStyle = tcell.StyleDefault
+		}
 
 		// Calculate how many rows the message requires to render.
 		messageColumnWidth := width - prefixWidth
 		messageRows := (len(makePrintWorthy(msg.Text)) / messageColumnWidth) + 1
-		if len(msg.Reactions) > 0 {
+		accessoryRow := row         // The row to start rendering "message accessories" on
+		if len(msg.Reactions) > 0 { // Reactions need one row
 			messageRows += 1
+			accessoryRow -= 1
+		}
+		if msg.File != nil { // Files need one row
+			messageRows += 1
+			accessoryRow -= 1
 		}
 
 		// Render the sender and the message
@@ -122,15 +186,26 @@ func (term *TerminalDisplay) DrawMessages(
 			if rowDelta == 0 {
 				// Draw the sender on the first row of a message
 				term.WriteText(0, row-messageRows+1, timestamp)
-				term.WriteTextStyle(len(timestamp) + 1, row-messageRows+1, senderStyle, sender)
+				term.WriteTextStyle(len(timestamp)+1, row-messageRows+1, senderStyle, sender)
 
-				// Render reactions after message
+				// Render reactions and file attachment after message
+				if msg.File != nil {
+					accessoryRow += 1
+					renderFile(
+						term,
+						msg.File,                      // File to render
+						index == selectedMessageIndex, // Is the current message selected?
+						accessoryRow,                  // Which row should the file be rendered on?
+						prefixWidth,                   // How far from the left should the first reaction be offset?
+					)
+				}
 				if len(msg.Reactions) > 0 {
+					accessoryRow += 1
 					renderReactions(
 						term,
 						msg.Reactions, // Reactions to render
-						row,           // Which row should the reactions be rendered on?
-						prefixWidth, // How far from the left should the first reaction be offset?
+						accessoryRow,  // Which row should the reactions be rendered on?
+						prefixWidth,   // How far from the left should the first reaction be offset?
 					)
 				}
 			}

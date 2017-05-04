@@ -45,8 +45,12 @@ func NewTerminalDisplay(screen tcell.Screen) *TerminalDisplay {
 				Foreground(tcell.ColorWhite),
 			"StatusBarConnection": tcell.StyleDefault,
 
-			"MessageReaction":     tcell.StyleDefault,
-			"MessageSelected":     tcell.StyleDefault.
+			"MessageReaction": tcell.StyleDefault,
+			"MessageFile":     tcell.StyleDefault,
+			"MessageActionHighlight": tcell.StyleDefault.
+				Foreground(tcell.ColorRed),
+			"MessageAction": tcell.StyleDefault,
+			"MessageSelected": tcell.StyleDefault.
 				Background(tcell.ColorTeal),
 
 			"FuzzyPickerTopBorder": tcell.StyleDefault.

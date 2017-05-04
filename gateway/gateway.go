@@ -95,6 +95,15 @@ type Reaction struct {
 	Users []*User `json:"users"`
 }
 
+// A file is an optional key on a message.
+type File struct {
+	Name       string `json:"name"`
+	Filetype   string `json:"type"`
+	User       *User  `json:"user"`
+	PrivateUrl string `json:"url_private"`
+	Permalink  string `json:"permalink"`
+}
+
 // A Message is a blob of text or media sent by a User within a Channel.
 type Message struct {
 	Sender    *User      `json:"sender"`
@@ -102,4 +111,5 @@ type Message struct {
 	Reactions []Reaction `json:"reactions"`
 	Hash      string     `json:"hash"`
 	Timestamp int        `json:"timestamp"` // This value is in seconds!
+	File      *File      `json:"file,omitempty"`
 }
