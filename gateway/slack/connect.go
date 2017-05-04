@@ -43,6 +43,7 @@ func (c *SlackConnection) Connect() error {
 		var msgRaw = make([]byte, 512)
 		var msg map[string]interface{}
 		var n int
+		var messageBuffer []byte
 
 		for {
 			// Listen for messages, and when some are received, write them to a channel.
@@ -50,13 +51,22 @@ func (c *SlackConnection) Connect() error {
 				log.Fatal(err)
 			}
 
-			// Decode into a struct so that we can check message type later
-			json.Unmarshal(msgRaw[:n], &msg)
-			log.Printf("INCOMING %s: %s", c.Team().Name, msgRaw[:n])
-			incoming <- gateway.Event{
-				Direction: "incoming",
-				Type:      msg["type"].(string),
-				Data:      msg,
+			// Add the latest packet to the message buffer
+			messageBuffer = append(messageBuffer, msgRaw[:n]...)
+			log.Printf("INCOMING PACKET %s: %s", c.Team().Name, messageBuffer)
+
+			// Decode message buffer into a struct so that we can check message type later
+			err = json.Unmarshal(messageBuffer, &msg)
+			if err == nil {
+				// Clear the message buffer after unpacking
+				messageBuffer = []byte{}
+
+				log.Printf("INCOMING %s: %s", c.Team().Name, msgRaw[:n])
+				incoming <- gateway.Event{
+					Direction: "incoming",
+					Type:      msg["type"].(string),
+					Data:      msg,
+				}
 			}
 		}
 	}(c.incoming)
