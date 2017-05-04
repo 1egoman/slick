@@ -5,10 +5,13 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/1egoman/slime/gateway"
 	"golang.org/x/net/websocket"
 )
+
+const pingFrequency = 30 // In seconds
 
 // Connect to the slack persistent socket.
 func (c *SlackConnection) Connect() error {
@@ -19,10 +22,10 @@ func (c *SlackConnection) Connect() error {
 
 	// Request a connection url with the token in the struct
 	var err error
-  err = c.requestConnectionUrl()
-  if err != nil {
-    return err
-  }
+	err = c.requestConnectionUrl()
+	if err != nil {
+		return err
+	}
 	log.Printf("Got slack connection url for team %s: %s", c.Team().Name, c.url)
 
 	// FIXME: what does this mean?
@@ -85,6 +88,20 @@ func (c *SlackConnection) Connect() error {
 		}
 	}(c.outgoing)
 
+	// Periodically ping slack
+	// This is to ensure slack doesn't think we disconnected.
+	go func(outgoing chan gateway.Event) {
+		pingCount := 0
+		for {
+			time.Sleep(pingFrequency * time.Second)
+			outgoing <- gateway.Event{
+				Type: "ping",
+				Data: map[string]interface{}{"count": pingCount},
+			}
+			pingCount++
+		}
+	}(c.outgoing)
+
 	return nil
 }
 
@@ -116,5 +133,5 @@ func (c *SlackConnection) requestConnectionUrl() error {
 	c.self = connectionBuffer.Self
 	c.team = connectionBuffer.Team
 
-  return nil
+	return nil
 }
