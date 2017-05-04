@@ -95,11 +95,22 @@ type Reaction struct {
 	Users []*User `json:"users"`
 }
 
+// An Attachment is an optional subcollection on a message.
+type Attachment struct {
+  Id int `json:"id"`
+  Text string `json:"text"`
+  Fallback string `json:"fallback"`
+  Title string `json:"title"`
+  TitleLink string `json:"title_link"`
+  Color string `json:"color"`
+}
+
 // A Message is a blob of text or media sent by a User within a Channel.
 type Message struct {
 	Sender    *User      `json:"sender"`
 	Text      string     `json:"text"`
 	Reactions []Reaction `json:"reactions"`
+	Attachments []Attachment `json:"attachments"`
 	Hash      string     `json:"hash"`
 	Timestamp int        `json:"timestamp"` // This value is in seconds!
 }

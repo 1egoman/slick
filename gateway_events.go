@@ -97,8 +97,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 					log.Printf("WARN: Tried to append a message without a text element in the body: %+v", event)
 				}
 			} else {
-				// 1
-				log.Printf("Channel value", channel)
+				log.Printf("Message received on channel %+v (channel inactive, so ignoring)", channel)
 			}
 
 		case "":

@@ -15,7 +15,7 @@ import (
 func renderReactions(term *TerminalDisplay, reactions []gateway.Reaction, row int, leftOffset int) {
 	reactionOffset := leftOffset
 
-	// Add a prefix to the reactino list
+	// Add a prefix to the reaction list
 	term.WriteText(reactionOffset, row, "| ")
 	reactionOffset += 2
 
@@ -34,6 +34,10 @@ func renderReactions(term *TerminalDisplay, reactions []gateway.Reaction, row in
 		// Offset the next reaction.
 		reactionOffset += len(reactionEmoji) + 1
 	}
+}
+
+func renderAttachments(term *TerminalDisplay, attachments []gateway.Attachment, row int, leftOffset int) {
+  // TODO: write me?
 }
 
 // Given a message, return the sender's name and the color to make the sender's name
@@ -113,6 +117,7 @@ func (term *TerminalDisplay) DrawMessages(
 		if len(msg.Reactions) > 0 {
 			messageRows += 1
 		}
+    messageRows += len(msg.Attachments)
 
 		// Render the sender and the message
 		for rowDelta, messageRow := range partitionIntoRows(
