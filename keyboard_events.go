@@ -8,6 +8,7 @@ import (
 	"github.com/1egoman/slime/frontend" // The thing to draw to the screen
 	"github.com/1egoman/slime/gateway"  // The thing to interface with slack
 	"github.com/gdamore/tcell"
+  "github.com/skratchdot/open-golang/open"
 )
 
 type CommandType int
@@ -148,6 +149,35 @@ func sendTypingIndicator(state *State) {
         "channel": state.ActiveConnection().SelectedChannel().Id,
       },
     }
+  }
+}
+
+// WHen a user presses a key when they are selecting with a message, perform an action.
+func OnMessageInteraction(state *State, key rune) {
+  // Is a message selected?
+  if state.SelectedMessageIndex > 0 {
+    selectedMessageIndex := len(state.ActiveConnection().MessageHistory()) - 1 - state.SelectedMessageIndex
+    selectedMessage := state.ActiveConnection().MessageHistory()[selectedMessageIndex]
+    
+    switch key {
+    case 'o':
+      // Open the private image url in the browser
+      if selectedMessage.File != nil {
+        open.Run(selectedMessage.File.Permalink)
+      } else {
+        log.Println("o pressed, but currently selected message has no file to Open")
+      }
+    case 'c':
+      // Open the private image url in the browser
+      if selectedMessage.File != nil {
+        // FIXME: actually write to the clipboard
+        log.Println("FIXME: will eventually copy to clipboard:", selectedMessage.File.Permalink)
+      } else {
+        log.Println("o pressed, but currently selected message has no file to Open")
+      }
+    }
+  } else {
+    log.Println("o pressed, but no message selected")
   }
 }
 
@@ -295,7 +325,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) {
     state.CommandCursorPosition = 1
 
     //
-    // MOVEMENT UP AND DOWN THROUGH MESSAGES
+    // MOVEMENT UP AND DOWN THROUGH MESSAGES AND ACTIONS ON THE MESSAGES
     //
   case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'j':
     if state.SelectedMessageIndex > 0 {
@@ -307,6 +337,9 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) {
       state.SelectedMessageIndex += 1
       log.Printf("Selecting message %s", state.SelectedMessageIndex)
     }
+  case state.Mode == "chat" && ev.Key() == tcell.KeyRune && (ev.Rune() == 'o' || ev.Rune() == 'c'):
+    // When a user presses a key to interact with a message, handle it.
+    OnMessageInteraction(state, ev.Rune())
 
   //
   // MOVEMENT BETWEEN CONNECTIONS

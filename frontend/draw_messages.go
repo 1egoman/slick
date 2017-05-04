@@ -38,7 +38,6 @@ func renderReactions(term *TerminalDisplay, reactions []gateway.Reaction, row in
 }
 
 const abbrevitionThreshhold = 30
-
 func formatAbreviatedLink(link string) string {
 	if strings.HasPrefix(link, "https://") {
 		link = link[8:]
@@ -64,7 +63,7 @@ func renderFile(term *TerminalDisplay, file *gateway.File, isSelected bool, row 
 		var messageActions []string
 		if isSelected {
 			messageStyle = term.Styles["MessageSelected"]
-			messageActions = []string{"Open", "Raw"}
+			messageActions = []string{"Open", "Copy"}
 		} else {
 			messageStyle = term.Styles["MessageFile"]
 		}
@@ -76,22 +75,27 @@ func renderFile(term *TerminalDisplay, file *gateway.File, isSelected bool, row 
 		)
 		term.WriteTextStyle(leftOffset, row, messageStyle, fileRow)
 
-		// Render actions that can be done with the message
-		// Uppercase letters in the actions are hgihlighted in a different color (they are the key to
-		// press to do the thing)
-		messageActionOffset := leftOffset + len(fileRow) + 1 // Add a space netween file and actions
-		for _, message := range messageActions {
-			for _, char := range message {
-				if char >= 'A' && char <= 'Z' {
-					term.WriteTextStyle(messageActionOffset, row, term.Styles["MessageActionHighlight"], string(char))
-				} else {
-					term.WriteTextStyle(messageActionOffset, row, term.Styles["MessageAction"], string(char))
-				}
-				messageActionOffset += 1 // Add one space between actions
-			}
-			messageActionOffset += 1 // Add one space between actions
-		}
+    // Render actions after the file
+    messageActionOffset := leftOffset + len(fileRow) + 1 // Add a space netween file and actions
+    renderActions(term, messageActions, messageActionOffset, row)
 	}
+}
+
+// Render actions that can be done with the message
+// Uppercase letters in the actions are highlighted in a different color (they are the key to
+// press to do the thing)
+func renderActions(term *TerminalDisplay, actions []string, leftOffset int, row int) {
+  for _, action := range actions {
+    for _, char := range action {
+      if char >= 'A' && char <= 'Z' {
+        term.WriteTextStyle(leftOffset, row, term.Styles["MessageActionHighlight"], string(char))
+      } else {
+        term.WriteTextStyle(leftOffset, row, term.Styles["MessageAction"], string(char))
+      }
+      leftOffset += 1 // Add one space between actions
+    }
+    leftOffset += 1 // Add one space between actions
+  }
 }
 
 // Given a message, return the sender's name and the color to make the sender's name
