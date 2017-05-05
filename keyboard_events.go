@@ -329,9 +329,10 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) {
 		state.Command = []rune{'/'}
 		state.CommandCursorPosition = 1
 
-		//
-		// MOVEMENT UP AND DOWN THROUGH MESSAGES AND ACTIONS ON THE MESSAGES
-		//
+
+	//
+	// MOVEMENT UP AND DOWN THROUGH MESSAGES AND ACTIONS ON THE MESSAGES
+	//
 	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'j': // Down a message
 		if state.SelectedMessageIndex > 0 {
 			state.SelectedMessageIndex -= 1
