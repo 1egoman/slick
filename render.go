@@ -26,7 +26,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 	state.RenderedMessageNumber = term.DrawMessages(
 		state.ActiveConnection().MessageHistory(),                                   // List of messages
 		len(state.ActiveConnection().MessageHistory())-1-state.SelectedMessageIndex, // Is a message selected?
-		state.BottomDisplayedItem, // Bottommost item
+		state.BottomDisplayedItem,                                                   // Bottommost item
 	)
 
 	term.DrawStatusBar(

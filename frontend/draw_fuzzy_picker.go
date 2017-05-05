@@ -1,21 +1,21 @@
 package frontend
 
 import (
-  // "log"
+	// "log"
 	"github.com/gdamore/tcell"
 )
 
 // The amount of rows at max that can be in the fuzzy picker.
-const FuzzyPickerMaxSize = 10;
+const FuzzyPickerMaxSize = 10
 
 func (term *TerminalDisplay) DrawFuzzyPicker(items []string, selectedIndex int, bottomDisplayedItem int) {
 	width, height := term.screen.Size()
 
-  // If there's more than one page of items, only show one page's worth.
-  if len(items) > FuzzyPickerMaxSize {
-    items = items[bottomDisplayedItem:bottomDisplayedItem+FuzzyPickerMaxSize]
-  }
-  projectedSelectedIndex := selectedIndex - bottomDisplayedItem
+	// If there's more than one page of items, only show one page's worth.
+	if len(items) > FuzzyPickerMaxSize {
+		items = items[bottomDisplayedItem : bottomDisplayedItem+FuzzyPickerMaxSize]
+	}
+	projectedSelectedIndex := selectedIndex - bottomDisplayedItem
 	bottomPadding := 2                                 // pad for the status bar and command bar
 	startingRow := height - len(items) - bottomPadding // The top row of the fuzzy picker
 
@@ -24,10 +24,10 @@ func (term *TerminalDisplay) DrawFuzzyPicker(items []string, selectedIndex int, 
 		projectedSelectedIndex = len(items) - 1
 	}
 
-  // Above the top of the picker, draw a border.
-  for i := 0; i < width; i++ {
-    term.screen.SetCell(i, startingRow - 1, term.Styles["FuzzyPickerTopBorder"], ' ')
-  }
+	// Above the top of the picker, draw a border.
+	for i := 0; i < width; i++ {
+		term.screen.SetCell(i, startingRow-1, term.Styles["FuzzyPickerTopBorder"], ' ')
+	}
 
 	for ct, item := range items {
 		row := startingRow + (len(items) - 1) - ct
@@ -42,10 +42,9 @@ func (term *TerminalDisplay) DrawFuzzyPicker(items []string, selectedIndex int, 
 
 		// Add selected prefix for selected item
 		if ct == projectedSelectedIndex {
-      term.WriteTextStyle(0, row, term.Styles["FuzzyPickerActivePrefix"], ">")
-    }
-    // Draw item
-    term.WriteText(2, row, item)
+			term.WriteTextStyle(0, row, term.Styles["FuzzyPickerActivePrefix"], ">")
+		}
+		// Draw item
+		term.WriteText(2, row, item)
 	}
 }
-

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"os"
-	"github.com/1egoman/slime/gateway"  // The thing to interface with slack
+	"github.com/1egoman/slime/gateway" // The thing to interface with slack
 	"github.com/1egoman/slime/gateway/slack"
+	"os"
 )
 
 // This struct contains the main application state. I have fluxy intentions.
@@ -19,13 +19,13 @@ type State struct {
 	connectionSynced bool
 
 	// Interacting with messages
-	SelectedMessageIndex int
-	BottomDisplayedItem int
+	SelectedMessageIndex  int
+	BottomDisplayedItem   int
 	RenderedMessageNumber int
 
 	// Fuzzy picker
-	FuzzyPicker FuzzySorter
-	fuzzyPickerSelectedItem int
+	FuzzyPicker                    FuzzySorter
+	fuzzyPickerSelectedItem        int
 	fuzzyPickerBottomDisplayedItem int
 }
 
@@ -53,12 +53,12 @@ func NewInitialStateMode(mode string) *State {
 		connectionSynced: false,
 
 		// Interacting with messages
-		SelectedMessageIndex: 0,
-		BottomDisplayedItem: 0,
+		SelectedMessageIndex:  0,
+		BottomDisplayedItem:   0,
 		RenderedMessageNumber: -1, // A render loop hasn't run yet.
 
 		// Fuzzy picker data
-		FuzzyPicker:       FuzzySorter{},
+		FuzzyPicker: FuzzySorter{},
 	}
 }
 

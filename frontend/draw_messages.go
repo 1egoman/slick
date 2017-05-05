@@ -38,6 +38,7 @@ func renderReactions(term *TerminalDisplay, reactions []gateway.Reaction, row in
 }
 
 const abbrevitionThreshhold = 30
+
 func formatAbreviatedLink(link string) string {
 	if strings.HasPrefix(link, "https://") {
 		link = link[8:]
@@ -75,9 +76,9 @@ func renderFile(term *TerminalDisplay, file *gateway.File, isSelected bool, row 
 		)
 		term.WriteTextStyle(leftOffset, row, messageStyle, fileRow)
 
-    // Render actions after the file
-    messageActionOffset := leftOffset + len(fileRow) + 1 // Add a space netween file and actions
-    renderActions(term, messageActions, messageActionOffset, row)
+		// Render actions after the file
+		messageActionOffset := leftOffset + len(fileRow) + 1 // Add a space netween file and actions
+		renderActions(term, messageActions, messageActionOffset, row)
 	}
 }
 
@@ -85,17 +86,17 @@ func renderFile(term *TerminalDisplay, file *gateway.File, isSelected bool, row 
 // Uppercase letters in the actions are highlighted in a different color (they are the key to
 // press to do the thing)
 func renderActions(term *TerminalDisplay, actions []string, leftOffset int, row int) {
-  for _, action := range actions {
-    for _, char := range action {
-      if char >= 'A' && char <= 'Z' {
-        term.WriteTextStyle(leftOffset, row, term.Styles["MessageActionHighlight"], string(char))
-      } else {
-        term.WriteTextStyle(leftOffset, row, term.Styles["MessageAction"], string(char))
-      }
-      leftOffset += 1 // Add one space between actions
-    }
-    leftOffset += 1 // Add one space between actions
-  }
+	for _, action := range actions {
+		for _, char := range action {
+			if char >= 'A' && char <= 'Z' {
+				term.WriteTextStyle(leftOffset, row, term.Styles["MessageActionHighlight"], string(char))
+			} else {
+				term.WriteTextStyle(leftOffset, row, term.Styles["MessageAction"], string(char))
+			}
+			leftOffset += 1 // Add one space between actions
+		}
+		leftOffset += 1 // Add one space between actions
+	}
 }
 
 // Given a message, return the sender's name and the color to make the sender's name
@@ -136,7 +137,7 @@ func partitionIntoRows(total string, width int) []string {
 func (term *TerminalDisplay) DrawMessages(
 	messages []gateway.Message, // A list of messages to render
 	selectedMessageIndex int, // Index of selected message (-1 for no selected message)
-  bottomDisplayedItem int, // The bottommost message. If 0, bottommost message is most recent.
+	bottomDisplayedItem int, // The bottommost message. If 0, bottommost message is most recent.
 ) int { // Return how many messages were rendered.
 	width, height := term.screen.Size()
 
@@ -151,7 +152,7 @@ func (term *TerminalDisplay) DrawMessages(
 	}
 
 	// Loop from the bottom of the window to the top.
-  // Start at the `bottomDisplayedItem`th item and loop until no more items can be rendered.
+	// Start at the `bottomDisplayedItem`th item and loop until no more items can be rendered.
 	index := len(messages) - 1 - bottomDisplayedItem
 	row := height - bottomPadding - 1
 	for row >= 0 && index >= 0 {
@@ -230,6 +231,6 @@ func (term *TerminalDisplay) DrawMessages(
 		index -= 1
 	}
 
-  // Return how many messages were rendered to the screen
-  return (len(messages) - 1) - index
+	// Return how many messages were rendered to the screen
+	return (len(messages) - 1) - index
 }
