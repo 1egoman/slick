@@ -11,6 +11,10 @@ import (
   "github.com/skratchdot/open-golang/open"
 )
 
+// FIXME: This unit is in messages, it should be in rows. The problem is that 1 message isn't always
+// 1 row.
+const messageScrollPadding = 7;
+
 type CommandType int
 const (
   NATIVE CommandType = iota
@@ -327,15 +331,38 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) {
     //
     // MOVEMENT UP AND DOWN THROUGH MESSAGES AND ACTIONS ON THE MESSAGES
     //
-  case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'j':
+  case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'j': // Down a message
     if state.SelectedMessageIndex > 0 {
       state.SelectedMessageIndex -= 1
+      if state.BottomDisplayedItem > 0 && state.SelectedMessageIndex < state.BottomDisplayedItem + messageScrollPadding {
+        state.BottomDisplayedItem -= 1
+      }
       log.Printf("Selecting message %s", state.SelectedMessageIndex)
     }
-  case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'k':
+  case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'k': // Up a message
     if state.SelectedMessageIndex < len(state.ActiveConnection().MessageHistory())-1 {
       state.SelectedMessageIndex += 1
-      log.Printf("Selecting message %s", state.SelectedMessageIndex)
+      if state.SelectedMessageIndex >= state.RenderedMessageNumber - messageScrollPadding {
+        state.BottomDisplayedItem += 1
+      }
+      log.Printf("Selecting message %d, bottom index %d", state.SelectedMessageIndex, state.BottomDisplayedItem)
+    }
+  case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'G': // Select first message
+    state.SelectedMessageIndex = 0
+    state.BottomDisplayedItem = 0
+    log.Printf("Selecting first message")
+  case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'g': // Select last message loaded
+    state.SelectedMessageIndex = len(state.ActiveConnection().MessageHistory()) - 1
+    state.BottomDisplayedItem = state.SelectedMessageIndex - messageScrollPadding
+    log.Printf("Selecting first message")
+  case state.Mode == "chat" && ev.Key() == tcell.KeyCtrlU: // Up a message page
+    pageAmount := state.RenderedMessageNumber / 2
+    if state.SelectedMessageIndex < len(state.ActiveConnection().MessageHistory())-1 {
+      state.SelectedMessageIndex += pageAmount
+      if state.SelectedMessageIndex >= state.RenderedMessageNumber - messageScrollPadding {
+        state.BottomDisplayedItem += pageAmount
+      }
+      log.Printf("Selecting message %d, bottom index %d", state.SelectedMessageIndex, state.BottomDisplayedItem)
     }
   case state.Mode == "chat" && ev.Key() == tcell.KeyRune && (ev.Rune() == 'o' || ev.Rune() == 'c'):
     // When a user presses a key to interact with a message, handle it.

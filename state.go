@@ -20,6 +20,8 @@ type State struct {
 
 	// Interacting with messages
 	SelectedMessageIndex int
+	BottomDisplayedItem int
+	RenderedMessageNumber int
 
 	// Fuzzy picker
 	FuzzyPicker FuzzySorter
@@ -52,6 +54,8 @@ func NewInitialStateMode(mode string) *State {
 
 		// Interacting with messages
 		SelectedMessageIndex: 0,
+		BottomDisplayedItem: 0,
+		RenderedMessageNumber: -1, // A render loop hasn't run yet.
 
 		// Fuzzy picker data
 		FuzzyPicker:       FuzzySorter{},

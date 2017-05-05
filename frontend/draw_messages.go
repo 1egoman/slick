@@ -136,7 +136,8 @@ func partitionIntoRows(total string, width int) []string {
 func (term *TerminalDisplay) DrawMessages(
 	messages []gateway.Message, // A list of messages to render
 	selectedMessageIndex int, // Index of selected message (-1 for no selected message)
-) {
+  bottomDisplayedItem int, // The bottommost message. If 0, bottommost message is most recent.
+) int { // Return how many messages were rendered.
 	width, height := term.screen.Size()
 
 	for r := 0; r < height-bottomPadding; r++ {
@@ -150,7 +151,8 @@ func (term *TerminalDisplay) DrawMessages(
 	}
 
 	// Loop from the bottom of the window to the top.
-	index := len(messages) - 1
+  // Start at the `bottomDisplayedItem`th item and loop until no more items can be rendered.
+	index := len(messages) - 1 - bottomDisplayedItem
 	row := height - bottomPadding - 1
 	for row >= 0 && index >= 0 {
 		msg := messages[index]
@@ -227,4 +229,7 @@ func (term *TerminalDisplay) DrawMessages(
 		row -= messageRows
 		index -= 1
 	}
+
+  // Return how many messages were rendered to the screen
+  return (len(messages) - 1) - index
 }
