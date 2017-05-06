@@ -18,6 +18,7 @@ type Connection interface {
 	AppendMessageHistory(message Message)
 	ClearMessageHistory()
 	SendMessage(Message, *Channel) (*Message, error)
+	ParseMessage(map[string]interface{}, map[string]*User) (*Message, error)
 
 	// Fetch a slice of all channels that are available on this connection
 	Channels() []Channel

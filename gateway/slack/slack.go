@@ -110,26 +110,7 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel) ([]gatew
 		return nil, err
 	}
 	var slackMessageBuffer struct {
-		Messages []struct {
-			Ts        string `json:"ts"`
-			UserId    string `json:"user"`
-			Text      string `json:"text"`
-			Reactions []struct {
-				Name  string   `json:"name"`
-				Users []string `json:"users"`
-			} `json:"reactions"`
-			File struct {
-				Name       string `json:"name"`
-				Filetype   string `json:"pretty_type"`
-				User       string `json:"user"`
-				PrivateUrl string `json:"url_private"`
-				Permalink  string `json:"permalink"`
-				Reactions  []struct {
-					Name  string   `json:"name"`
-					Users []string `json:"users"`
-				} `json:"reactions"`
-			} `json:"file,omitempty"`
-		} `json:"messages"`
+		Messages []map[string]interface{} `json:"messages"`
 		hasMore bool `json:"has_more"`
 	}
 	if err = json.Unmarshal(body, &slackMessageBuffer); err != nil {
@@ -138,91 +119,15 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel) ([]gatew
 
 	// Convert to more generic message format
 	var messageBuffer []gateway.Message
-	var sender *gateway.User
 	cachedUsers := make(map[string]*gateway.User)
 	for i := len(slackMessageBuffer.Messages) - 1; i >= 0; i-- { // loop backwards to reverse the final slice
-		msg := slackMessageBuffer.Messages[i]
-
-		// Get the sender of the message
-		// Since we're likely to have a lot of the same users, cache them.
-		if cachedUsers[msg.UserId] != nil {
-			sender = cachedUsers[msg.UserId]
+		var message *gateway.Message
+		message, err = c.ParseMessage(slackMessageBuffer.Messages[i], cachedUsers)
+		if err == nil {
+			messageBuffer = append(messageBuffer, *message)
 		} else {
-			sender, err = c.UserById(msg.UserId)
-			cachedUsers[msg.UserId] = sender
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		// Convert the reactions fetched into reaction objects
-		reactions := []gateway.Reaction{}
-		reactionsLocation := msg.Reactions
-		if len(msg.File.Reactions) > 0 {
-			reactionsLocation = msg.File.Reactions
-		}
-		for _, reaction := range reactionsLocation {
-			reactionUsers := []*gateway.User{}
-			// reaction.Users is an array of string user ids. Convert each into user objects.
-			for _, reactionUserId := range reaction.Users {
-				if cachedUsers[reactionUserId] != nil {
-					reactionUsers = append(reactionUsers, cachedUsers[reactionUserId])
-				} else {
-					var reactionUser *gateway.User
-					reactionUser, err = c.UserById(reactionUserId)
-					if err != nil {
-						return nil, err
-					}
-					reactionUsers = append(reactionUsers, reactionUser)
-				}
-			}
-
-			// Add the final reaction to the collection
-			reactions = append(reactions, gateway.Reaction{Name: reaction.Name, Users: reactionUsers})
-		}
-
-		var file *gateway.File
-		if len(msg.File.Name) > 0 {
-			// Given a user id, get a reference to the user.
-			var fileUser *gateway.User
-			if cachedUsers[msg.File.User] != nil {
-				fileUser = cachedUsers[msg.File.User]
-			} else {
-				fileUser, err = c.UserById(msg.File.User)
-				if err != nil {
-					return nil, err
-				}
-			}
-
-			// Create the file struct representation.
-			file = &gateway.File{
-				Name:       msg.File.Name,
-				Filetype:   msg.File.Filetype,
-				User:       fileUser,
-				PrivateUrl: msg.File.PrivateUrl,
-				Permalink:  msg.File.Permalink,
-			}
-		} else {
-			file = nil
-		}
-
-		// Convert timestamp to float64
-		// I would unmarshal directly into float64, but that doesn't work since slack encodes their
-		// timestamps as strings :/
-		var timestamp float64
-		timestamp, err = strconv.ParseFloat(msg.Ts, 64)
-		if err != nil {
 			return nil, err
 		}
-
-		messageBuffer = append(messageBuffer, gateway.Message{
-			Sender:    sender,
-			Text:      msg.Text,
-			Reactions: reactions,
-			Timestamp: int(timestamp), // this value is in seconds!
-			Hash:      msg.Ts,
-			File:      file,
-		})
 	}
 
 	return messageBuffer, nil
@@ -303,6 +208,130 @@ func (c *SlackConnection) Channels() []gateway.Channel {
 func (c *SlackConnection) Self() *gateway.User {
 	return &c.self
 }
+
+type RawSlackMessage struct {
+	Ts        string `json:"ts"`
+	UserId    string `json:"user"`
+	Text      string `json:"text"`
+	Reactions []struct {
+		Name  string   `json:"name"`
+		Users []string `json:"users"`
+	} `json:"reactions"`
+	File struct {
+		Name       string `json:"name"`
+		Filetype   string `json:"pretty_type"`
+		User       string `json:"user"`
+		PrivateUrl string `json:"url_private"`
+		Permalink  string `json:"permalink"`
+		Reactions  []struct {
+			Name  string   `json:"name"`
+			Users []string `json:"users"`
+		} `json:"reactions"`
+	} `json:"file,omitempty"`
+}
+
+func (c *SlackConnection) ParseMessage(
+	preMessage map[string]interface{},
+	cachedUsers map[string]*gateway.User,
+) (*gateway.Message, error) {
+	var slackMessageBuffer RawSlackMessage
+	var intermediate []byte
+
+	// First, convert the map to json.
+	intermediate, err := json.Marshal(preMessage)
+	if err != nil {
+		return nil, err
+	}
+
+	// Then, marshal the json into the struct
+	err = json.Unmarshal(intermediate, &slackMessageBuffer)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the sender of the message
+	// Since we're likely to have a lot of the same users, cache them.
+	var sender *gateway.User
+	if cachedUsers[slackMessageBuffer.UserId] != nil {
+		sender = cachedUsers[slackMessageBuffer.UserId]
+	} else {
+		sender, err = c.UserById(slackMessageBuffer.UserId)
+		cachedUsers[slackMessageBuffer.UserId] = sender
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Convert the reactions fetched into reaction objects
+	reactions := []gateway.Reaction{}
+	reactionsLocation := slackMessageBuffer.Reactions
+	if len(slackMessageBuffer.File.Reactions) > 0 {
+		reactionsLocation = slackMessageBuffer.File.Reactions
+	}
+	for _, reaction := range reactionsLocation {
+		reactionUsers := []*gateway.User{}
+		// reaction.Users is an array of string user ids. Convert each into user objects.
+		for _, reactionUserId := range reaction.Users {
+			if cachedUsers[reactionUserId] != nil {
+				reactionUsers = append(reactionUsers, cachedUsers[reactionUserId])
+			} else {
+				var reactionUser *gateway.User
+				reactionUser, err = c.UserById(reactionUserId)
+				if err != nil {
+					return nil, err
+				}
+				reactionUsers = append(reactionUsers, reactionUser)
+			}
+		}
+
+		// Add the final reaction to the collection
+		reactions = append(reactions, gateway.Reaction{Name: reaction.Name, Users: reactionUsers})
+	}
+
+	var file *gateway.File
+	if len(slackMessageBuffer.File.Name) > 0 {
+		// Given a user id, get a reference to the user.
+		var fileUser *gateway.User
+		if cachedUsers[slackMessageBuffer.File.User] != nil {
+			fileUser = cachedUsers[slackMessageBuffer.File.User]
+		} else {
+			fileUser, err = c.UserById(slackMessageBuffer.File.User)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		// Create the file struct representation.
+		file = &gateway.File{
+			Name:       slackMessageBuffer.File.Name,
+			Filetype:   slackMessageBuffer.File.Filetype,
+			User:       fileUser,
+			PrivateUrl: slackMessageBuffer.File.PrivateUrl,
+			Permalink:  slackMessageBuffer.File.Permalink,
+		}
+	} else {
+		file = nil
+	}
+
+	// Convert timestamp to float64
+	// I would unmarshal directly into float64, but that doesn't work since slack encodes their
+	// timestamps as strings :/
+	var timestamp float64
+	timestamp, err = strconv.ParseFloat(slackMessageBuffer.Ts, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	return &gateway.Message{
+		Sender:    sender,
+		Text:      slackMessageBuffer.Text,
+		Reactions: reactions,
+		Timestamp: int(timestamp), // this value is in seconds!
+		Hash:      slackMessageBuffer.Ts,
+		File:      file,
+	}, nil
+}
+
 
 func (c *SlackConnection) PostText(title string, content string) error {
 	log.Println("Post Text", title, content)

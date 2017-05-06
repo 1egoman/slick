@@ -10,6 +10,8 @@ import (
 
 // Once conencted, listen for events from the active gateway. When an event comes in, act on it.
 func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan struct{}) {
+	cachedUsers := make(map[string]*gateway.User)
+
 	// Wait to be connected before handling events.
 	<-connected
 
@@ -74,49 +76,13 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 					break
 				}
 
-				// Figure out who sent the message
-				var sender *gateway.User
-				if event.Data["user"] != nil {
-					var err error
-					sender, err = state.ActiveConnection().UserById(event.Data["user"].(string))
-					if err != nil {
-						log.Fatal(err)
-					}
-				} else {
-					sender = nil
-				}
-
 				// Add message to history
-				if text, ok := event.Data["text"].(string); ok {
-          var file *gateway.File
-          if event.Data["file"] != nil {
-            // Given a user id, get a reference to the user.
-            var fileUser *gateway.User
-            fileUser, err = c.UserById(msg.File.User)
-            if err != nil {
-              return nil, err
-            }
-
-            // Create the file struct representation.
-            file = &gateway.File{
-              Name:       msg.File.Name,
-              Filetype:   msg.File.Filetype,
-              User:       fileUser,
-              PrivateUrl: msg.File.PrivateUrl,
-              Permalink:  msg.File.Permalink,
-            }
-          } else {
-            file = nil
-          }
-
-					state.ActiveConnection().AppendMessageHistory(gateway.Message{
-						Sender: sender,
-						Text:   text,
-						Hash:   messageHash,
-					})
-				} else {
-					log.Printf("WARN: Tried to append a message without a text element in the body: %+v", event)
-				}
+        message, err := state.ActiveConnection().ParseMessage(event.Data, cachedUsers)
+        if err == nil {
+          state.ActiveConnection().AppendMessageHistory(*message)
+        } else {
+          log.Fatalf(err.Error())
+        }
 			} else {
 				// 1
 				log.Printf("Channel value", channel)
