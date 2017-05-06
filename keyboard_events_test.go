@@ -2,6 +2,7 @@ package main_test
 
 import (
 	"fmt"
+	"reflect"
 	. "github.com/1egoman/slime"
 	"github.com/1egoman/slime/gateway"
 	"github.com/gdamore/tcell"
@@ -286,6 +287,32 @@ func TestHandleKeyboardEvent(t *testing.T) {
 			t.Errorf("Test `%s` failed.", test.Name)
 		} else {
 			fmt.Printf(".")
+		}
+	}
+}
+
+
+//
+// CreateArgvFromString
+//
+
+var argvTests  = []struct{
+	Input string
+	Output []string
+}{
+	{`a b c d`, []string{`a`, `b`, `c`, `d`}}, // no quotes or escapes
+	{`a b "c d"`, []string{`a`, `b`, `c d`}}, // quotes at end
+	{`a "b c" d`, []string{`a`, `b c`, `d`}}, // quotes in middle
+	{`a b "c d`, []string{`a`, `b`, `c d`}}, // mismatched quotes
+	{`a \"b c d`, []string{`a`, `\"b`, `c`, `d`}}, // escaped quote
+	{`a \b c d`, []string{`a`, `\b`, `c`, `d`}}, // backslash in the args
+}
+
+func TestCreateArgvFromString(t *testing.T) {
+	for index, argv := range argvTests {
+		value := CreateArgvFromString(argv.Input)
+		if !reflect.DeepEqual(value, argv.Output) {
+			t.Errorf("Test index %d failed! Should have gotten %+v, really got %+v", index, argv.Output, value)
 		}
 	}
 }

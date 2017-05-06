@@ -88,6 +88,27 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 
 				// Add message to history
 				if text, ok := event.Data["text"].(string); ok {
+          var file *gateway.File
+          if event.Data["file"] != nil {
+            // Given a user id, get a reference to the user.
+            var fileUser *gateway.User
+            fileUser, err = c.UserById(msg.File.User)
+            if err != nil {
+              return nil, err
+            }
+
+            // Create the file struct representation.
+            file = &gateway.File{
+              Name:       msg.File.Name,
+              Filetype:   msg.File.Filetype,
+              User:       fileUser,
+              PrivateUrl: msg.File.PrivateUrl,
+              Permalink:  msg.File.Permalink,
+            }
+          } else {
+            file = nil
+          }
+
 					state.ActiveConnection().AppendMessageHistory(gateway.Message{
 						Sender: sender,
 						Text:   text,

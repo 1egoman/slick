@@ -44,8 +44,8 @@ func NewInitialStateMode(mode string) *State {
 
 		// Connection to the server
 		Connections: []gateway.Connection{
-			gatewaySlack.New(os.Getenv("SLACK_TOKEN_TWO")), // Uncommonspace
 			gatewaySlack.New(os.Getenv("SLACK_TOKEN_ONE")), // Gaus Family
+			gatewaySlack.New(os.Getenv("SLACK_TOKEN_TWO")), // Uncommonspace
 		},
 
 		// Which connection in the connections object is active

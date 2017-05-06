@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"io/ioutil"
+	"errors"
 
 	"github.com/1egoman/slime/frontend" // The thing to draw to the screen
 	"github.com/1egoman/slime/gateway"  // The thing to interface with slack
@@ -28,6 +30,13 @@ var commands = []FuzzyPickerSlashCommandItem{
 		Name:         "Quit",
 		Description:  "Quits slime.",
 		Permutations: []string{"/quit", "/q"},
+	},
+	{
+		Type:         NATIVE,
+		Name:         "Post",
+		Description:  "Make a post in the current channel.",
+		Arguments:    "<post file> [post name]",
+		Permutations: []string{"/post"},
 	},
 	{
 		Type:         SLACK,
@@ -160,7 +169,7 @@ func sendTypingIndicator(state *State) {
 // WHen a user presses a key when they are selecting with a message, perform an action.
 func OnMessageInteraction(state *State, key rune) {
 	// Is a message selected?
-	if state.SelectedMessageIndex > 0 {
+	if state.SelectedMessageIndex >= 0 {
 		selectedMessageIndex := len(state.ActiveConnection().MessageHistory()) - 1 - state.SelectedMessageIndex
 		selectedMessage := state.ActiveConnection().MessageHistory()[selectedMessageIndex]
 
@@ -235,15 +244,59 @@ func OnPickConnectionChannel(state *State) {
 	}
 }
 
+// Given a string, create an argv array of its parts. If a part is quoted, it's all part of the same
+// argument.
+// `a b c d` => []string{"a", "b", "c", "d"}
+// `a "b c" d` => []string{"a", "b c", "d"}
+// `a \"b c\" d` => []string{`a`, `"b`, `c"`, `d`}
+func CreateArgvFromString(input string) []string {
+	argv := []string{""}
+	argvLastIndex := 0
+	insideQuotes := false
+	lastItem := ' '
+
+	for _, item := range input {
+		if item == '"' && lastItem != '\\' { // Handle an unescaped quote
+			insideQuotes = !insideQuotes
+		} else if item == ' ' && !insideQuotes { // Handle an unquoted space
+			// A space creates a new argument
+			argvLastIndex += 1
+			argv = append(argv, "")
+		} else {
+			// Add the character to the last argv item, nothing special here...
+			argv[argvLastIndex] += string(item)
+		}
+		lastItem = item
+	}
+
+	return argv
+}
+
 // When the user presses enter in `writ` mode after typing some stuff...
 func OnCommandExecuted(state *State, quit chan struct{}) error {
 	command := string(state.Command)
+	args := CreateArgvFromString(command)
 	switch {
 	// :q or :quit closes the app
 	case command == ":q", command == ":quit":
 		log.Println("CLOSE QUIT 2")
 		close(quit)
 		return nil
+
+	case args[0] == ":post":
+		if len(args) > 2 { // /post path/to/post.txt "post title"
+			postPath := args[1]
+			postTitle := args[2]
+			postContent, err := ioutil.ReadFile(postPath)
+			if err != nil {
+				return err
+			}
+			if err = state.ActiveConnection().PostText(postTitle, string(postContent)); err != nil {
+				return err
+			}
+		} else {
+			return errors.New("Please use more arguments. /post path/to/post.txt \"post title\"")
+		}
 
 	// By default, just send a message
 	default:
@@ -406,12 +459,13 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) {
 	//
 
 	case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyEnter:
+		log.Println("Enter pressed")
 		if state.FuzzyPicker.Visible {
 			state.FuzzyPicker.OnSelected(state)
 		} else if state.Mode == "writ" {
 			err := OnCommandExecuted(state, quit)
 			if err != nil {
-				log.Fatal(err)
+				log.Println(err)
 			}
 		}
 
@@ -439,7 +493,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) {
 
 		// Also, take care of autocomplete of slash commands
 		// As the user types, show them above the command bar in a fuzzy picker.
-		if !state.FuzzyPicker.Visible && state.Command[0] == '/' {
+		if !state.FuzzyPicker.Visible && (state.Command[0] == '/' || state.Command[0] == ':') {
 			// When the user presses enter, run the slash command the user typed.
 			state.FuzzyPicker.Show(func(state *State) {
 				err := OnCommandExecuted(state, quit)
@@ -455,7 +509,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) {
 					state.FuzzyPicker.StringItems,
 					fmt.Sprintf(
 						"%s %s\t%s - %s", // ie: "/quit (/q)        Quit - quits slime"
-						strings.Join(command.Permutations, " "),
+						strings.Replace(strings.Join(command.Permutations, " "), "/", string(state.Command[0]), -1),
 						command.Arguments,
 						command.Name,
 						command.Description,

@@ -35,6 +35,9 @@ type Connection interface {
 	FetchChannelMessages(Channel) ([]Message, error)
 
 	UserById(string) (*User, error)
+
+	// Post a large block of text in a given channel
+	PostText(title string, body string) error
 }
 
 // Events are emitted when data comes in from a connection
