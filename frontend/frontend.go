@@ -7,6 +7,7 @@ import (
 	"regexp"
 
 	"github.com/1egoman/slime/gateway" // The thing to interface with slack
+	"github.com/1egoman/slime/status"
 )
 
 const bottomPadding = 2 // The amount of lines at the bottom of the window to leave available for status bars.
@@ -76,7 +77,12 @@ func (term *TerminalDisplay) Render() {
 	term.screen.Show()
 }
 
-func (term *TerminalDisplay) DrawStatusBar(mode string, connections []gateway.Connection, activeConnection gateway.Connection) {
+func (term *TerminalDisplay) DrawStatusBar(
+	mode string,
+	connections []gateway.Connection,
+	activeConnection gateway.Connection,
+	status status.Status,
+) {
 	width, height := term.screen.Size()
 	lastRow := height - 1
 
@@ -94,21 +100,27 @@ func (term *TerminalDisplay) DrawStatusBar(mode string, connections []gateway.Co
 	// Then, draw a seperator
 	term.WriteText(len(mode)+1, lastRow, "|")
 
-	// Then, render each conenction
 	position := len(mode) + 3
-	for index, item := range connections {
-		// How should the connection look?
-		var style tcell.Style
-		if item == activeConnection {
-			style = term.Styles["StatusBarActiveConnection"]
-		} else {
-			style = term.Styles["StatusBarConnection"]
-		}
 
-		// Draw each connection
-		label := fmt.Sprintf("%d: %s", index+1, item.Name())
-		term.WriteTextStyle(position, lastRow, style, label)
-		position += len(label) + 1
+	if status.Show {
+		// Write status text
+		term.WriteText(position, lastRow, status.Message)
+	} else {
+		// Then, render each conenction
+		for index, item := range connections {
+			// How should the connection look?
+			var style tcell.Style
+			if item == activeConnection {
+				style = term.Styles["StatusBarActiveConnection"]
+			} else {
+				style = term.Styles["StatusBarConnection"]
+			}
+
+			// Draw each connection
+			label := fmt.Sprintf("%d: %s", index+1, item.Name())
+			term.WriteTextStyle(position, lastRow, style, label)
+			position += len(label) + 1
+		}
 	}
 }
 
