@@ -16,6 +16,7 @@ type Connection interface {
 
 	MessageHistory() []Message
 	AppendMessageHistory(message Message)
+	DeleteMessageHistory(index int)
 	ClearMessageHistory()
 	SendMessage(Message, *Channel) (*Message, error)
 	ParseMessage(map[string]interface{}, map[string]*User) (*Message, error)

@@ -180,6 +180,9 @@ func (c *SlackConnection) MessageHistory() []gateway.Message {
 func (c *SlackConnection) AppendMessageHistory(message gateway.Message) {
 	c.messageHistory = append(c.messageHistory, message)
 }
+func (c *SlackConnection) DeleteMessageHistory(index int) {
+	c.messageHistory = append(c.messageHistory[:index], c.messageHistory[index+1:]...)
+}
 func (c *SlackConnection) ClearMessageHistory() {
 	c.messageHistory = []gateway.Message{}
 }

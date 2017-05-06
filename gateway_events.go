@@ -24,7 +24,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 		// state.ActiveConnection() points to behind the scenes changes, the we won't be blocking
 		// listening for events on an old reference.
 		if len(state.ActiveConnection().Incoming()) == 0 || !hasFetchedChannel {
-			time.Sleep(100 * time.Millisecond) // Sleep to lower the speef od the loop for debugging reasons.
+			time.Sleep(100 * time.Millisecond) // Sleep to lower the speed of the loop for debugging reasons.
 			continue
 		}
 
@@ -52,39 +52,49 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 		// "message" events come in when the gateway receives a message sent by someone else.
 		case "message":
 			if channel := state.ActiveConnection().SelectedChannel(); event.Data["channel"] == channel.Id {
-				// Find a hash for the message, just use the timestamp
-				// In message events, the timestamp is `ts`
-				// In pong events, the timestamp is `event_ts`
-				var messageHash string
-				if data, ok := event.Data["ts"].(string); ok {
-					messageHash = data
-				} else {
-					log.Fatal("No ts key in message so can't create a hash for this message!")
-				}
-
-				// See if the message is already in the history
-				alreadyInHistory := false
-				for _, msg := range state.ActiveConnection().MessageHistory() {
-					if msg.Hash == messageHash {
-						// Message with that hash is already in the history, no need to add
-						// again...
-						alreadyInHistory = true
-						break
-					}
-				}
-				if alreadyInHistory {
-					break
-				}
-
-				// Add message to history
-        message, err := state.ActiveConnection().ParseMessage(event.Data, cachedUsers)
-        if err == nil {
-          state.ActiveConnection().AppendMessageHistory(*message)
+        if event.Data["subtype"] == "message_deleted" {
+          // If a message was deleted, then delete the message from the message history
+          for index, msg := range state.ActiveConnection().MessageHistory() {
+            if msg.Hash == event.Data["deleted_ts"] {
+              state.ActiveConnection().DeleteMessageHistory(index)
+            }
+          }
         } else {
-          log.Fatalf(err.Error())
+          // JUST A NORMAL MESSAGE!
+
+          // Find a hash for the message, just use the timestamp
+          // In message events, the timestamp is `ts`
+          // In pong events, the timestamp is `event_ts`
+          var messageHash string
+          if data, ok := event.Data["ts"].(string); ok {
+            messageHash = data
+          } else {
+            log.Fatal("No ts key in message so can't create a hash for this message!")
+          }
+
+          // See if the message is already in the history
+          alreadyInHistory := false
+          for _, msg := range state.ActiveConnection().MessageHistory() {
+            if msg.Hash == messageHash {
+              // Message with that hash is already in the history, no need to add
+              // again...
+              alreadyInHistory = true
+              break
+            }
+          }
+          if alreadyInHistory {
+            break
+          }
+
+          // Add message to history
+          message, err := state.ActiveConnection().ParseMessage(event.Data, cachedUsers)
+          if err == nil {
+            state.ActiveConnection().AppendMessageHistory(*message)
+          } else {
+            log.Fatalf(err.Error())
+          }
         }
 			} else {
-				// 1
 				log.Printf("Channel value", channel)
 			}
 
