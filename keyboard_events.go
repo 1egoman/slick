@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"io/ioutil"
-	"errors"
 
 	"github.com/1egoman/slime/frontend" // The thing to draw to the screen
 	"github.com/1egoman/slime/gateway"  // The thing to interface with slack
@@ -16,143 +14,6 @@ import (
 // FIXME: This unit is in messages, it should be in rows. The problem is that 1 message isn't always
 // 1 row.
 const messageScrollPadding = 7
-
-type CommandType int
-
-const (
-	NATIVE CommandType = iota
-	SLACK
-)
-
-var commands = []FuzzyPickerSlashCommandItem{
-	{
-		Type:         NATIVE,
-		Name:         "Quit",
-		Description:  "Quits slime.",
-		Permutations: []string{"/quit", "/q"},
-	},
-	{
-		Type:         NATIVE,
-		Name:         "Post",
-		Description:  "Make a post in the current channel.",
-		Arguments:    "<post file> [post name]",
-		Permutations: []string{"/post"},
-	},
-	{
-		Type:         SLACK,
-		Name:         "Apps",
-		Permutations: []string{"/apps"},
-		Arguments:    "[search term]",
-		Description:  "Search for Slack Apps in the App Directory",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Away",
-		Permutations: []string{"/away"},
-		Arguments:    "Toggle your away status",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Call",
-		Permutations: []string{"/call"},
-		Arguments:    "[help]",
-		Description:  "Start a call",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Dnd",
-		Permutations: []string{"/dnd"},
-		Arguments:    "[some description of time]",
-		Description:  "Starts or ends a Do Not Disturb session",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Feed",
-		Permutations: []string{"/feed"},
-		Arguments:    "help [or subscribe, list, remove...]",
-		Description:  "Manage RSS subscriptions",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Invite",
-		Permutations: []string{"/invite"},
-		Arguments:    "@user [channel]",
-		Description:  "Invite another member to a channel",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Invite people",
-		Permutations: []string{"/invite_people"},
-		Arguments:    "[name@example.com, ...]",
-		Description:  "Invite people to your Slack team",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Leave",
-		Permutations: []string{"/leave", "/close", "/part"},
-		Description:  "Leave a channel",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Me",
-		Permutations: []string{"/me"},
-		Arguments:    "your message",
-		Description:  "Displays action text",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Msg",
-		Permutations: []string{"/msg", "/dm"},
-		Arguments:    "[your message]",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Mute",
-		Permutations: []string{"/mute"},
-		Arguments:    "[channel]",
-		Description:  "Mutes [channel] or the current channel",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Remind",
-		Permutations: []string{"/remind"},
-		Arguments:    "[@someone or #channel] [what] [when]",
-		Description:  "Set a reminder",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Rename",
-		Permutations: []string{"/rename"},
-		Arguments:    "[new name]",
-		Description:  "Rename a channel",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Shrug",
-		Permutations: []string{"/shrug"},
-		Arguments:    "[your message]",
-		Description:  "Appends ¯\\_(ツ)_/¯ to your message",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Star",
-		Permutations: []string{"/star"},
-		Arguments:    "Stars the current channel or conversation",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Status",
-		Permutations: []string{"/status"},
-		Arguments:    "[clear] or [:your_new_status_emoji:] [your new status message]",
-		Description:  "Set or clear your custom status",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Who",
-		Permutations: []string{"/who"},
-		Description:  "List users in the currentl channel or group",
-	},
-}
 
 // When the user presses a key, send a message telling slack that the user is typing.
 func sendTypingIndicator(state *State) {
@@ -274,39 +135,52 @@ func CreateArgvFromString(input string) []string {
 
 // When the user presses enter in `writ` mode after typing some stuff...
 func OnCommandExecuted(state *State, quit chan struct{}) error {
-	command := string(state.Command)
-	args := CreateArgvFromString(command)
-	switch {
-	// :q or :quit closes the app
-	case command == ":q", command == ":quit":
+	// Parse the command and create a list of arguments
+	args := CreateArgvFromString(string(state.Command))
+
+	// If the command was empty, return
+	if len(args) == 0 {
+		return nil
+	}
+
+	// Remove the first charater (slash or colon) from the command.
+	arg0 := args[0][1:]
+
+	if arg0 == "quit" || arg0 == "q" {
+		// :q or :quit closes the app, and is a special case.
 		log.Println("CLOSE QUIT 2")
 		close(quit)
 		return nil
-
-	case args[0] == ":post":
-		if len(args) > 2 { // /post path/to/post.txt "post title"
-			postPath := args[1]
-			postTitle := args[2]
-			postContent, err := ioutil.ReadFile(postPath)
-			if err != nil {
-				return err
+	} else {
+		// Otherwise, find the command that the user typed.
+		for _, command := range COMMANDS {
+			if command.Type == NATIVE {
+				for _, permutation := range command.Permutations {
+					if permutation == arg0 && command.Handler != nil {
+						err := command.Handler(args, state)
+						if err != nil {
+							state.Status.Errorf("Error in running command %s: %s", arg0, err.Error())
+						}
+						return nil
+					} else if permutation == arg0 && command.Handler == nil {
+						state.Status.Errorf("The command %s doesn't have an associated handler function.", arg0)
+						return nil
+					}
+				}
 			}
-			if err = state.ActiveConnection().PostText(postTitle, string(postContent)); err != nil {
-				return err
-			}
-		} else {
-			return errors.New("Please use more arguments. /post path/to/post.txt \"post title\"")
 		}
 
-	// Unknown command!
-	default:
-		return errors.New(fmt.Sprintf("Unknown command %s", args[0]))
+		// If we haven't returned by now, then the command is invalid.
+		state.Status.Errorf("Unknown command %s", args[0])
 	}
 	return nil
 }
 
 // Break out function to handle only keyboard events. Called by `keyboardEvents`.
 func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) error {
+	// Prior to executing a keyboard command, clear the status.
+	state.Status.Clear()
+
 	switch {
 	case ev.Key() == tcell.KeyCtrlC:
 		log.Println("CLOSE QUIT 1")
@@ -500,13 +374,14 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 			})
 
 			// Assemble add the items to the fuzzy sorter.
-			for _, command := range commands {
+			for _, command := range COMMANDS {
 				state.FuzzyPicker.Items = append(state.FuzzyPicker.Items, command)
 				state.FuzzyPicker.StringItems = append(
 					state.FuzzyPicker.StringItems,
 					fmt.Sprintf(
-						"%s %s\t%s - %s", // ie: "/quit (/q)        Quit - quits slime"
-						strings.Replace(strings.Join(command.Permutations, " "), "/", string(state.Command[0]), -1),
+						"%s%s %s\t%s - %s", // ie: "/quit (/q)        Quit - quits slime"
+						string(state.Command[0]),
+						strings.Join(command.Permutations, " "),
 						command.Arguments,
 						command.Name,
 						command.Description,

@@ -1,9 +1,10 @@
 package main
 
 import (
+	"os"
+	"github.com/1egoman/slime/status"
 	"github.com/1egoman/slime/gateway" // The thing to interface with slack
 	"github.com/1egoman/slime/gateway/slack"
-	"os"
 )
 
 // This struct contains the main application state. I have fluxy intentions.
@@ -27,6 +28,9 @@ type State struct {
 	FuzzyPicker                    FuzzySorter
 	fuzzyPickerSelectedItem        int
 	fuzzyPickerBottomDisplayedItem int
+
+	// Status message
+	Status status.Status
 }
 
 func NewInitialState() *State {
@@ -59,6 +63,9 @@ func NewInitialStateMode(mode string) *State {
 
 		// Fuzzy picker data
 		FuzzyPicker: FuzzySorter{},
+
+		// Status message
+		Status: status.Status{},
 	}
 }
 

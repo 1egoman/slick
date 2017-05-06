@@ -3,12 +3,10 @@ package gatewaySlack
 import (
 	"log"
 	"strconv"
-	"errors"
 
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 
 	"github.com/1egoman/slime/gateway"
 	"golang.org/x/net/websocket"
@@ -333,39 +331,4 @@ func (c *SlackConnection) ParseMessage(
 		Hash:      slackMessageBuffer.Ts,
 		File:      file,
 	}, nil
-}
-
-
-func (c *SlackConnection) PostText(title string, content string) error {
-	log.Println("Post Text", title, content)
-	title = url.QueryEscape(title)
-	content = url.QueryEscape(content)
-
-	resp, err := http.Get("https://slack.com/api/files.upload?token=" + c.token + "&channels=" + c.selectedChannel.Id + "&content=" + content + "&title=" + title)
-	if err != nil {
-		return err
-	}
-
-	var body []byte
-	body, err = ioutil.ReadAll(resp.Body)
-
-	var fileBuffer struct {
-		Ok bool `json:"ok"`
-		Error string `json:"error"`
-		File struct {
-			Id string `json:"id"`
-			Mimetype string `json:"mimetype"`
-			Mode string `json:"snippet"`
-			Public string `json:"is_public"`
-			Preview string `json:"preview"`
-		} `json:"file"`
-	}
-
-	json.Unmarshal(body, &fileBuffer)
-
-	if len(fileBuffer.Error) != 0 {
-		log.Println("Error", fileBuffer.Error)
-		return errors.New(fileBuffer.Error)
-	}
-	return nil
 }

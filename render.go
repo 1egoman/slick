@@ -33,6 +33,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		state.Mode,               // Which mode we're currently in
 		state.Connections,        // A list of all connections
 		state.ActiveConnection(), // Which conenction is active (to highlight the active one differently)
+		state.Status,             // Status message to display
 	)
 	term.DrawCommandBar(
 		string(state.Command),                      // The command that the user is typing

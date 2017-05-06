@@ -93,7 +93,7 @@ func (c *SlackConnection) Connect() error {
 
 			// Send it.
 			if _, err = c.conn.Write(data); err != nil {
-				log.Fatal(err)
+        log.Fatalf("Couldn't send message: %s", err.Error())
 			}
 		}
 	}(c.outgoing)

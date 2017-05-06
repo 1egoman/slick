@@ -67,11 +67,3 @@ type FuzzyPickerConnectionChannelItem struct {
 	Channel    string
 	Connection string
 }
-
-type FuzzyPickerSlashCommandItem struct {
-	Name         string
-	Description  string
-	Type         CommandType
-	Permutations []string
-	Arguments    string
-}
