@@ -240,7 +240,7 @@ func OnPickConnectionChannel(state *State) {
 		state.Mode = "chat"
 		state.FuzzyPicker.Hide()
 	} else {
-		log.Fatalln("In pick mode, the fuzzy picker doesn't contain FuzzyPickerConnectionChannelItem's.")
+		log.Fatalf("In pick mode, the fuzzy picker doesn't contain FuzzyPickerConnectionChannelItem's.")
 	}
 }
 
@@ -298,37 +298,20 @@ func OnCommandExecuted(state *State, quit chan struct{}) error {
 			return errors.New("Please use more arguments. /post path/to/post.txt \"post title\"")
 		}
 
-	// By default, just send a message
+	// Unknown command!
 	default:
-		message := gateway.Message{
-			Sender: state.ActiveConnection().Self(),
-			Text:   command,
-		}
-
-		// Sometimes, a message could have a response. This is for example true in the
-		// case of slash commands, sometimes.
-		responseMessage, err := state.ActiveConnection().SendMessage(
-			message,
-			state.ActiveConnection().SelectedChannel(),
-		)
-
-		if err != nil {
-			return err
-		} else if responseMessage != nil {
-			// Got a response command? Append it to the message history.
-			state.ActiveConnection().AppendMessageHistory(*responseMessage)
-		}
+		return errors.New(fmt.Sprintf("Unknown command %s", args[0]))
 	}
 	return nil
 }
 
 // Break out function to handle only keyboard events. Called by `keyboardEvents`.
-func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) {
+func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) error {
 	switch {
 	case ev.Key() == tcell.KeyCtrlC:
 		log.Println("CLOSE QUIT 1")
 		close(quit)
-		return
+		return nil
 
 	// Escape reverts back to chat mode.
 	case ev.Key() == tcell.KeyEscape:
@@ -463,9 +446,23 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) {
 		if state.FuzzyPicker.Visible {
 			state.FuzzyPicker.OnSelected(state)
 		} else if state.Mode == "writ" {
-			err := OnCommandExecuted(state, quit)
+			message := gateway.Message{
+				Sender: state.ActiveConnection().Self(),
+				Text:   string(state.Command),
+			}
+
+			// Sometimes, a message could have a response. This is for example true in the
+			// case of slash commands, sometimes.
+			responseMessage, err := state.ActiveConnection().SendMessage(
+				message,
+				state.ActiveConnection().SelectedChannel(),
+			)
+
 			if err != nil {
-				log.Println(err)
+				return err
+			} else if responseMessage != nil {
+				// Got a response command? Append it to the message history.
+				state.ActiveConnection().AppendMessageHistory(*responseMessage)
 			}
 		}
 
@@ -498,7 +495,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) {
 			state.FuzzyPicker.Show(func(state *State) {
 				err := OnCommandExecuted(state, quit)
 				if err != nil {
-					log.Fatal(err)
+					log.Fatalf(err.Error())
 				}
 			})
 
@@ -563,6 +560,8 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) {
 	case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyCtrlE:
 		state.CommandCursorPosition = len(state.Command)
 	}
+
+	return nil
 }
 
 func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.Screen, quit chan struct{}) {
@@ -576,7 +575,10 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 			if state.Mode == "chat" && ev.Key() == tcell.KeyCtrlL {
 				screen.Sync()
 			} else {
-				HandleKeyboardEvent(ev, state, quit)
+				err := HandleKeyboardEvent(ev, state, quit)
+				if err != nil {
+					log.Fatalf(err.Error())
+				}
 			}
 		case *tcell.EventResize:
 			screen.Sync()
