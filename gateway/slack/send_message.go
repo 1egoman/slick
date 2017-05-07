@@ -13,7 +13,7 @@ import (
 )
 
 func sendSlashCommand(c *SlackConnection, message gateway.Message, channel *gateway.Channel) (*gateway.Message, error) {
-	log.Printf("Sending slash command to team %s on channel %s", c.Team().Name)
+	log.Printf("Sending slash command to team %s on channel %s", c.Team().Name, channel.Id)
 
 	// If the message starts with a slash, it's a slash command.
 	command := strings.Split(message.Text, " ")
