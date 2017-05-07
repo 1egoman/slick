@@ -4,8 +4,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"errors"
+	"strings"
+	"log"
+
+	"github.com/1egoman/slime/gateway"
 
 	"github.com/skratchdot/open-golang/open"
+	"github.com/yuin/gopher-lua"
 )
 
 type CommandType int
@@ -278,4 +283,117 @@ var COMMANDS = []Command{
 		Permutations: []string{"who"},
 		Description:  "List users in the current channel or group",
 	},
+}
+
+func GetCommand(name string) *Command {
+	for _, command := range COMMANDS {
+		if command.Name == name {
+			return &command
+		}
+	}
+	return nil
+}
+
+// Given a command, a list of arguments to pass to the command, and the state, run the command.
+func RunCommand(command Command, args []string, state *State) error {
+	if command.Type == NATIVE && command.Handler != nil {
+		return command.Handler(args, state)
+	} else if command.Type == NATIVE && command.Handler == nil {
+		return errors.New(fmt.Sprintf("The command %s doesn't have an associated handler function.", command.Name))
+	} else {
+		message := gateway.Message{
+			Sender: state.ActiveConnection().Self(),
+			Text:   fmt.Sprintf("/%s %s", command.Permutations[0], strings.Join(args, " ")),
+		}
+
+		// Sometimes, a message could have a response. This is for example true in the
+		// case of slash commands, sometimes.
+		responseMessage, err := state.ActiveConnection().SendMessage(
+			message,
+			state.ActiveConnection().SelectedChannel(),
+		)
+
+		if err != nil {
+			return err
+		} else if responseMessage != nil {
+			// Got a response command? Append it to the message history.
+			state.ActiveConnection().AppendMessageHistory(*responseMessage)
+		}
+		return nil
+	}
+}
+
+type KeyAction struct {
+	Key []rune
+	Handler func(*State) error
+}
+
+func ParseScript(script string, state *State) error {
+	L := lua.NewState()
+	defer L.Close()
+
+	// Add some logging utilities
+	L.SetGlobal("print", L.NewFunction(func(L *lua.LState) int {
+		state.Status.Printf(L.ToString(1))
+		return 0
+	}))
+	L.SetGlobal("error", L.NewFunction(func(L *lua.LState) int {
+		state.Status.Errorf(L.ToString(1))
+		return 0
+	}))
+	L.SetGlobal("clear", L.NewFunction(func(L *lua.LState) int {
+		state.Status.Clear()
+		return 0
+	}))
+
+	// Allow lua to run things when a user presses a key.
+	L.SetGlobal("keymap", L.NewFunction(func(L *lua.LState) int {
+		key := L.ToString(1)
+		function := L.ToFunction(2)
+
+		state.KeyActions = append(state.KeyActions, KeyAction{
+			Key: []rune(key),
+			Handler: func(state *State) error {
+				return L.CallByParam(lua.P{Fn: function, NRet: 0})
+			},
+		})
+		return 0
+	}))
+
+	// Export all commands in the lua context
+	for _, command := range COMMANDS {
+		func(command Command) { // Close over command so it 
+			L.SetGlobal(command.Name, L.NewFunction(func(L *lua.LState) int {
+				// Collect all arguments into an array
+				args := []string{}
+				argc := 1
+				for ;; argc += 1 {
+					arg := L.ToString(argc)
+					if len(arg) > 0 {
+						args = append(args, arg)
+					} else {
+						break
+					}
+				}
+
+				log.Printf("* Running command %s with args %v", command.Name, args)
+				command := GetCommand(command.Name)
+				if command.Handler == nil {
+					L.Push(lua.LString("No handler defined for the command "+command.Name+"."))
+					return 1
+				}
+
+				err := command.Handler(args, state)
+
+				if err == nil {
+					L.Push(lua.LNil)
+				} else {
+					L.Push(lua.LString(err.Error()))
+				}
+				return 1
+			}))
+		}(command)
+	}
+
+	return L.DoString(script)
 }

@@ -25,7 +25,6 @@ func (c *SlackConnection) Refresh() error {
 	}
 
 	if len(c.channels) > 0 {
-
 		// If no channel is selected, select a default.
 		if c.selectedChannel == nil {
 			// Try to find the general channel

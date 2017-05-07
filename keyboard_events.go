@@ -145,18 +145,13 @@ func OnCommandExecuted(state *State, quit chan struct{}) error {
 	} else {
 		// Otherwise, find the command that the user typed.
 		for _, command := range COMMANDS {
-			if command.Type == NATIVE {
-				for _, permutation := range command.Permutations {
-					if permutation == arg0 && command.Handler != nil {
-						err := command.Handler(args, state)
-						if err != nil {
-							state.Status.Errorf("Error in running command %s: %s", arg0, err.Error())
-						}
-						return nil
-					} else if permutation == arg0 && command.Handler == nil {
-						state.Status.Errorf("The command %s doesn't have an associated handler function.", arg0)
-						return nil
+			for _, permutation := range command.Permutations {
+				if permutation == arg0 {
+					err := RunCommand(command, args, state)
+					if err != nil {
+						state.Status.Errorf("Error in running command %s: %s", arg0, err.Error())
 					}
+					return nil
 				}
 			}
 		}
@@ -172,16 +167,33 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 	// Prior to executing a keyboard command, clear the status.
 	state.Status.Clear()
 
+	// Did the user press a key in the keymap?
+	if state.Mode == "chat" && ev.Key() == tcell.KeyRune {
+		// Add pressed key to the stack of keys
+		state.KeyStack = append(state.KeyStack, ev.Rune())
+
+		// Did the user press the key combo?
+		for _, key := range state.KeyActions {
+			if string(key.Key) == string(state.KeyStack) {
+				err := key.Handler(state)
+				if err != nil {
+					state.Status.Errorf(err.Error())
+				}
+			}
+		}
+	}
+
 	switch {
 	case ev.Key() == tcell.KeyCtrlC:
 		log.Println("CLOSE QUIT 1")
 		close(quit)
 		return nil
 
-	// Escape reverts back to chat mode.
+	// Escape reverts back to chat mode and clears the key stack.
 	case ev.Key() == tcell.KeyEscape:
 		state.Mode = "chat"
 		state.FuzzyPicker.Hide()
+		state.KeyStack = []rune{}
 
 	// 'p' moves to a channel picker, which is a mode for switching teams and channels
 	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'p':
@@ -311,6 +323,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 		if state.FuzzyPicker.Visible {
 			state.FuzzyPicker.OnSelected(state)
 		} else if state.Mode == "writ" {
+			// Just send a normal message!
 			message := gateway.Message{
 				Sender: state.ActiveConnection().Self(),
 				Text:   string(state.Command),

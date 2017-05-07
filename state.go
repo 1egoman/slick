@@ -14,6 +14,9 @@ type State struct {
 	Command               []rune
 	CommandCursorPosition int
 
+	// A list of all keys that have been pressed to make up the current command.
+	KeyStack              []rune
+
 	// All the connections that are currently made to outside services.
 	Connections      []gateway.Connection
 	activeConnection int
@@ -31,6 +34,9 @@ type State struct {
 
 	// Status message
 	Status status.Status
+
+	// Actions to perform when a user presses a key
+	KeyActions []KeyAction
 }
 
 func NewInitialState() *State {

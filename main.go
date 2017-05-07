@@ -27,6 +27,18 @@ func main() {
 	s.Init()
 	defer s.Fini() // Make sure we clean up after tcell!
 
+	// Execute configs
+	if err := ParseScript(`
+	keymap("ff", function()
+		error = Who("content", "title")
+		if error then
+			print(error)
+		end
+	end)
+	`, state); err != nil {
+		state.Status.Errorf("lua error: "+err.Error())
+	}
+
 	// Initial render.
 	render(state, term)
 
