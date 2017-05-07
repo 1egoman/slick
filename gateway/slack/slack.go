@@ -1,8 +1,10 @@
 package gatewaySlack
 
 import (
+	"fmt"
 	"log"
 	"strconv"
+	"errors"
 
 	"encoding/json"
 	"io/ioutil"
@@ -219,6 +221,7 @@ type RawSlackMessage struct {
 		Users []string `json:"users"`
 	} `json:"reactions"`
 	File struct {
+		Id         string `json:"id"`
 		Name       string `json:"name"`
 		Filetype   string `json:"pretty_type"`
 		User       string `json:"user"`
@@ -304,6 +307,7 @@ func (c *SlackConnection) ParseMessage(
 
 		// Create the file struct representation.
 		file = &gateway.File{
+			Id:         slackMessageBuffer.File.Id,
 			Name:       slackMessageBuffer.File.Name,
 			Filetype:   slackMessageBuffer.File.Filetype,
 			User:       fileUser,
@@ -331,4 +335,64 @@ func (c *SlackConnection) ParseMessage(
 		Hash:      slackMessageBuffer.Ts,
 		File:      file,
 	}, nil
+}
+
+func (c *SlackConnection) ToggleMessageReaction(message gateway.Message, reaction string) error {
+	// Has the active user reacted to this message?
+	messageReactedTo := false
+	Outer:
+	for _, r := range message.Reactions {
+		if r.Name == reaction {
+			for _, user := range r.Users {
+				if c.Self().Name == user.Name {
+					// This messag has already been reacted to by this user.
+					messageReactedTo = true
+					break Outer
+				}
+			}
+		}
+	}
+
+	// Toggle the reaction on the message
+	var reactionUrl string
+	if messageReactedTo {
+		log.Printf("Adding reaction to message %s: %s", message.Hash, reaction)
+		reactionUrl = "https://slack.com/api/reactions.remove"
+	} else {
+		log.Printf("Removing reaction to message %s: %s", message.Hash, reaction)
+		reactionUrl = "https://slack.com/api/reactions.add"
+	}
+
+	reactionUrl += "?token=" + c.token
+	reactionUrl += "&name=" + reaction
+	reactionUrl += "&channel=" + c.selectedChannel.Id
+	reactionUrl += "&timestamp=" + message.Hash
+	// If reacting to a message that has a file attached, pass to the file too.
+	if message.File != nil {
+		reactionUrl += "&file=" + message.File.Id
+	}
+
+	// Make the request
+	resp, err := http.Get(reactionUrl)
+	if err != nil {
+		return err
+	}
+
+	// Fetch body
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	// Verify the response
+	var response struct {
+		Ok bool `json:"ok"`
+		Error string `json:"error"`
+	}
+	json.Unmarshal(body, &response)
+	if response.Ok {
+		return nil
+	} else {
+		return errors.New(fmt.Sprintf("Slack error: %s", response.Error))
+	}
 }

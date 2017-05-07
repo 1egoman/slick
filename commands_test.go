@@ -9,16 +9,6 @@ import (
 	"errors"
 )
 
-func findCommand(name string) *Command {
-	// Find post command
-	for _, command := range COMMANDS {
-		if command.Name == name {
-			return &command
-		}
-	}
-	return nil
-}
-
 func TestCommandPost(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
@@ -71,7 +61,7 @@ func TestCommandPost(t *testing.T) {
 		initialState.ActiveConnection().SetSelectedChannel(&gateway.Channel{Id: "channel-id"})
 
 		// Execute the command
-		command := findCommand(test.Command)
+		command := GetCommand(test.Command)
 		err := command.Handler(test.Args, initialState)
 
 		httpmock.DeactivateAndReset()

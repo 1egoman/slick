@@ -20,6 +20,7 @@ type Connection interface {
 	ClearMessageHistory()
 	SendMessage(Message, *Channel) (*Message, error)
 	ParseMessage(map[string]interface{}, map[string]*User) (*Message, error)
+	ToggleMessageReaction(Message, string) error
 
 	// Fetch a slice of all channels that are available on this connection
 	Channels() []Channel
@@ -64,7 +65,7 @@ type Event struct {
 	User    User
 }
 
-// A user is a human or bot that sends messages on a channel.
+// A user is a human or bot that sends messages on within channel.
 type User struct {
 	Id       string `json:"id"`
 	Name     string `json:"name"`
@@ -100,8 +101,9 @@ type Reaction struct {
 	Users []*User `json:"users"`
 }
 
-// A file is an optional key on a message.
+// A File is an optional key on a message.
 type File struct {
+	Id         string `json:"id"`
 	Name       string `json:"name"`
 	Filetype   string `json:"type"`
 	User       *User  `json:"user"`

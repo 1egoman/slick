@@ -8,7 +8,6 @@ import (
 	"github.com/1egoman/slime/frontend" // The thing to draw to the screen
 	"github.com/1egoman/slime/gateway"  // The thing to interface with slack
 	"github.com/gdamore/tcell"
-	"github.com/skratchdot/open-golang/open"
 )
 
 // FIXME: This unit is in messages, it should be in rows. The problem is that 1 message isn't always
@@ -31,28 +30,20 @@ func sendTypingIndicator(state *State) {
 func OnMessageInteraction(state *State, key rune) {
 	// Is a message selected?
 	if state.SelectedMessageIndex >= 0 {
-		selectedMessageIndex := len(state.ActiveConnection().MessageHistory()) - 1 - state.SelectedMessageIndex
-		selectedMessage := state.ActiveConnection().MessageHistory()[selectedMessageIndex]
-
 		switch key {
 		case 'o':
-			// Open the private image url in the browser
-			if selectedMessage.File != nil {
-				open.Run(selectedMessage.File.Permalink)
-			} else {
-				log.Println("o pressed, but currently selected message has no file to Open")
+			err := GetCommand("OpenFile").Handler([]string{}, state)
+			if err != nil {
+				state.Status.Errorf(err.Error())
 			}
 		case 'c':
-			// Open the private image url in the browser
-			if selectedMessage.File != nil {
-				// FIXME: actually write to the clipboard
-				log.Println("FIXME: will eventually copy to clipboard:", selectedMessage.File.Permalink)
-			} else {
-				log.Println("o pressed, but currently selected message has no file to Open")
+			err := GetCommand("CopyFile").Handler([]string{}, state)
+			if err != nil {
+				state.Status.Errorf(err.Error())
 			}
 		}
 	} else {
-		log.Println("o pressed, but no message selected")
+		state.Status.Printf("No message selected.")
 	}
 }
 

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"errors"
+
+	"github.com/skratchdot/open-golang/open"
 )
 
 type CommandType int
@@ -87,6 +89,70 @@ var COMMANDS = []Command{
 			// Make the post
 			if err := state.ActiveConnection().PostText(postTitle, postContent); err != nil {
 				return err
+			}
+
+			return nil
+		},
+	},
+
+
+	//
+	// MESSAGE ACTIONS
+	//
+
+	{
+		Name: "Reaction",
+		Type: NATIVE,
+		Description: "Post a reaction to the selected message",
+		Arguments: "<raection name>",
+		Permutations: []string{"react"},
+		Handler: func(args []string, state *State) error {
+			selectedMessageIndex := len(state.ActiveConnection().MessageHistory()) - 1 - state.SelectedMessageIndex
+			selectedMessage := state.ActiveConnection().MessageHistory()[selectedMessageIndex]
+
+			if len(args) == 2 {
+				reaction := args[1]
+				return state.ActiveConnection().ToggleMessageReaction(selectedMessage, reaction)
+			} else {
+				return errors.New("Please use more arguments. /react <reaction name>")
+			}
+		},
+	},
+	{
+		Name: "OpenFile",
+		Type: NATIVE,
+		Description: "If a file is attached to the current message, open it.",
+		Arguments: "",
+		Permutations: []string{"openfile", "opf"},
+		Handler: func(args []string, state *State) error {
+			selectedMessageIndex := len(state.ActiveConnection().MessageHistory()) - 1 - state.SelectedMessageIndex
+			selectedMessage := state.ActiveConnection().MessageHistory()[selectedMessageIndex]
+
+			// Open the private image url in the browser
+			if selectedMessage.File != nil {
+				open.Run(selectedMessage.File.Permalink)
+			} else {
+				return errors.New("Selected message has no file")
+			}
+
+			return nil
+		},
+	},
+	{
+		Name: "CopyFile",
+		Type: NATIVE,
+		Description: "If a file is attached to the current message, copy it into the system clipboard.",
+		Arguments: "",
+		Permutations: []string{"copyfile", "cpf"},
+		Handler: func(args []string, state *State) error {
+			selectedMessageIndex := len(state.ActiveConnection().MessageHistory()) - 1 - state.SelectedMessageIndex
+			selectedMessage := state.ActiveConnection().MessageHistory()[selectedMessageIndex]
+
+			// Open the private image url in the browser
+			if selectedMessage.File != nil {
+				state.Status.Printf("FIXME: will eventually copy to clipboard: %s", selectedMessage.File.Permalink)
+			} else {
+				return errors.New("Selected message has no file")
 			}
 
 			return nil

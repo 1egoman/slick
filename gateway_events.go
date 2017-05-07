@@ -98,6 +98,17 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 				log.Printf("Channel value", channel)
 			}
 
+    // case "reaction_added":
+    //   // If a message was deleted, then delete the message from the message history
+    //   for index, msg := range state.ActiveConnection().MessageHistory() {
+    //     if msg.Hash == event.Data["event_ts"] {
+    //       for _, reaction := range msg.Reactions {
+    //         event.Data["reaction"] // == "smile"
+    //         event.Data["item_user"] // == "U0M9S59T2"
+    //       }
+    //     }
+    //   }
+
 		case "":
 			log.Printf("Unknown event received: %+v", event)
 		}
