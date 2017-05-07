@@ -4,20 +4,30 @@ import (
 	"strings"
 )
 
-/*
+/*/ / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
+// EXAMPLE USAGE
 
-state.FuzzyPicker.Items = []interface{}
+fuzzyPicker := FuzzySorter{} // (state.FuzzyPicker is an instance of `FuzzySorter`, fyi)
+fuzzyPicker.StringItems = []string{}
+fuzzyPicker.Items = []interface{}
+
+// Add corresponding items to `Items` and `StringItems`
+// Their lengths need to be the same.
 for i := 0; i < 10; i++ {
-    state.FuzzyPicker.Items = append(state.FuzzyPicker.Items, i)
-    state.FuzzyPicker.StringItems = append(state.FuzzyPicker.Items, string(i))
+    fuzzyPicker.Items = append(state.FuzzyPicker.Items, i)
+    fuzzyPicker.StringItems = append(state.FuzzyPicker.Items, string(i))
 }
 
-state.FuzzyPicker.Show(func(state *State) {
+// Show the fuzzy picker, and provide a callback to be called when the user selects an item.
+fuzzyPicker.Show(func(state *State) {
     log.Printf("I'm printed when the user selectd something.")
     log.Printf("Selected index = %d", state.FuzzyPicker.SelectedItem)
 })
 
-*/
+/ / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /*/
+
+
+
 
 // A struct that wraps a collection of string items and norma items, and sorts both based on the
 // closeness of each of `StringItems` to `Needle`.
