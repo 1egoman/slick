@@ -165,6 +165,26 @@ var COMMANDS = []Command{
 	},
 
 
+	//
+	// OPEN IN SLACK
+	//
+	{
+		Name: "OpenInSlack",
+		Type: NATIVE,
+		Description: "Open the current channel in the slack app.",
+		Arguments: "",
+		Permutations: []string{"slack", "ops"},
+		Handler: func(args []string, state *State) error {
+			team := state.ActiveConnection().Team()
+			channel := state.ActiveConnection().SelectedChannel()
+			if team == nil || channel == nil {
+				return errors.New("Selected team or channel was nil.")
+			}
+			open.Run("slack://channel?team="+team.Id+"&id="+channel.Id)
+			return nil
+		},
+	},
+
 
 	//
 	// BUILT INTO SLACK
