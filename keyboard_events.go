@@ -26,6 +26,36 @@ func sendTypingIndicator(state *State) {
 	}
 }
 
+func enableCommandAutocompletion(state *State, quit chan struct{}) {
+	// Also, take care of autocomplete of slash commands
+	// As the user types, show them above the command bar in a fuzzy picker.
+	if !state.FuzzyPicker.Visible {
+		// When the user presses enter, run the slash command the user typed.
+		state.FuzzyPicker.Show(func(state *State) {
+			err := OnCommandExecuted(state, quit)
+			if err != nil {
+				log.Fatalf(err.Error())
+			}
+		})
+
+		// Assemble add the items to the fuzzy sorter.
+		for _, command := range COMMANDS {
+			state.FuzzyPicker.Items = append(state.FuzzyPicker.Items, command)
+			state.FuzzyPicker.StringItems = append(
+				state.FuzzyPicker.StringItems,
+				fmt.Sprintf(
+					"%s%s %s\t%s - %s", // ie: "/quit (/q)        Quit - quits slime"
+					string(state.Command[0]),
+					strings.Join(command.Permutations, " "),
+					command.Arguments,
+					command.Name,
+					command.Description,
+				),
+			)
+		}
+	}
+}
+
 // WHen a user presses a key when they are selecting with a message, perform an action.
 func OnMessageInteraction(state *State, key rune) {
 	// Is a message selected?
@@ -230,17 +260,20 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 			state.Mode = "chat"
 			state.FuzzyPicker.Hide()
 		}
-		// 'e' moves to write mode. So does ':' and '/'
+
+	// 'e' moves to write mode. So does ':' and '/'
 	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'w':
 		state.Mode = "writ"
 	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == ':':
 		state.Mode = "writ"
 		state.Command = []rune{':'}
 		state.CommandCursorPosition = 1
+		enableCommandAutocompletion(state, quit)
 	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == '/':
 		state.Mode = "writ"
 		state.Command = []rune{'/'}
 		state.CommandCursorPosition = 1
+		enableCommandAutocompletion(state, quit)
 
 
 	//
@@ -365,34 +398,6 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 
 		// Send a message on the outgoing channel that the user is typing.
 		sendTypingIndicator(state)
-
-		// Also, take care of autocomplete of slash commands
-		// As the user types, show them above the command bar in a fuzzy picker.
-		if !state.FuzzyPicker.Visible && (state.Command[0] == '/' || state.Command[0] == ':') {
-			// When the user presses enter, run the slash command the user typed.
-			state.FuzzyPicker.Show(func(state *State) {
-				err := OnCommandExecuted(state, quit)
-				if err != nil {
-					log.Fatalf(err.Error())
-				}
-			})
-
-			// Assemble add the items to the fuzzy sorter.
-			for _, command := range COMMANDS {
-				state.FuzzyPicker.Items = append(state.FuzzyPicker.Items, command)
-				state.FuzzyPicker.StringItems = append(
-					state.FuzzyPicker.StringItems,
-					fmt.Sprintf(
-						"%s%s %s\t%s - %s", // ie: "/quit (/q)        Quit - quits slime"
-						string(state.Command[0]),
-						strings.Join(command.Permutations, " "),
-						command.Arguments,
-						command.Name,
-						command.Description,
-					),
-				)
-			}
-		}
 
 	// Backspace removes a character.
 	case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyDEL:

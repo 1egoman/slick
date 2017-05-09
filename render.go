@@ -17,7 +17,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 
 		go func() {
 			if err := state.ActiveConnection().Refresh(); err != nil {
-				log.Fatal(err)
+				state.Status.Errorf(err.Error())
 			}
 			render(state, term)
 		}()

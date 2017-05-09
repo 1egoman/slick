@@ -53,7 +53,10 @@ func main() {
 				panic(r)
 			}
 		}()
-		connect(state, term, connected)
+
+		if err := connect(state, term, connected); err != nil {
+			state.Status.Errorf("Conenction error: %s", err.Error())
+		}
 	}()
 
 	// GOROUTINE: Handle events coming from the input device (ie, keyboard).
