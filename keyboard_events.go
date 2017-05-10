@@ -360,7 +360,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 		log.Println("Enter pressed")
 		if state.FuzzyPicker.Visible {
 			state.FuzzyPicker.OnSelected(state)
-		} else if state.Mode == "writ" {
+		} else if state.Mode == "writ" && state.ActiveConnection() != nil {
 			// Just send a normal message!
 			message := gateway.Message{
 				Sender: state.ActiveConnection().Self(),

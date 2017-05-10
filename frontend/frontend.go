@@ -117,7 +117,7 @@ func (term *TerminalDisplay) DrawStatusBar(
 	lastRow := height - 1
 
 	// Clear the row.
-	term.DrawBlankLine(0)
+	term.DrawBlankLine(lastRow)
 
 	// First, draw the mode (ie, chat, channel-picker, etc...)
 	term.WriteText(0, lastRow, mode)

@@ -29,14 +29,13 @@ func main() {
 
 	// Execute configs
 	if err := ParseScript(`
-	-- team({token = getenv("SLACK_TOKEN_ONE")})
-	-- team("Gaus Family", {token = "test"})
-	-- team("Openhack", {token = "test"})
-	-- team("Commonspace", {token = "test"})
-	-- team("Commonspace", {token = "test"})
+	-- Connect to slack teams
+	Connect(getenv("SLACK_TOKEN_ONE"))
+	Connect(getenv("SLACK_TOKEN_TWO"))
 
+	-- Example key binding
 	keymap("ff", function()
-		error = Who("content", "title")
+		error = PostInline("content", "title")
 		if error then
 			print(error)
 		end

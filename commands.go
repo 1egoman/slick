@@ -41,6 +41,39 @@ var COMMANDS = []Command{
 	},
 
 	//
+	// CONNECT TO A TEAM
+	//
+	{
+		Name:         "Connect",
+		Type:         NATIVE,
+		Description:  "Connect to a given team",
+		Arguments:    "<token>",
+		Permutations: []string{"connect", "con"},
+		Handler:      func(args []string, state *State) error {
+			var token string
+			if len(args) == 2 { // /connect token-here
+				token = args[1]
+			} else {
+				return errors.New("Please use more arguments. /connect token-here")
+			}
+
+			// Add the connection.
+			connection := gatewaySlack.New(token)
+			
+			// Initialize the connection
+			err := connection.Connect()
+			if err != nil {
+				return errors.New(fmt.Sprintf("Error in connecting: %s", err))
+			}
+
+			// Store the connection
+			state.Connections = append(state.Connections, connection)
+			state.SetActiveConnection(len(state.Connections) - 1)
+			return nil
+		},
+	},
+
+	//
 	// POSTS
 	//
 	{
@@ -432,17 +465,6 @@ func ParseScript(script string, state *State) error {
 		return 0
 	}))
 
-	// Allow lua to run things when a user presses a key.
-	L.SetGlobal("team", L.NewFunction(func(L *lua.LState) int {
-		teamOptions := L.ToTable(1)
-
-		state.Connections = append(state.Connections, gatewaySlack.New(
-			teamOptions.RawGetString("token").String(),
-		))
-
-		return 0
-	}))
-
 	L.SetGlobal("getenv", L.NewFunction(func(L *lua.LState) int {
 		envName := L.ToString(1)
 		L.Push(lua.LString(os.Getenv(envName)))
@@ -454,7 +476,7 @@ func ParseScript(script string, state *State) error {
 		func(command Command) { // Close over command so it 
 			L.SetGlobal(command.Name, L.NewFunction(func(L *lua.LState) int {
 				// Collect all arguments into an array
-				args := []string{}
+				args := []string{"__COMMAND"}
 				argc := 1
 				for ;; argc += 1 {
 					arg := L.ToString(argc)
