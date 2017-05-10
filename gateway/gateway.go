@@ -6,6 +6,7 @@ type Connection interface {
 	Name() string
 
 	Connect() error
+	Disconnect() error
 
 	// Called to "refetch" any persistent resources, such as channels.
 	Refresh() error

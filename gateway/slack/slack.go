@@ -337,6 +337,11 @@ func (c *SlackConnection) ParseMessage(
 	}, nil
 }
 
+func (c *SlackConnection) Disconnect() error {
+	c.conn.Close()
+	return nil
+}
+
 func (c *SlackConnection) ToggleMessageReaction(message gateway.Message, reaction string) error {
 	// Has the active user reacted to this message?
 	messageReactedTo := false

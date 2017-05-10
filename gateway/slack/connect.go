@@ -48,7 +48,8 @@ func (c *SlackConnection) Connect() error {
 		for {
 			// Listen for messages, and when some are received, write them to a channel.
 			if n, err = c.conn.Read(msgRaw); err != nil {
-				log.Fatal(err)
+				log.Println(err.Error())
+        return
 			}
 
 			// Add the latest packet to the message buffer
@@ -93,7 +94,8 @@ func (c *SlackConnection) Connect() error {
 
 			// Send it.
 			if _, err = c.conn.Write(data); err != nil {
-        log.Fatalf("Couldn't send message: %s", err.Error())
+        log.Println("Couldn't send message: %s", err.Error())
+        return
 			}
 		}
 	}(c.outgoing)

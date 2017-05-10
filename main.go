@@ -35,9 +35,11 @@ func main() {
 
 	-- Example key binding
 	keymap("ff", function()
-		error = PostInline("content", "title")
-		if error then
-			print(error)
+		err = PostInline("content", "title")
+		if err then
+			error(err)
+		else
+			print("Successfully posted!")
 		end
 	end)
 	`, state); err != nil {

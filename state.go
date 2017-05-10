@@ -1,10 +1,8 @@
 package main
 
 import (
-	// "os"
 	"github.com/1egoman/slime/status"
 	"github.com/1egoman/slime/gateway" // The thing to interface with slack
-	// "github.com/1egoman/slime/gateway/slack"
 )
 
 // This struct contains the main application state. I have fluxy intentions.
@@ -53,10 +51,7 @@ func NewInitialStateMode(mode string) *State {
 		CommandCursorPosition: 0,
 
 		// Connection to the server
-		Connections: []gateway.Connection{
-			// gatewaySlack.New(os.Getenv("SLACK_TOKEN_ONE")), // Gaus Family
-			// gatewaySlack.New(os.Getenv("SLACK_TOKEN_TWO")), // Uncommonspace
-		},
+		Connections: []gateway.Connection{},
 
 		// Which connection in the connections object is active
 		activeConnection: 0,
@@ -112,4 +107,7 @@ func (s *State) ConnectionIsStale() bool {
 }
 func (s *State) SyncActiveConnection() {
 	s.connectionSynced = true
+}
+func (s *State) ActiveConnectionIndex() int {
+	return s.activeConnection
 }

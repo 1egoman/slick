@@ -7,6 +7,7 @@ import (
 	"strings"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/1egoman/slime/gateway"
 	"github.com/1egoman/slime/gateway/slack"
@@ -68,6 +69,37 @@ var COMMANDS = []Command{
 
 			// Store the connection
 			state.Connections = append(state.Connections, connection)
+			state.SetActiveConnection(len(state.Connections) - 1)
+			return nil
+		},
+	},
+	{
+		Name:         "Disconnect",
+		Type:         NATIVE,
+		Description:  "Connect to a given team. If no index is specified, then use the active connection.",
+		Arguments:    "[team index]",
+		Permutations: []string{"disconnect", "dis"},
+		Handler:      func(args []string, state *State) error {
+			var index int
+			if len(args) == 1 { // /disconnect
+				index = state.ActiveConnectionIndex()
+			} else if len(args) == 2 { // /disconnect index
+				// Convert the index from strint to int
+				i, err := strconv.ParseInt(args[1], 10, 0)
+				if err != nil {
+					return errors.New("Error disconnecting: "+err.Error())
+				}
+				index = int(i)
+				if index < 0 && index > len(state.Connections) {
+					return errors.New("No such connection at that index.")
+				}
+			} else {
+				return errors.New("Please use more arguments. /disconnect [team index]")
+			}
+
+			log.Println("Closing connection with index", index)
+			state.Connections[index].Disconnect()
+			state.Connections = append(state.Connections[:index], state.Connections[index+1:]...)
 			state.SetActiveConnection(len(state.Connections) - 1)
 			return nil
 		},
