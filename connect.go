@@ -1,17 +1,16 @@
 package main
 
 import (
-	"log"
-
+	// "log"
 	"github.com/1egoman/slime/frontend" // The thing to draw to the screen
 )
 
 // Given a state object populated with a gateway, initialize the state with the gateway.
-func connect(state *State, term *frontend.TerminalDisplay, connected chan struct{}) {
+func connect(state *State, term *frontend.TerminalDisplay, connected chan struct{}) error {
 	// Connect to all gateways on start.
 	for _, connection := range state.Connections {
 		if err := connection.Connect(); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 
@@ -27,10 +26,11 @@ func connect(state *State, term *frontend.TerminalDisplay, connected chan struct
 	for _, connection := range state.Connections {
 		_, err := connection.FetchChannels()
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 
 	// Render any changes due to the added connections
 	render(state, term)
+	return nil
 }

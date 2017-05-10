@@ -29,6 +29,12 @@ func main() {
 
 	// Execute configs
 	if err := ParseScript(`
+	-- team({token = getenv("SLACK_TOKEN_ONE")})
+	-- team("Gaus Family", {token = "test"})
+	-- team("Openhack", {token = "test"})
+	-- team("Commonspace", {token = "test"})
+	-- team("Commonspace", {token = "test"})
+
 	keymap("ff", function()
 		error = Who("content", "title")
 		if error then
@@ -55,7 +61,7 @@ func main() {
 		}()
 
 		if err := connect(state, term, connected); err != nil {
-			state.Status.Errorf("Conenction error: %s", err.Error())
+			state.Status.Errorf("Connection error: %s", err.Error())
 		}
 	}()
 

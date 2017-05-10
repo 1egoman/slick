@@ -141,7 +141,7 @@ func (term *TerminalDisplay) DrawMessages(
 ) int { // Return how many messages were rendered.
 	width, height := term.screen.Size()
 
-	for r := 0; r < height-bottomPadding; r++ {
+	for r := 0; r < height-BottomPadding; r++ {
 		// Clear the row.
 		for i := 0; i < width; i++ {
 			char, _, style, _ := term.screen.GetContent(i, r)
@@ -154,7 +154,7 @@ func (term *TerminalDisplay) DrawMessages(
 	// Loop from the bottom of the window to the top.
 	// Start at the `bottomDisplayedItem`th item and loop until no more items can be rendered.
 	index := len(messages) - 1 - bottomDisplayedItem
-	row := height - bottomPadding - 1
+	row := height - BottomPadding - 1
 	for row >= 0 && index >= 0 {
 		msg := messages[index]
 

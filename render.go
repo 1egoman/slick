@@ -11,7 +11,7 @@ import (
 // This function is called whenever something in state is changed.
 func render(state *State, term *frontend.TerminalDisplay) {
 	// If the user switched connections, then refresh
-	if state.ConnectionIsStale() {
+	if state.ConnectionIsStale() && state.ActiveConnection() != nil {
 		state.SyncActiveConnection()
 		log.Printf("User switching to new active connection: %s", state.ActiveConnection().Name())
 
@@ -23,11 +23,15 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		}()
 	}
 
-	state.RenderedMessageNumber = term.DrawMessages(
-		state.ActiveConnection().MessageHistory(),                                   // List of messages
-		len(state.ActiveConnection().MessageHistory())-1-state.SelectedMessageIndex, // Is a message selected?
-		state.BottomDisplayedItem,                                                   // Bottommost item
-	)
+	if state.ActiveConnection() != nil {
+		state.RenderedMessageNumber = term.DrawMessages(
+			state.ActiveConnection().MessageHistory(),                                   // List of messages
+			len(state.ActiveConnection().MessageHistory())-1-state.SelectedMessageIndex, // Is a message selected?
+			state.BottomDisplayedItem,                                                   // Bottommost item
+		)
+	} else {
+		term.DrawBlankLines(0, -1 * frontend.BottomPadding)
+	}
 
 	term.DrawStatusBar(
 		state.Mode,               // Which mode we're currently in
@@ -35,12 +39,22 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		state.ActiveConnection(), // Which conenction is active (to highlight the active one differently)
 		state.Status,             // Status message to display
 	)
-	term.DrawCommandBar(
-		string(state.Command),                      // The command that the user is typing
-		state.CommandCursorPosition,                // The cursor position
-		state.ActiveConnection().SelectedChannel(), // The selected channel
-		state.ActiveConnection().Team(),            // The selected team
-	)
+
+	if state.ActiveConnection() == nil {
+		term.DrawCommandBar(
+			string(state.Command),                      // The command that the user is typing
+			state.CommandCursorPosition,                // The cursor position
+			nil, // The selected channel
+			nil,            // The selected team
+		)
+	} else {
+		term.DrawCommandBar(
+			string(state.Command),                      // The command that the user is typing
+			state.CommandCursorPosition,                // The cursor position
+			state.ActiveConnection().SelectedChannel(), // The selected channel
+			state.ActiveConnection().Team(),            // The selected team
+		)
+	}
 
 	if state.FuzzyPicker.Visible {
 		// Sort items by the search command

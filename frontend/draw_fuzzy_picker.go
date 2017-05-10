@@ -16,8 +16,7 @@ func (term *TerminalDisplay) DrawFuzzyPicker(items []string, selectedIndex int, 
 		items = items[bottomDisplayedItem : bottomDisplayedItem+FuzzyPickerMaxSize]
 	}
 	projectedSelectedIndex := selectedIndex - bottomDisplayedItem
-	bottomPadding := 2                                 // pad for the status bar and command bar
-	startingRow := height - len(items) - bottomPadding // The top row of the fuzzy picker
+	startingRow := height - len(items) - BottomPadding // The top row of the fuzzy picker
 
 	// Make sure that the item that is selected is never larger then the max item.
 	if projectedSelectedIndex > len(items)-1 {

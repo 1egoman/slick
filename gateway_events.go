@@ -16,6 +16,11 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan 
 	<-connected
 
 	for {
+    if state.ActiveConnection() == nil {
+			time.Sleep(100 * time.Millisecond) // Sleep to lower the speed of the loop for debugging reasons.
+      continue
+    }
+
 		// Before events can run, confirm that the a channel is selected.
 		hasFetchedChannel := state.ActiveConnection().SelectedChannel() != nil
 

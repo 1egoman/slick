@@ -16,7 +16,7 @@ const messageScrollPadding = 7
 
 // When the user presses a key, send a message telling slack that the user is typing.
 func sendTypingIndicator(state *State) {
-	if state.ActiveConnection().SelectedChannel() != nil {
+	if state.ActiveConnection() != nil && state.ActiveConnection().SelectedChannel() != nil {
 		state.ActiveConnection().Outgoing() <- gateway.Event{
 			Type: "typing",
 			Data: map[string]interface{}{
@@ -26,6 +26,7 @@ func sendTypingIndicator(state *State) {
 	}
 }
 
+// When the user presses ':' or '/', enable the autocomplete menu.
 func enableCommandAutocompletion(state *State, quit chan struct{}) {
 	// Also, take care of autocomplete of slash commands
 	// As the user types, show them above the command bar in a fuzzy picker.
@@ -280,37 +281,41 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 	// MOVEMENT UP AND DOWN THROUGH MESSAGES AND ACTIONS ON THE MESSAGES
 	//
 	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'j': // Down a message
-		if state.SelectedMessageIndex > 0 {
-			state.SelectedMessageIndex -= 1
-			if state.BottomDisplayedItem > 0 && state.SelectedMessageIndex < state.BottomDisplayedItem+messageScrollPadding {
-				state.BottomDisplayedItem -= 1
-			}
-			log.Printf("Selecting message %s", state.SelectedMessageIndex)
+		err := GetCommand("MoveBackMessage").Handler([]string{}, state)
+		if err != nil {
+			state.Status.Errorf(err.Error())
 		}
 	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'k': // Up a message
-		if state.SelectedMessageIndex < len(state.ActiveConnection().MessageHistory())-1 {
-			state.SelectedMessageIndex += 1
-			if state.SelectedMessageIndex >= state.RenderedMessageNumber-messageScrollPadding {
-				state.BottomDisplayedItem += 1
-			}
-			log.Printf("Selecting message %d, bottom index %d", state.SelectedMessageIndex, state.BottomDisplayedItem)
+		err := GetCommand("MoveForwardMessage").Handler([]string{}, state)
+		if err != nil {
+			state.Status.Errorf(err.Error())
 		}
 	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'G': // Select first message
-		state.SelectedMessageIndex = 0
-		state.BottomDisplayedItem = 0
-		log.Printf("Selecting first message")
+		if state.ActiveConnection() != nil && len(state.ActiveConnection().MessageHistory()) > 0{
+			state.SelectedMessageIndex = 0
+			state.BottomDisplayedItem = 0
+			log.Printf("Selecting first message")
+		} else {
+			state.Status.Errorf("No active connection or message history!")
+		}
 	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'g': // Select last message loaded
-		state.SelectedMessageIndex = len(state.ActiveConnection().MessageHistory()) - 1
-		state.BottomDisplayedItem = state.SelectedMessageIndex - messageScrollPadding
-		log.Printf("Selecting first message")
+		if state.ActiveConnection() != nil && len(state.ActiveConnection().MessageHistory()) > 0{
+			state.SelectedMessageIndex = len(state.ActiveConnection().MessageHistory()) - 1
+			state.BottomDisplayedItem = state.SelectedMessageIndex - messageScrollPadding
+			log.Printf("Selecting last message")
+		} else {
+			state.Status.Errorf("No active connection or message history!")
+		}
 	case state.Mode == "chat" && ev.Key() == tcell.KeyCtrlU: // Up a message page
 		pageAmount := state.RenderedMessageNumber / 2
-		if state.SelectedMessageIndex < len(state.ActiveConnection().MessageHistory())-1 {
+		if state.ActiveConnection() != nil && state.SelectedMessageIndex < len(state.ActiveConnection().MessageHistory())-1 {
 			state.SelectedMessageIndex += pageAmount
 			if state.SelectedMessageIndex >= state.RenderedMessageNumber-messageScrollPadding {
 				state.BottomDisplayedItem += pageAmount
 			}
 			log.Printf("Selecting message %d, bottom index %d", state.SelectedMessageIndex, state.BottomDisplayedItem)
+		} else {
+			state.Status.Errorf("No active connection, or message history too short!")
 		}
 	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && (ev.Rune() == 'o' || ev.Rune() == 'c'):
 		// When a user presses a key to interact with a message, handle it.

@@ -10,7 +10,7 @@ import (
 	"github.com/1egoman/slime/status"
 )
 
-const bottomPadding = 2 // The amount of lines at the bottom of the window to leave available for status bars.
+const BottomPadding = 2 // The amount of lines at the bottom of the window to leave available for status bars.
 
 var usernameRegex = regexp.MustCompile("<@[A-Z0-9]+\\|(.+)>")
 var channelRegex = regexp.MustCompile("<#[A-Z0-9]+\\|(.+)>")
@@ -26,11 +26,37 @@ func makePrintWorthy(text string) string {
 	return text
 }
 
+// Given a line number, reset it to the default style and erase it.
+func (term *TerminalDisplay) DrawBlankLine(line int) {
+	width, _ := term.screen.Size()
+	for j := 0; j < width; j++ {
+		char, _, style, _ := term.screen.GetContent(j, line)
+		if char != ' ' || style != tcell.StyleDefault {
+			term.screen.SetCell(j, line, tcell.StyleDefault, ' ')
+		}
+	}
+}
+func (term *TerminalDisplay) DrawBlankLines(start int, end int) {
+	_, height := term.screen.Size()
+
+	// If end < 0, then index from the other end.
+	// ie, DrawBlankLines(0, -2) would draw blank lines from the first line up until the second
+	// to last.
+	if end < 0 {
+		end = height - end
+	}
+
+	for i := start; i < end; i++ {
+		term.DrawBlankLine(i)
+	}
+}
+
 type Display interface {
 	DrawStatusBar()
 	DrawCommandBar(string, int)
 	DrawChannels([]gateway.Channel)
 	Render()
+	Close()
 }
 
 func NewTerminalDisplay(screen tcell.Screen) *TerminalDisplay {
@@ -77,22 +103,21 @@ func (term *TerminalDisplay) Render() {
 	term.screen.Show()
 }
 
+func (term *TerminalDisplay) Close() {
+	term.screen.Fini()
+}
+
 func (term *TerminalDisplay) DrawStatusBar(
 	mode string,
 	connections []gateway.Connection,
 	activeConnection gateway.Connection,
 	status status.Status,
 ) {
-	width, height := term.screen.Size()
+	_, height := term.screen.Size()
 	lastRow := height - 1
 
 	// Clear the row.
-	for i := 0; i < width; i++ {
-		char, _, style, _ := term.screen.GetContent(i, lastRow)
-		if char != ' ' || style != tcell.StyleDefault {
-			term.screen.SetCell(i, lastRow, tcell.StyleDefault, ' ')
-		}
-	}
+	term.DrawBlankLine(0)
 
 	// First, draw the mode (ie, chat, channel-picker, etc...)
 	term.WriteText(0, lastRow, mode)
@@ -130,22 +155,17 @@ func (term *TerminalDisplay) DrawCommandBar(
 	currentChannel *gateway.Channel,
 	currentTeam *gateway.Team,
 ) {
-	width, height := term.screen.Size()
+	_, height := term.screen.Size()
 	row := height - 2
 
 	// Clear the row.
-	for i := 0; i < width; i++ {
-		char, _, style, _ := term.screen.GetContent(i, row)
-		if char != ' ' || style != tcell.StyleDefault {
-			term.screen.SetCell(i, row, tcell.StyleDefault, ' ')
-		}
-	}
+	term.DrawBlankLine(row)
 
 	var prefix string
 	if currentTeam != nil && currentChannel != nil {
 		prefix = currentTeam.Name + "#" + currentChannel.Name + " >"
 	} else {
-		prefix = "(loading...) >"
+		prefix = "(no connec) >"
 	}
 
 	// Write what the user is typing

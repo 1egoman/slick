@@ -6,8 +6,10 @@ import (
 	"errors"
 	"strings"
 	"log"
+	"os"
 
 	"github.com/1egoman/slime/gateway"
+	"github.com/1egoman/slime/gateway/slack"
 
 	"github.com/skratchdot/open-golang/open"
 	"github.com/yuin/gopher-lua"
@@ -65,6 +67,10 @@ var COMMANDS = []Command{
 				return errors.New(fmt.Sprintf("Couldn't read file %s: %s", postPath, err.Error()))
 			}
 
+			if state.ActiveConnection() == nil {
+				return errors.New("No active connection!")
+			}
+
 			// Make the post
 			if err = state.ActiveConnection().PostText(postTitle, string(postContent)); err != nil {
 				return err
@@ -89,6 +95,10 @@ var COMMANDS = []Command{
 				postContent = args[1]
 			} else {
 				return errors.New("Please use more arguments. /postinline \"post content\" [\"post title\"]")
+			}
+
+			if state.ActiveConnection() == nil {
+				return errors.New("No active connection!")
 			}
 
 			// Make the post
@@ -161,6 +171,48 @@ var COMMANDS = []Command{
 			}
 
 			return nil
+		},
+	},
+
+	//
+	// MOVE FORWARD / BACKWARD MESSAGES
+	//
+	{
+		Name: "MoveBackMessage",
+		Type: NATIVE,
+		Description: "Move selected message back to the previous message in time.",
+		Arguments: "",
+		Permutations: []string{},
+		Handler: func(args []string, state *State) error {
+			if state.ActiveConnection() != nil && state.SelectedMessageIndex > 0 {
+				state.SelectedMessageIndex -= 1
+				if state.BottomDisplayedItem > 0 && state.SelectedMessageIndex < state.BottomDisplayedItem+messageScrollPadding {
+					state.BottomDisplayedItem -= 1
+				}
+				log.Printf("Selecting message %s", state.SelectedMessageIndex)
+				return nil
+			} else {
+				return errors.New("Can't move back a message, no such message!")
+			}
+		},
+	},
+	{
+		Name: "MoveForwardMessage",
+		Type: NATIVE,
+		Description: "Move selected message forward to the next message in time.",
+		Arguments: "",
+		Permutations: []string{},
+		Handler: func(args []string, state *State) error {
+			if state.ActiveConnection() != nil && state.SelectedMessageIndex < len(state.ActiveConnection().MessageHistory())-1 {
+				state.SelectedMessageIndex += 1
+				if state.SelectedMessageIndex >= state.RenderedMessageNumber-messageScrollPadding {
+					state.BottomDisplayedItem += 1
+				}
+				log.Printf("Selecting message %d, bottom index %d", state.SelectedMessageIndex, state.BottomDisplayedItem)
+				return nil
+			} else {
+				return errors.New("Can't move forward a message, no such message!")
+			}
 		},
 	},
 
@@ -378,6 +430,23 @@ func ParseScript(script string, state *State) error {
 			},
 		})
 		return 0
+	}))
+
+	// Allow lua to run things when a user presses a key.
+	L.SetGlobal("team", L.NewFunction(func(L *lua.LState) int {
+		teamOptions := L.ToTable(1)
+
+		state.Connections = append(state.Connections, gatewaySlack.New(
+			teamOptions.RawGetString("token").String(),
+		))
+
+		return 0
+	}))
+
+	L.SetGlobal("getenv", L.NewFunction(func(L *lua.LState) int {
+		envName := L.ToString(1)
+		L.Push(lua.LString(os.Getenv(envName)))
+		return 1
 	}))
 
 	// Export all commands in the lua context
