@@ -32,6 +32,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		)
 	} else {
 		term.DrawBlankLines(0, -1 * frontend.BottomPadding)
+		term.DrawInfoPage()
 	}
 
 	term.DrawStatusBar(

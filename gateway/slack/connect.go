@@ -36,7 +36,7 @@ func (c *SlackConnection) Connect() error {
 	// Create a connection to the websocket
 	c.conn, err = websocket.Dial(c.url, "", origin)
 	if err != nil {
-		panic(err) // Panic when cannot talk to messaging servers
+		return err // Panic when cannot talk to messaging servers
 	}
 	log.Printf("Slack connection %s made!", c.Team().Name)
 
