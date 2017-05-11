@@ -5,6 +5,7 @@ import (
 	"reflect"
 	. "github.com/1egoman/slime"
 	"github.com/1egoman/slime/gateway"
+	"github.com/1egoman/slime/gateway/slack"
 	"github.com/gdamore/tcell"
 	"testing"
 )
@@ -30,6 +31,12 @@ func InitialMessageHistoryState(initialSelectedIndex int, initialBottomItemIndex
 	s.SelectedMessageIndex = initialSelectedIndex
 	s.BottomDisplayedItem = initialBottomItemIndex
 	s.RenderedMessageNumber = 10 // For our tests, assume that 10 messages will fit on the screen.
+
+	// Define an active connection
+	s.Connections = append(s.Connections, gatewaySlack.New("token"))
+	s.SetActiveConnection(len(s.Connections) - 1)
+
+	// Add messages to the active connection
 	for i := 1; i <= 15; i++ {
 		s.ActiveConnection().AppendMessageHistory(gateway.Message{
 			Timestamp: i,
