@@ -25,6 +25,7 @@ type SlackConnection struct {
 	url   string
 	token string
 	conn  *websocket.Conn
+	connectionStatus gateway.ConnectionStatus
 
 	// Create two message channels, one for incoming messages and one for outgoing messages.
 	incoming chan gateway.Event
@@ -337,11 +338,6 @@ func (c *SlackConnection) ParseMessage(
 	}, nil
 }
 
-func (c *SlackConnection) Disconnect() error {
-	c.conn.Close()
-	return nil
-}
-
 func (c *SlackConnection) ToggleMessageReaction(message gateway.Message, reaction string) error {
 	// Has the active user reacted to this message?
 	messageReactedTo := false
@@ -400,4 +396,8 @@ func (c *SlackConnection) ToggleMessageReaction(message gateway.Message, reactio
 	} else {
 		return errors.New(fmt.Sprintf("Slack error: %s", response.Error))
 	}
+}
+
+func (c *SlackConnection) Status() gateway.ConnectionStatus {
+	return c.connectionStatus
 }

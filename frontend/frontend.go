@@ -70,7 +70,9 @@ func NewTerminalDisplay(screen tcell.Screen) *TerminalDisplay {
 			"StatusBarActiveConnection": tcell.StyleDefault.
 				Background(tcell.ColorBlue).
 				Foreground(tcell.ColorWhite),
-			"StatusBarConnection": tcell.StyleDefault,
+			"StatusBarConnected": tcell.StyleDefault,
+			"StatusBarConnecting": tcell.StyleDefault.
+				Background(tcell.ColorDarkMagenta),
 
 			"MessageReaction": tcell.StyleDefault,
 			"MessageFile":     tcell.StyleDefault,
@@ -137,8 +139,13 @@ func (term *TerminalDisplay) DrawStatusBar(
 			var style tcell.Style
 			if item == activeConnection {
 				style = term.Styles["StatusBarActiveConnection"]
+			} else if item.Status() == gateway.CONNECTING {
+				style = term.Styles["StatusBarConnecting"]
+			} else if item.Status() == gateway.CONNECTED {
+				style = term.Styles["StatusBarConnected"]
 			} else {
-				style = term.Styles["StatusBarConnection"]
+				// SOme weird case has no coloring.
+				style = tcell.StyleDefault
 			}
 
 			// Draw each connection

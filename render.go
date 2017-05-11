@@ -23,6 +23,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		}()
 	}
 
+	// Render messages provided by the active conenction
 	if state.ActiveConnection() != nil {
 		state.RenderedMessageNumber = term.DrawMessages(
 			state.ActiveConnection().MessageHistory(),                                   // List of messages

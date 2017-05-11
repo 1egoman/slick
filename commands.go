@@ -98,7 +98,11 @@ var COMMANDS = []Command{
 			}
 
 			log.Println("Closing connection with index", index)
+
+			// Gracefully close the conenctino prior to removing
 			state.Connections[index].Disconnect()
+
+			// Remove connection from the pool
 			state.Connections = append(state.Connections[:index], state.Connections[index+1:]...)
 			state.SetActiveConnection(len(state.Connections) - 1)
 			return nil

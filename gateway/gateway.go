@@ -4,6 +4,7 @@ package gateway
 type Connection interface {
 	// Each connection has a name.
 	Name() string
+	Status() ConnectionStatus
 
 	Connect() error
 	Disconnect() error
@@ -121,3 +122,12 @@ type Message struct {
 	Timestamp int        `json:"timestamp"` // This value is in seconds!
 	File      *File      `json:"file,omitempty"`
 }
+
+type ConnectionStatus int
+const (
+	DISCONNECTED ConnectionStatus = iota
+	CONNECTING
+	CONNECTED
+	FAILED      // When the gateway errors, then move to this state.
+)
+
