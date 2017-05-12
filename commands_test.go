@@ -9,7 +9,7 @@ import (
 	"errors"
 )
 
-func TestCommandPost(t *testing.T) {
+func TestHttpBasedCommands(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	for _, test := range []struct{
@@ -70,5 +70,38 @@ func TestCommandPost(t *testing.T) {
 		if !((test.Error == nil && err == nil) || (test.Error.Error() == err.Error())) {
 			t.Errorf("Test %s failed: %s", test.Name, err)
 		}
+	}
+}
+
+func TestCommandConnectDisconnect(t *testing.T) {
+	defer httpmock.DeactivateAndReset()
+
+	// Listen for command response
+	// FIXME: we should spin up a local websocket server here and not use one on the internet.
+	httpmock.Activate()
+	httpmock.RegisterResponder("GET", "https://slack.com/api/rtm.connect?token=token",
+		httpmock.NewStringResponder(200, `{"ok": true, "url": "wss://echo.websocket.org/?encoding=text"}`))
+
+	// Create initial state
+	state := NewInitialStateMode("writ")
+	state.Connections = []gateway.Connection{
+		gatewaySlack.New("token"),
+	}
+	state.ActiveConnection().SetSelectedChannel(&gateway.Channel{Id: "channel-id"})
+
+	// Execute the command
+	command := *GetCommand("Connect")
+	err := RunCommand(command, []string{"connect", "token"}, state)
+
+	// Verify the output
+	if err != nil {
+		t.Errorf("Couldn't connect to mock slack: %s", err)
+	}
+
+	// Attempt to disconnect from the socket.
+	command = *GetCommand("Disconnect")
+	err = RunCommand(command, []string{"disconnect"}, state)
+	if err != nil {
+		t.Errorf("Couldn't disconnect from mock slack: %s", err)
 	}
 }
