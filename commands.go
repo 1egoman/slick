@@ -49,18 +49,27 @@ var COMMANDS = []Command{
 		Name:         "Connect",
 		Type:         NATIVE,
 		Description:  "Connect to a given team",
-		Arguments:    "<token>",
+		Arguments:    "[team name] <token>",
 		Permutations: []string{"connect", "con"},
 		Handler:      func(args []string, state *State) error {
+			var name string
 			var token string
 			if len(args) == 2 { // /connect token-here
 				token = args[1]
+			} else if len(args) == 3 { // /connect "team name" token-here
+				token = args[2]
+				name = args[1]
 			} else {
-				return errors.New("Please use more arguments. /connect token-here")
+				return errors.New("Please use more arguments. /connect [team name] <token-here>")
 			}
 
 			// Add the connection.
-			connection := gatewaySlack.New(token)
+			var connection gateway.Connection
+			if len(name) > 0 {
+				connection = gatewaySlack.NewWithName(name, token)
+			} else {
+				connection = gatewaySlack.New(token)
+			}
 			
 			// Initialize the connection
 			err := connection.Connect()

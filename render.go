@@ -46,15 +46,15 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		term.DrawCommandBar(
 			string(state.Command),                      // The command that the user is typing
 			state.CommandCursorPosition,                // The cursor position
-			nil, // The selected channel
-			nil,            // The selected team
+			nil,                                        // The selected channel
+			"(no active connec)",                       // The selected team
 		)
 	} else {
 		term.DrawCommandBar(
 			string(state.Command),                      // The command that the user is typing
 			state.CommandCursorPosition,                // The cursor position
 			state.ActiveConnection().SelectedChannel(), // The selected channel
-			state.ActiveConnection().Team(),            // The selected team
+			state.ActiveConnection().Name(),            // The selected team name
 		)
 	}
 

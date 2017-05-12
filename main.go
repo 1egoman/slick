@@ -38,9 +38,6 @@ func main() {
 		}
 	}
 
-	// Render after executing scripts.
-	render(state, term)
-
 	// GOROUTINE: Handle events coming from the input device (ie, keyboard).
 	quit := make(chan struct{})
 	go func() {

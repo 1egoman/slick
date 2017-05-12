@@ -174,7 +174,7 @@ func (term *TerminalDisplay) DrawCommandBar(
 	command string,
 	cursorPosition int,
 	currentChannel *gateway.Channel,
-	currentTeam *gateway.Team,
+	currentTeamName string,
 ) {
 	_, height := term.screen.Size()
 	row := height - 2
@@ -182,12 +182,12 @@ func (term *TerminalDisplay) DrawCommandBar(
 	// Clear the row.
 	term.DrawBlankLine(row)
 
-	var prefix string
-	if currentTeam != nil && currentChannel != nil {
-		prefix = currentTeam.Name + "#" + currentChannel.Name + " >"
-	} else {
-		prefix = "(no connec) >"
+	// Generate prefix for given team and channel
+	prefix := currentTeamName
+	if currentChannel != nil {
+		prefix += "#" + currentChannel.Name
 	}
+	prefix += " >"
 
 	// Write what the user is typing
 	term.WriteTextStyle(0, row, term.Styles["CommandBarPrefix"], prefix)

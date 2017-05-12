@@ -17,6 +17,13 @@ import (
 func New(token string) *SlackConnection {
 	return &SlackConnection{
 		token: token,
+		nickname: nil,
+	}
+}
+func NewWithName(nickname string, token string) *SlackConnection {
+	return &SlackConnection{
+		token: token,
+		nickname: &nickname,
 	}
 }
 
@@ -24,6 +31,7 @@ func New(token string) *SlackConnection {
 type SlackConnection struct {
 	url   string
 	token string
+	nickname *string
 	conn  *websocket.Conn
 	connectionStatus gateway.ConnectionStatus
 
@@ -44,7 +52,9 @@ type SlackConnection struct {
 
 // Return the name of the team.
 func (c *SlackConnection) Name() string {
-	if c.Team() != nil && len(c.Team().Name) != 0 {
+	if c.nickname != nil && len(*c.nickname) > 0 {
+		return *c.nickname
+	} else if c.Team() != nil && len(c.Team().Name) != 0 {
 		return c.Team().Name
 	} else {
 		return "(slack loading...)"
