@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"errors"
 
 	"github.com/1egoman/slime/gateway"
 	"golang.org/x/net/websocket"
@@ -148,7 +149,7 @@ func (c *SlackConnection) requestConnectionUrl() error {
 	err = json.Unmarshal(body, &connectionBuffer)
 	if err != nil {
 		log.Println("Slack response: " + string(body))
-		return err
+		return errors.New("Slack connection error: "+string(body))
 	}
 
 	// Add response data to struct

@@ -27,44 +27,19 @@ func main() {
 	s.Init()
 	defer s.Fini() // Make sure we clean up after tcell!
 
-	// Execute configs
-	if err := ParseScript(`
-	-- Connect to slack teams
-	Connect(getenv("SLACK_TOKEN_ONE"))
-	Connect(getenv("SLACK_TOKEN_TWO"))
-
-	-- Example key binding
-	keymap("ff", function()
-		err = PostInline("content", "title")
-		if err then
-			error(err)
-		else
-			print("Successfully posted!")
-		end
-	end)
-	`, state); err != nil {
-		state.Status.Errorf("lua error: "+err.Error())
-	}
-
 	// Initial render.
 	render(state, term)
 
-	// Connect to the server
-	// Once this goroutine finishes, it closed the connected channel. This is used as a signal by
-	// the gateway events goroutine to start working.
-	connected := make(chan struct{})
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				s.Fini()
-				panic(r)
-			}
-		}()
-
-		if err := connect(state, term, connected); err != nil {
-			state.Status.Errorf("Connection error: %s", err.Error())
+	log.Println("Reading config files...")
+	for _, data := range GetConfigFileContents() {
+		err := ParseScript(data, state, term)
+		if err != nil {
+			state.Status.Errorf("lua error: %s", err.Error())
 		}
-	}()
+	}
+
+	// Render after executing scripts.
+	render(state, term)
 
 	// GOROUTINE: Handle events coming from the input device (ie, keyboard).
 	quit := make(chan struct{})
@@ -87,7 +62,7 @@ func main() {
 			}
 		}()
 
-		gatewayEvents(state, term, connected)
+		gatewayEvents(state, term)
 	}()
 
 	<-quit

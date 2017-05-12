@@ -73,6 +73,10 @@ func NewTerminalDisplay(screen tcell.Screen) *TerminalDisplay {
 			"StatusBarConnected": tcell.StyleDefault,
 			"StatusBarConnecting": tcell.StyleDefault.
 				Background(tcell.ColorDarkMagenta),
+			"StatusBarLog": tcell.StyleDefault,
+			"StatusBarError": tcell.StyleDefault.
+				Foreground(tcell.ColorDarkMagenta).
+				Bold(true),
 
 			"MessageReaction": tcell.StyleDefault,
 			"MessageFile":     tcell.StyleDefault,
@@ -113,7 +117,7 @@ func (term *TerminalDisplay) DrawStatusBar(
 	mode string,
 	connections []gateway.Connection,
 	activeConnection gateway.Connection,
-	status status.Status,
+	stat status.Status,
 ) {
 	_, height := term.screen.Size()
 	lastRow := height - 1
@@ -129,9 +133,18 @@ func (term *TerminalDisplay) DrawStatusBar(
 
 	position := len(mode) + 3
 
-	if status.Show {
+	if stat.Show {
+		// Get the color of the text on the status bar
+		log.Println("Status bar", stat.Type)
+		var style tcell.Style
+		if stat.Type == status.STATUS_ERROR {
+			style = term.Styles["StatusBarError"]
+		} else {
+			style = term.Styles["StatusBarLog"]
+		}
+
 		// Write status text
-		term.WriteText(position, lastRow, status.Message)
+		term.WriteTextStyle(position, lastRow, style, stat.Message)
 	} else {
 		// Then, render each conenction
 		for index, item := range connections {

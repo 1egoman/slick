@@ -68,3 +68,47 @@ a constructor called `gatewaySlack.New` that takes a single parameter - the auth
 ├── render.go                // Contains main render loop.
 └── state.go                 // Contains app state struct definitions.
 ```
+
+# Config files
+Slime configuration files are written in lua. Configuration files are searched from the current
+directory up to the root, and each must have the name or `.slimerc`. For example, if the current
+folder or any folder below the current folder contains a file named `.slimerc`, it will be loaded
+automatically.
+
+Config files contain a few unique functions:
+
+- `print("hello world")` logs a given string to the bottom status bar.
+- `error("oh noes")` logs an error to the bottom status bar.
+- `clear()` clear's the bottom status bar.
+- `getenv("ENVIRONMENT_VARIABLE")` fetches the contents of the specified environment variable.
+- `keymap("key sequence", <callback>)` calls the callback when a given key sequence is pressed. For
+  example:
+
+```
+keymap("ff", function()
+	print("User pressed ff!")
+end)
+```
+
+## Commands in config files
+Commands map one-to-one with functions in a config file. For example, the command `/postinline`
+defines a function called `PostInline` that can be used to run that command within the config file.
+As arguments to these command functions, pass the same arguments you'd pass to the command. Ie,
+`/postinline foo bar` == `PostInline("foo", "bar")`.
+
+## Example config file
+```lua
+-- Connect to slack teams
+Connect(getenv("SLACK_TOKEN_ONE"))
+Connect(getenv("SLACK_TOKEN_TWO"))
+
+-- Example key binding
+keymap("ff", function()
+	err = PostInline("content", "title")
+	if err then
+		error(err)
+	else
+		print("Successfully posted!")
+	end
+end)
+```

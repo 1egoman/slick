@@ -469,21 +469,24 @@ type KeyAction struct {
 	Handler func(*State) error
 }
 
-func ParseScript(script string, state *State) error {
+func ParseScript(script string, state *State, term *frontend.TerminalDisplay) error {
 	L := lua.NewState()
 	defer L.Close()
 
 	// Add some logging utilities
 	L.SetGlobal("print", L.NewFunction(func(L *lua.LState) int {
 		state.Status.Printf(L.ToString(1))
+		render(state, term)
 		return 0
 	}))
 	L.SetGlobal("error", L.NewFunction(func(L *lua.LState) int {
 		state.Status.Errorf(L.ToString(1))
+		render(state, term)
 		return 0
 	}))
 	L.SetGlobal("clear", L.NewFunction(func(L *lua.LState) int {
 		state.Status.Clear()
+		render(state, term)
 		return 0
 	}))
 
@@ -537,6 +540,8 @@ func ParseScript(script string, state *State) error {
 				} else {
 					L.Push(lua.LString(err.Error()))
 				}
+
+				render(state, term)
 				return 1
 			}))
 		}(command)
