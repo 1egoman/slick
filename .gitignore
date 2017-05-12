@@ -1,3 +1,4 @@
 slime
 .*.sw*
 log
+.DS_Store

@@ -41,18 +41,20 @@ func enableCommandAutocompletion(state *State, quit chan struct{}) {
 
 		// Assemble add the items to the fuzzy sorter.
 		for _, command := range COMMANDS {
-			state.FuzzyPicker.Items = append(state.FuzzyPicker.Items, command)
-			state.FuzzyPicker.StringItems = append(
-				state.FuzzyPicker.StringItems,
-				fmt.Sprintf(
-					"%s%s %s\t%s - %s", // ie: "/quit (/q)        Quit - quits slime"
-					string(state.Command[0]),
-					strings.Join(command.Permutations, " "),
-					command.Arguments,
-					command.Name,
-					command.Description,
-				),
-			)
+			if len(command.Permutations) > 0 { // Only autocomplete commands that have slash commands
+				state.FuzzyPicker.Items = append(state.FuzzyPicker.Items, command)
+				state.FuzzyPicker.StringItems = append(
+					state.FuzzyPicker.StringItems,
+					fmt.Sprintf(
+						"%s%s %s\t%s - %s", // ie: "/quit (/q)        Quit - quits slime"
+						string(state.Command[0]),
+						strings.Join(command.Permutations, " "),
+						command.Arguments,
+						command.Name,
+						command.Description,
+					),
+				)
+			}
 		}
 	}
 }
