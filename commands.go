@@ -11,6 +11,7 @@ import (
 
 	"github.com/1egoman/slime/gateway"
 	"github.com/1egoman/slime/gateway/slack"
+	"github.com/1egoman/slime/frontend"
 
 	"github.com/skratchdot/open-golang/open"
 	"github.com/yuin/gopher-lua"
@@ -63,6 +64,7 @@ var COMMANDS = []Command{
 			
 			// Initialize the connection
 			err := connection.Connect()
+			log.Println("Connection response: %s", err)
 			if err != nil {
 				return errors.New(fmt.Sprintf("Error in connecting: %s", err))
 			}

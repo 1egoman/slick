@@ -9,11 +9,8 @@ import (
 )
 
 // Once conencted, listen for events from the active gateway. When an event comes in, act on it.
-func gatewayEvents(state *State, term *frontend.TerminalDisplay, connected chan struct{}) {
+func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 	cachedUsers := make(map[string]*gateway.User)
-
-	// Wait to be connected before handling events.
-	<-connected
 
 	for {
     if state.ActiveConnection() == nil {

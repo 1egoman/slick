@@ -5,6 +5,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/kyokomi/emoji" // convert :smile: to unicode
 	"regexp"
+	"log"
 
 	"github.com/1egoman/slime/gateway" // The thing to interface with slack
 	"github.com/1egoman/slime/status"
