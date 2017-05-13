@@ -188,6 +188,9 @@ func (c *SlackConnection) UserById(id string) (*gateway.User, error) {
 func (c *SlackConnection) MessageHistory() []gateway.Message {
 	return c.messageHistory
 }
+func (c *SlackConnection) SetMessageHistory(messages []gateway.Message) {
+	c.messageHistory = messages
+}
 func (c *SlackConnection) AppendMessageHistory(message gateway.Message) {
 	c.messageHistory = append(c.messageHistory, message)
 }
@@ -218,6 +221,9 @@ func (c *SlackConnection) Team() *gateway.Team {
 }
 func (c *SlackConnection) Channels() []gateway.Channel {
 	return c.channels
+}
+func (c *SlackConnection) SetChannels(channels []gateway.Channel) {
+	c.channels = channels
 }
 func (c *SlackConnection) Self() *gateway.User {
 	return &c.self

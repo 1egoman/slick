@@ -17,6 +17,7 @@ type Connection interface {
 	Outgoing() chan Event
 
 	MessageHistory() []Message
+	SetMessageHistory([]Message)
 	AppendMessageHistory(message Message)
 	DeleteMessageHistory(index int)
 	ClearMessageHistory()
@@ -26,6 +27,7 @@ type Connection interface {
 
 	// Fetch a slice of all channels that are available on this connection
 	Channels() []Channel
+	SetChannels([]Channel)
 	FetchChannels() ([]Channel, error)
 	SelectedChannel() *Channel
 	SetSelectedChannel(*Channel)
@@ -130,4 +132,3 @@ const (
 	CONNECTED
 	FAILED      // When the gateway errors, then move to this state.
 )
-

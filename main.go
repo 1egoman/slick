@@ -64,4 +64,15 @@ func main() {
 
 	<-quit
 	log.Println("Quitting gracefully...")
+
+	// Save each connection and close it in turn.
+	os.MkdirAll(PathToSavedConnections(), 0755)
+	for _, connection := range state.Connections {
+		err := SaveConnection(connection)
+		if err != nil {
+			log.Printf("Error saving connection state: %s", err)
+		}
+
+		connection.Disconnect()
+	}
 }

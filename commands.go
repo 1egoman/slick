@@ -67,6 +67,8 @@ var COMMANDS = []Command{
 			var connection gateway.Connection
 			if len(name) > 0 {
 				connection = gatewaySlack.NewWithName(name, token)
+				// If there's any saved data, add that to the connection
+				ApplySaveToConnection(name, &connection)
 			} else {
 				connection = gatewaySlack.New(token)
 			}
