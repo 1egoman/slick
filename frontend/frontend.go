@@ -5,7 +5,6 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/kyokomi/emoji" // convert :smile: to unicode
 	"regexp"
-	"log"
 
 	"github.com/1egoman/slime/gateway" // The thing to interface with slack
 	"github.com/1egoman/slime/status"
@@ -136,7 +135,6 @@ func (term *TerminalDisplay) DrawStatusBar(
 
 	if stat.Show {
 		// Get the color of the text on the status bar
-		log.Println("Status bar", stat.Type)
 		var style tcell.Style
 		if stat.Type == status.STATUS_ERROR {
 			style = term.Styles["StatusBarError"]

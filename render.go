@@ -16,9 +16,14 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		log.Printf("User switching to new active connection: %s", state.ActiveConnection().Name())
 
 		go func() {
-			if err := state.ActiveConnection().Refresh(); err != nil {
+			state.Status.Printf("Loading team %s...", state.ActiveConnection().Name())
+			render(state, term)
+
+			if err := state.ActiveConnection().Refresh(false); err != nil {
 				state.Status.Errorf(err.Error())
 			}
+
+			state.Status.Clear()
 			render(state, term)
 		}()
 	}
@@ -47,7 +52,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 			string(state.Command),                      // The command that the user is typing
 			state.CommandCursorPosition,                // The cursor position
 			nil,                                        // The selected channel
-			"(no active connec)",                       // The selected team
+			"(no active connec)",                       // The selected team name
 		)
 	} else {
 		term.DrawCommandBar(

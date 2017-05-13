@@ -10,7 +10,7 @@ type Connection interface {
 	Disconnect() error
 
 	// Called to "refetch" any persistent resources, such as channels.
-	Refresh() error
+	Refresh(bool) error
 
 	// Get incoming and outgoing message buffers
 	Incoming() chan Event

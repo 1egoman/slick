@@ -6,13 +6,15 @@ import (
 )
 
 // Called when the connection becomes active
-func (c *SlackConnection) Refresh() error {
+func (c *SlackConnection) Refresh(force bool) error {
 	var err error
 
 	// Fetch details about all channels
-	c.channels, err = c.FetchChannels()
-	if err != nil {
-		return err
+	if force || len(c.channels) == 0 {
+		c.channels, err = c.FetchChannels()
+		if err != nil {
+			return err
+		}
 	}
 
 	// Fetch details about the currently logged in user
