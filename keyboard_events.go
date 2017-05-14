@@ -16,15 +16,22 @@ import (
 const messageScrollPadding = 7
 
 // When the user presses a key, send a message telling slack that the user is typing.
-func sendTypingIndicator(state *State) {
+// Never send more typing events if the outgoing channel is full.
+func sendTypingIndicator(state *State) error {
 	if state.ActiveConnection() != nil && state.ActiveConnection().SelectedChannel() != nil {
-		state.ActiveConnection().Outgoing() <- gateway.Event{
-			Type: "typing",
-			Data: map[string]interface{}{
-				"channel": state.ActiveConnection().SelectedChannel().Id,
-			},
+		outgoing := state.ActiveConnection().Outgoing()
+		if len(outgoing) < cap(outgoing) {
+			state.ActiveConnection().Outgoing() <- gateway.Event{
+				Type: "typing",
+				Data: map[string]interface{}{
+					"channel": state.ActiveConnection().SelectedChannel().Id,
+				},
+			}
+		} else {
+			return errors.New("No room in outgoing channel to send typing event!")
 		}
 	}
+	return nil
 }
 
 // When the user presses ':' or '/', enable the autocomplete menu.
@@ -405,7 +412,10 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 		state.CommandCursorPosition += 1
 
 		// Send a message on the outgoing channel that the user is typing.
-		sendTypingIndicator(state)
+		err := sendTypingIndicator(state)
+		if err != nil {
+			state.Status.Errorf(err.Error())
+		}
 
 	// Backspace removes a character.
 	case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyDEL:

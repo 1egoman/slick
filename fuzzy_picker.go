@@ -50,12 +50,16 @@ func (p FuzzySorter) Len() int {
 func (p FuzzySorter) Less(i, j int) bool {
 	iItem := p.StringItems[i]
 	jItem := p.StringItems[j]
-	return strings.Index(iItem, p.Needle) > strings.Index(jItem, p.Needle)
+	return p.Rank(iItem) > p.Rank(jItem)
 }
 
 func (p FuzzySorter) Swap(i, j int) {
 	p.Items[i], p.Items[j] = p.Items[j], p.Items[i]
 	p.StringItems[i], p.StringItems[j] = p.StringItems[j], p.StringItems[i]
+}
+
+func (p FuzzySorter) Rank(item string) int {
+	return strings.Index(item, p.Needle)
 }
 
 // Show the fuzzy picker

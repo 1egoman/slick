@@ -52,8 +52,10 @@ func (c *SlackConnection) Connect() error {
 		for {
 			// Listen for messages, and when some are received, write them to a channel.
 			if n, err = c.conn.Read(msgRaw); err != nil {
-				log.Println(err.Error())
-				c.connectionStatus = gateway.FAILED
+				if c.Status() != gateway.DISCONNECTED {
+					log.Println(err.Error())
+					c.connectionStatus = gateway.FAILED
+				}
 				return
 			}
 
@@ -99,8 +101,10 @@ func (c *SlackConnection) Connect() error {
 
 			// Send it.
 			if _, err = c.conn.Write(data); err != nil {
-				log.Println("Couldn't send message: %s", err.Error())
-				c.connectionStatus = gateway.FAILED
+				if c.Status() != gateway.DISCONNECTED {
+					log.Println(err.Error())
+					c.connectionStatus = gateway.FAILED
+				}
 				return
 			}
 		}
