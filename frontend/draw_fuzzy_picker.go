@@ -1,15 +1,28 @@
 package frontend
 
 import (
-	// "log"
 	"github.com/gdamore/tcell"
 )
 
 // The amount of rows at max that can be in the fuzzy picker.
 const FuzzyPickerMaxSize = 10
 
-func (term *TerminalDisplay) DrawFuzzyPicker(items []string, selectedIndex int, bottomDisplayedItem int) {
+func (term *TerminalDisplay) DrawFuzzyPicker(
+	preItems []string,
+	selectedIndex int,
+	bottomDisplayedItem int,
+	rank func(string)int,
+) {
 	width, height := term.screen.Size()
+
+	// Filter items to remove those that have a negitive rank.
+	var items []string
+	for _, item := range preItems {
+		if rank(item) >= 0 {
+			items = append(items, item)
+		}
+	}
+
 
 	// If there's more than one page of items, only show one page's worth.
 	if len(items) > FuzzyPickerMaxSize {

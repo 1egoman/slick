@@ -123,6 +123,20 @@ type Message struct {
 	Hash      string     `json:"hash"`
 	Timestamp int        `json:"timestamp"` // This value is in seconds!
 	File      *File      `json:"file,omitempty"`
+	Attachments *[]Attachment `json:"attachments,omitempty"`
+}
+
+type Attachment struct {
+	Title string
+	TitleLink string
+	Color string
+	Fields []AttachmentField
+}
+
+type AttachmentField struct {
+	Title string
+	Value string
+	Short bool
 }
 
 type ConnectionStatus int

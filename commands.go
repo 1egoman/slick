@@ -75,7 +75,7 @@ var COMMANDS = []Command{
 			
 			// Initialize the connection
 			err := connection.Connect()
-			log.Println("Connection response: %s", err)
+			log.Printf("Connection response: %s", err)
 			if err != nil {
 				return errors.New(fmt.Sprintf("Error in connecting: %s", err))
 			}

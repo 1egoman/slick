@@ -73,6 +73,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 			state.FuzzyPicker.StringItems,
 			state.FuzzyPicker.SelectedItem,
 			state.FuzzyPicker.BottomItem,
+			state.FuzzyPicker.Rank,
 		)
 	}
 

@@ -64,15 +64,17 @@ func NewTerminalDisplay(screen tcell.Screen) *TerminalDisplay {
 		screen: screen,
 		Styles: map[string]tcell.Style{
 			"CommandBarPrefix": tcell.StyleDefault.
-				Background(tcell.ColorRed).
+				Background(tcell.ColorBlue).
 				Foreground(tcell.ColorWhite),
 			"CommandBarText": tcell.StyleDefault,
 			"StatusBarActiveConnection": tcell.StyleDefault.
 				Background(tcell.ColorBlue).
 				Foreground(tcell.ColorWhite),
-			"StatusBarConnected": tcell.StyleDefault,
-			"StatusBarConnecting": tcell.StyleDefault.
+			"StatusBarGatewayConnected": tcell.StyleDefault,
+			"StatusBarGatewayConnecting": tcell.StyleDefault.
 				Background(tcell.ColorDarkMagenta),
+			"StatusBarGatewayFailed": tcell.StyleDefault.
+				Background(tcell.ColorRed),
 			"StatusBarLog": tcell.StyleDefault,
 			"StatusBarError": tcell.StyleDefault.
 				Foreground(tcell.ColorDarkMagenta).
@@ -85,6 +87,11 @@ func NewTerminalDisplay(screen tcell.Screen) *TerminalDisplay {
 			"MessageAction": tcell.StyleDefault,
 			"MessageSelected": tcell.StyleDefault.
 				Background(tcell.ColorTeal),
+			"MessageAttachmentTitle": tcell.StyleDefault.
+				Foreground(tcell.ColorGreen),
+			"MessageAttachmentFieldTitle": tcell.StyleDefault.
+				Bold(true),
+			"MessageAttachmentFieldValue": tcell.StyleDefault,
 
 			"FuzzyPickerTopBorder": tcell.StyleDefault.
 				Background(tcell.ColorGray),
@@ -152,9 +159,11 @@ func (term *TerminalDisplay) DrawStatusBar(
 			if item == activeConnection {
 				style = term.Styles["StatusBarActiveConnection"]
 			} else if item.Status() == gateway.CONNECTING {
-				style = term.Styles["StatusBarConnecting"]
+				style = term.Styles["StatusBarGatewayConnecting"]
 			} else if item.Status() == gateway.CONNECTED {
-				style = term.Styles["StatusBarConnected"]
+				style = term.Styles["StatusBarGatewayConnected"]
+			} else if item.Status() == gateway.FAILED {
+				style = term.Styles["StatusBarGatewayFailed"]
 			} else {
 				// SOme weird case has no coloring.
 				style = tcell.StyleDefault

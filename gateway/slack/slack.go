@@ -244,11 +244,22 @@ type RawSlackMessage struct {
 		User       string `json:"user"`
 		PrivateUrl string `json:"url_private"`
 		Permalink  string `json:"permalink"`
+		Text       string `json:"plain_text"`
 		Reactions  []struct {
 			Name  string   `json:"name"`
 			Users []string `json:"users"`
 		} `json:"reactions"`
 	} `json:"file,omitempty"`
+	Attachments []struct {
+		Title string `json:"title"`
+		TitleLink string `json:"title_link"`
+		Color string `json:"color"`
+		Fields []struct {
+			Title string `json:"title"`
+			Value string `json:"value"`
+			Short bool `json:"short"`
+		} `json:"fields"`
+	} `json:"attachments"`
 }
 
 func (c *SlackConnection) ParseMessage(
@@ -335,6 +346,32 @@ func (c *SlackConnection) ParseMessage(
 		file = nil
 	}
 
+	var attachments []gateway.Attachment
+	if len(slackMessageBuffer.Attachments) > 0 {
+		for _, attach := range slackMessageBuffer.Attachments {
+			// Create attachment
+			a := gateway.Attachment{
+				Title: attach.Title,
+				TitleLink: attach.TitleLink,
+				Color: attach.Color,
+			}
+
+			// Add fields to attachment
+			for _, field := range attach.Fields {
+				a.Fields = append(a.Fields, gateway.AttachmentField{
+					Title: field.Title,
+					Value: field.Value,
+					Short: field.Short,
+				})
+			}
+
+			// Add attachment to list.
+			attachments = append(attachments, a)
+		}
+	} else {
+		attachments = nil
+	}
+
 	// Convert timestamp to float64
 	// I would unmarshal directly into float64, but that doesn't work since slack encodes their
 	// timestamps as strings :/
@@ -351,6 +388,7 @@ func (c *SlackConnection) ParseMessage(
 		Timestamp: int(timestamp), // this value is in seconds!
 		Hash:      slackMessageBuffer.Ts,
 		File:      file,
+		Attachments: &attachments,
 	}, nil
 }
 

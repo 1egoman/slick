@@ -14,12 +14,6 @@ import (
 
 const CONFIG_FILE_NAME = ".slimerc"
 
-type SerializedConnection struct {
-	MessageHistory []gateway.Message
-	Channels []gateway.Channel
-	SelectedChannel gateway.Channel
-}
-
 func GetConfigFileContents() map[string]string {
 	configFiles := make(map[string]string)
 
@@ -36,6 +30,16 @@ func GetConfigFileContents() map[string]string {
 	}
 
 	return configFiles
+}
+
+//
+// STORAGE OF SAVED CONNECTIONS
+//
+
+type SerializedConnection struct {
+	MessageHistory []gateway.Message
+	Channels []gateway.Channel
+	SelectedChannel gateway.Channel
 }
 
 func PathToSavedConnections() string {

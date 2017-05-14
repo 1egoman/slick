@@ -1,7 +1,6 @@
 package frontend
 
 import (
-	// "log"
 	"fmt"
 	"strings"
 	"time"
@@ -57,16 +56,24 @@ func formatAbreviatedLink(link string) string {
 	)
 }
 
+func getAttachmentHeight(attachment gateway.Attachment) int {
+	lines := 0
+
+	// One line for the title
+	lines += 1
+
+	// One line for each field
+	lines += len(attachment.Fields)
+
+	return lines
+}
+
 // Given a pointer to a file and a row to render it on, render it.
 func renderFile(term *TerminalDisplay, file *gateway.File, isSelected bool, row int, leftOffset int) {
 	if file != nil {
-		var messageStyle tcell.Style
 		var messageActions []string
 		if isSelected {
-			messageStyle = term.Styles["MessageSelected"]
 			messageActions = []string{"Open", "Copy"}
-		} else {
-			messageStyle = term.Styles["MessageFile"]
 		}
 
 		fileRow := fmt.Sprintf(
@@ -74,11 +81,58 @@ func renderFile(term *TerminalDisplay, file *gateway.File, isSelected bool, row 
 			file.Name,
 			formatAbreviatedLink(file.Permalink),
 		)
-		term.WriteTextStyle(leftOffset, row, messageStyle, fileRow)
+		term.WriteTextStyle(leftOffset, row, term.Styles["MessageFile"], fileRow)
 
 		// Render actions after the file
 		messageActionOffset := leftOffset + len(fileRow) + 1 // Add a space netween file and actions
 		renderActions(term, messageActions, messageActionOffset, row)
+	}
+}
+
+func renderAttachment(
+	term *TerminalDisplay,
+	attachment gateway.Attachment,
+	isSelected bool,
+	row int,
+	leftOffset int,
+	windowWidth int,
+) {
+	maxAttachmentWidth := windowWidth - leftOffset - 1
+
+	attachmentColor := tcell.StyleDefault.
+		Foreground(tcell.GetColor("#" + attachment.Color)).
+		Bold(true)
+
+	title := attachment.Title
+	if len(title) > maxAttachmentWidth {
+		title = title[:maxAttachmentWidth]
+	}
+
+	term.WriteTextStyle(leftOffset, row, attachmentColor, "+ ")
+
+	// Draw the attachment title.
+	term.WriteTextStyle(
+		leftOffset + 2,
+		row,
+		tcell.StyleDefault,
+		title,
+	)
+
+	// Draw each attachment field.
+	for index, field := range attachment.Fields {
+		term.WriteTextStyle(leftOffset, row + index + 1, attachmentColor, "|")
+		term.WriteTextStyle(
+			leftOffset + 2,
+			row + index + 1,
+			term.Styles["MessageAttachmentFieldTitle"],
+			field.Title+":",
+		)
+		term.WriteTextStyle(
+			leftOffset + 2 + len(field.Title) + 2,
+			row + index + 1,
+			term.Styles["MessageAttachmentFieldValue"],
+			field.Value,
+		)
 	}
 }
 
@@ -165,17 +219,20 @@ func (term *TerminalDisplay) DrawMessages(
 		prefixWidth := len(timestamp) + 1 + len(sender) + 1
 
 		// Is the message selected?
-		var messageStyle tcell.Style
+		var selectedStyle tcell.Style
 		if index == selectedMessageIndex {
-			messageStyle = term.Styles["MessageSelected"]
+			selectedStyle = term.Styles["MessageSelected"]
 		} else {
-			messageStyle = tcell.StyleDefault
+			selectedStyle = tcell.StyleDefault
 		}
 
 		// Calculate how many rows the message requires to render.
 		messageColumnWidth := width - prefixWidth
 		messageRows := (len(makePrintWorthy(msg.Text)) / messageColumnWidth) + 1
 		accessoryRow := row         // The row to start rendering "message accessories" on
+		if len(msg.Text) == 0 {
+			accessoryRow -= 1
+		}
 		if len(msg.Reactions) > 0 { // Reactions need one row
 			messageRows += 1
 			accessoryRow -= 1
@@ -184,44 +241,70 @@ func (term *TerminalDisplay) DrawMessages(
 			messageRows += 1
 			accessoryRow -= 1
 		}
+		if msg.Attachments != nil { // Attachments need a lot of rows. :(
+			// Collect the total attachment height
+			var attachmentSize int
+			for _, attach := range *msg.Attachments {
+				attachmentSize += getAttachmentHeight(attach)
+			}
+
+			messageRows += attachmentSize
+			accessoryRow -= attachmentSize
+		}
+
+		// Draw the sender and timestamp on the first row of a message
+		term.WriteTextStyle(0, row-messageRows+1, selectedStyle, timestamp)
+		term.WriteTextStyle(len(timestamp)+1, row-messageRows+1, senderStyle, sender)
+
+		// Render reactions and file attachment after message
+		// log.Printf("attach %+v", msg.Attachments)
+		if msg.File != nil {
+			accessoryRow += 1
+			renderFile(
+				term,
+				msg.File,                      // File to render
+				index == selectedMessageIndex, // Is the current message selected?
+				accessoryRow,                  // Which row should the file be rendered on?
+				prefixWidth,                   // How far from the left should the first reaction be offset?
+			)
+		}
+
+		if msg.Attachments != nil {
+			for _, attachment := range *msg.Attachments {
+				accessoryRow += 1
+				renderAttachment(
+					term,
+					attachment,                    // Attachment to render
+					index == selectedMessageIndex, // Is the current message selected?
+					accessoryRow,                  // Which row to render the attachment on?
+					prefixWidth,                   // How far to the left should the first attachment be offset?
+					width,
+				)
+				accessoryRow += getAttachmentHeight(attachment) - 1
+			}
+		}
+
+		if len(msg.Reactions) > 0 {
+			accessoryRow += 1
+			renderReactions(
+				term,
+				msg.Reactions, // Reactions to render
+				accessoryRow,  // Which row should the reactions be rendered on?
+				prefixWidth,   // How far from the left should the first reaction be offset?
+			)
+		}
+
 
 		// Render the sender and the message
 		for rowDelta, messageRow := range partitionIntoRows(
 			makePrintWorthy(msg.Text), // Our message to render to the screen
 			messageColumnWidth,        // The width of each message row
 		) {
-			if rowDelta == 0 {
-				// Draw the sender on the first row of a message
-				term.WriteText(0, row-messageRows+1, timestamp)
-				term.WriteTextStyle(len(timestamp)+1, row-messageRows+1, senderStyle, sender)
-
-				// Render reactions and file attachment after message
-				if msg.File != nil {
-					accessoryRow += 1
-					renderFile(
-						term,
-						msg.File,                      // File to render
-						index == selectedMessageIndex, // Is the current message selected?
-						accessoryRow,                  // Which row should the file be rendered on?
-						prefixWidth,                   // How far from the left should the first reaction be offset?
-					)
-				}
-				if len(msg.Reactions) > 0 {
-					accessoryRow += 1
-					renderReactions(
-						term,
-						msg.Reactions, // Reactions to render
-						accessoryRow,  // Which row should the reactions be rendered on?
-						prefixWidth,   // How far from the left should the first reaction be offset?
-					)
-				}
-			}
-
 			// Render the message row.
 			term.WriteTextStyle(
 				prefixWidth, // Sender and timestamp go before message.
 				row-messageRows+rowDelta,
-				messageStyle,
+				tcell.StyleDefault,
 				strings.Trim(messageRow, " "),
 			)
 		}
