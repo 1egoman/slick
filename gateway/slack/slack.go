@@ -108,9 +108,20 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 }
 
 // Given a channel, return all messages within that channel.
-func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel) ([]gateway.Message, error) {
-	log.Printf("Fetching channel messages for team %s", c.Team().Name)
-	resp, err := http.Get("https://slack.com/api/channels.history?token=" + c.token + "&channel=" + channel.Id + "&count=100")
+func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel, startTs *string) ([]gateway.Message, error) {
+	log.Printf("Fetching channel messages for team %s starting at %s", c.Team().Name, startTs)
+
+	// Contruct the request url
+	url := "https://slack.com/api/channels.history?token=" + c.token
+	url += "&channel=" + channel.Id
+	url += "&count=100"
+
+	// If a starting timestamp was passed, get all messages after that timestamp.
+	if startTs != nil {
+		url += "&latest=" + *startTs
+	}
+
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -193,6 +204,9 @@ func (c *SlackConnection) SetMessageHistory(messages []gateway.Message) {
 }
 func (c *SlackConnection) AppendMessageHistory(message gateway.Message) {
 	c.messageHistory = append(c.messageHistory, message)
+}
+func (c *SlackConnection) PrependMessageHistory(message gateway.Message) {
+	c.messageHistory = append([]gateway.Message{message}, c.messageHistory...)
 }
 func (c *SlackConnection) DeleteMessageHistory(index int) {
 	c.messageHistory = append(c.messageHistory[:index], c.messageHistory[index+1:]...)

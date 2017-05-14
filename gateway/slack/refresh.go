@@ -48,7 +48,7 @@ func (c *SlackConnection) Refresh(force bool) error {
 				c.Team().Name,
 				c.SelectedChannel().Name,
 			)
-			c.messageHistory, err = c.FetchChannelMessages(*c.selectedChannel)
+			c.messageHistory, err = c.FetchChannelMessages(*c.selectedChannel, nil)
 			if err != nil {
 				return err
 			}

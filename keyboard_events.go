@@ -131,6 +131,8 @@ func OnPickConnectionChannel(state *State) {
 		state.SetActiveConnection(selectedConnectionIndex)
 		state.Connections[selectedConnectionIndex].SetSelectedChannel(selectedChannel)
 		state.Mode = "chat"
+		state.SelectedMessageIndex = 0
+		state.BottomDisplayedItem = 0
 		state.FuzzyPicker.Hide()
 	} else {
 		log.Fatalf("In pick mode, the fuzzy picker doesn't contain FuzzyPickerConnectionChannelItem's.")
@@ -200,6 +202,25 @@ func OnCommandExecuted(state *State, quit chan struct{}) error {
 		// If we haven't returned by now, then the command is invalid.
 		state.Status.Errorf("Unknown command %s", args[0])
 	}
+	return nil
+}
+
+// Fetch more messages when the user has scrolled to the end of the previous message list.
+func FetchMessageHistoryScrollback(state *State) error {
+	msgHistory := state.ActiveConnection().MessageHistory()
+	messages, err := state.ActiveConnection().FetchChannelMessages(
+		*state.ActiveConnection().SelectedChannel(), // Channel
+		&(msgHistory[0].Hash), // *string
+	)
+
+	if err != nil {
+		return err
+	}
+
+	for msgIndex := len(messages) - 1; msgIndex >= 0; msgIndex-- {
+		state.ActiveConnection().PrependMessageHistory(messages[msgIndex])
+	}
+
 	return nil
 }
 
@@ -302,7 +323,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 			state.Status.Errorf(err.Error())
 		}
 	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'G': // Select first message
-		if state.ActiveConnection() != nil && len(state.ActiveConnection().MessageHistory()) > 0{
+		if state.ActiveConnection() != nil && len(state.ActiveConnection().MessageHistory()) > 0 {
 			state.SelectedMessageIndex = 0
 			state.BottomDisplayedItem = 0
 			log.Printf("Selecting first message")
@@ -314,6 +335,10 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 			state.SelectedMessageIndex = len(state.ActiveConnection().MessageHistory()) - 1
 			state.BottomDisplayedItem = state.SelectedMessageIndex - messageScrollPadding
 			log.Printf("Selecting last message")
+
+			// Now that we're at the top, fetch more messages.
+			msgHistory := state.ActiveConnection().MessageHistory()
+			log.Println("Last message loaded: %s", msgHistory[0].Hash)
 		} else {
 			state.Status.Errorf("No active connection or message history!")
 		}
@@ -500,6 +525,18 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 		state.CommandCursorPosition = 0
 	case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyCtrlE:
 		state.CommandCursorPosition = len(state.Command)
+	}
+
+	// If the user has scrolled to the end of the list of messages in their active channel, then load more
+	if state.ActiveConnection() != nil &&
+		state.SelectedMessageIndex > len(state.ActiveConnection().MessageHistory()) - 1 - messageScrollPadding &&
+		len(state.ActiveConnection().MessageHistory()) > 0 {
+		go func(state *State) {
+			err := FetchMessageHistoryScrollback(state)
+			if err != nil {
+				state.Status.Errorf("Error fetching more messages: %s", err)
+			}
+		}(state)
 	}
 
 	return nil

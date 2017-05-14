@@ -19,6 +19,7 @@ type Connection interface {
 	MessageHistory() []Message
 	SetMessageHistory([]Message)
 	AppendMessageHistory(message Message)
+	PrependMessageHistory(message Message)
 	DeleteMessageHistory(index int)
 	ClearMessageHistory()
 	SendMessage(Message, *Channel) (*Message, error)
@@ -38,8 +39,9 @@ type Connection interface {
 	// Fetch user that is authenticated
 	Self() *User
 
-	// Given a channel, fetch the message history for that channel
-	FetchChannelMessages(Channel) ([]Message, error)
+	// Given a channel, fetch the message history for that channel. Optionally, provide a timestamp
+	// to fetch all messages after.
+	FetchChannelMessages(Channel, *string) ([]Message, error)
 
 	UserById(string) (*User, error)
 
