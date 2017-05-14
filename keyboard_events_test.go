@@ -233,6 +233,25 @@ var keyEvents = []struct {
 				state.BottomDisplayedItem == 4
 		},
 	},
+	{
+		"In chat mode, the message history can be scrolled down a half page at a time with Ctrl+D",
+		InitialMessageHistoryState(14, 4), // Selecting index 14, and item 4 is on the bottom
+		tcell.NewEventKey(tcell.KeyCtrlD, ' ', tcell.ModNone),
+		func(state *State) bool {
+			// Note: we are rendering 10 items per page, 9 == 14 - (10 / 2)
+			return state.SelectedMessageIndex == 9 &&
+				state.BottomDisplayedItem == 0
+		},
+	},
+	{
+		"In chat mode, the message history can't be scrolled down when already at the oldest.",
+		InitialMessageHistoryState(0, 0), // Selecting index 0, and item 0 is on the bottom
+		tcell.NewEventKey(tcell.KeyCtrlD, ' ', tcell.ModNone),
+		func(state *State) bool {
+			return state.SelectedMessageIndex == 0 &&
+				state.BottomDisplayedItem == 0
+		},
+	},
 
 	// Editing operations
 	{

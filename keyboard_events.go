@@ -220,6 +220,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 				if err != nil {
 					state.Status.Errorf(err.Error())
 				}
+				state.KeyStack = []rune{}
 			}
 		}
 	}
@@ -320,8 +321,34 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 		pageAmount := state.RenderedMessageNumber / 2
 		if state.ActiveConnection() != nil && state.SelectedMessageIndex < len(state.ActiveConnection().MessageHistory())-1 {
 			state.SelectedMessageIndex += pageAmount
-			if state.SelectedMessageIndex >= state.RenderedMessageNumber-messageScrollPadding {
-				state.BottomDisplayedItem += pageAmount
+			state.BottomDisplayedItem += pageAmount
+			log.Printf("Selecting message %d, bottom index %d", state.SelectedMessageIndex, state.BottomDisplayedItem)
+
+			// Clamp BottomDisplayedItem at zero.
+			largestMessageIndex := len(state.ActiveConnection().MessageHistory()) - 1
+			if state.BottomDisplayedItem > largestMessageIndex {
+				state.BottomDisplayedItem = largestMessageIndex
+			}
+			// Clamp SelectedMessageIndex at zero.
+			if state.SelectedMessageIndex > largestMessageIndex {
+				state.SelectedMessageIndex = largestMessageIndex
+			}
+		} else {
+			state.Status.Errorf("No active connection, or message history too short!")
+		}
+	case state.Mode == "chat" && ev.Key() == tcell.KeyCtrlD: // Down a message page
+		pageAmount := state.RenderedMessageNumber / 2
+		if state.ActiveConnection() != nil && state.SelectedMessageIndex > 0 {
+			state.SelectedMessageIndex -= pageAmount
+			state.BottomDisplayedItem -= pageAmount
+
+			// Clamp BottomDisplayedItem at zero.
+			if state.BottomDisplayedItem < 0 {
+				state.BottomDisplayedItem = 0
+			}
+			// Clamp SelectedMessageIndex at zero.
+			if state.SelectedMessageIndex < 0 {
+				state.SelectedMessageIndex = 0
 			}
 			log.Printf("Selecting message %d, bottom index %d", state.SelectedMessageIndex, state.BottomDisplayedItem)
 		} else {
@@ -330,6 +357,18 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && (ev.Rune() == 'o' || ev.Rune() == 'c'):
 		// When a user presses a key to interact with a message, handle it.
 		OnMessageInteraction(state, ev.Rune())
+	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'Z':
+		// Center the selected message
+		if state.ActiveConnection() != nil {
+			state.BottomDisplayedItem = state.SelectedMessageIndex - (state.RenderedMessageNumber / 4)
+
+			// Clamp BottomDisplayedItem at zero.
+			if state.BottomDisplayedItem < 0 {
+				state.BottomDisplayedItem = 0
+			}
+		} else {
+			state.Status.Errorf("No active connection, or message history too short!")
+		}
 
 	//
 	// MOVEMENT BETWEEN CONNECTIONS
