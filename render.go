@@ -3,9 +3,49 @@ package main
 import (
 	"log"
 	"sort"
+	"time"
 
 	"github.com/1egoman/slime/frontend"
 )
+
+var SPINNER_STATES = map[string][]rune{
+	"normal": []rune{'|', '/', '-', '\\', '|', '/', '-', '\\'},
+	"pipes": []rune{'┤', '┘', '┴', '└', '├', '┌', '┬', '┐'},
+	"braile": []rune{'⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷', '⠁', ' ', '⠂', '⠄', '⡀', ' ', '⢀', '⠠', '⠐', '⠈'},
+	"balloon": []rune{'.', 'o', 'O', '@', '*'},
+}
+func renderSpinner(state *State, term *frontend.TerminalDisplay, spinnerType string, x int, y int) {
+	// Turn on the loadign spinner
+	state.Status.IsLoading = true
+
+	spinnerState := 0
+	previousState := false
+	for {
+		if state.Status.IsLoading {
+			// If the spinner just was enabled, make sure it starts spinning at the right index.
+			if previousState == false {
+				spinnerState = 0
+			}
+
+			log.Println(string(SPINNER_STATES[spinnerType][spinnerState]))
+			term.WriteText(x, y, string(SPINNER_STATES[spinnerType][spinnerState]))
+			term.Render()
+			spinnerState += 1
+
+			previousState = state.Status.IsLoading
+
+			// If spinnerState is larger than the quantity of spinners, then wrap back around to the
+			// first spinner.
+			for spinnerState >= len(SPINNER_STATES[spinnerType]) {
+				spinnerState -= len(SPINNER_STATES[spinnerType])
+			}
+
+			time.Sleep(100 * time.Millisecond)
+		} else {
+			break
+		}
+	}
+}
 
 // Given application state and a frontend, render the state to the screen.
 // This function is called whenever something in state is changed.

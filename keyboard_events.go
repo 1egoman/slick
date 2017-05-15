@@ -528,14 +528,20 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 	}
 
 	// If the user has scrolled to the end of the list of messages in their active channel, then load more
+	// (Ensure before loading that there are messages in the list, though)
 	if state.ActiveConnection() != nil &&
 		state.SelectedMessageIndex > len(state.ActiveConnection().MessageHistory()) - 1 - messageScrollPadding &&
 		len(state.ActiveConnection().MessageHistory()) > 0 {
+
+		// Turn on the loadign spinner
+		state.Status.StartLoading()
+
 		go func(state *State) {
 			err := FetchMessageHistoryScrollback(state)
 			if err != nil {
 				state.Status.Errorf("Error fetching more messages: %s", err)
 			}
+			state.Status.StopLoading()
 		}(state)
 	}
 

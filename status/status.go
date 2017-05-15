@@ -16,6 +16,7 @@ type Status struct {
 	Message string
 	Type StatusType
 	Show bool
+	IsLoading bool
 }
 
 func (s *Status) Printf(format string, args ...interface{}) {
@@ -28,6 +29,13 @@ func (s *Status) Errorf(format string, args ...interface{}) {
 	s.Message = fmt.Sprintf(format, args...)
 	s.Type = STATUS_ERROR
 	s.Show = true
+}
+
+func (s *Status) StartLoading() {
+	s.IsLoading = true
+}
+func (s *Status) StopLoading() {
+	s.IsLoading = false
 }
 
 func (s *Status) Clear() {
