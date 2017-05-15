@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 	"errors"
+	"strconv"
 
 	"github.com/1egoman/slime/frontend" // The thing to draw to the screen
 	"github.com/1egoman/slime/gateway"  // The thing to interface with slack
@@ -64,6 +65,29 @@ func enableCommandAutocompletion(state *State, quit chan struct{}) {
 				)
 			}
 		}
+	}
+}
+
+// Given a keystack, extract the preceeding quantity.
+func keystackQuantityParser(keystack []rune) (int, []rune, error) {
+	quantityRunes := []rune{}
+
+	// Fetch the preceeding int before the command
+	for index, key := range keystack {
+		if key > '0' && key < '9' {
+			quantityRunes = append(quantityRunes, key)
+		} else {
+			keystack = keystack[index:] // Remove the quantity from the front of the keystack
+			break
+		}
+	}
+	
+	// Convert the quantity to an int
+	if len(quantityRunes) == 0 {
+		return 1, keystack, nil
+	} else {
+		quantity, err := strconv.Atoi(string(quantityRunes))
+		return quantity, keystack, err
 	}
 }
 
@@ -246,6 +270,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 		}
 	}
 
+	quantity, keystackCommand, _ := keystackQuantityParser(state.KeyStack)
 	switch {
 	case ev.Key() == tcell.KeyCtrlC:
 		log.Println("CLOSE QUIT 1")
@@ -312,16 +337,23 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 	//
 	// MOVEMENT UP AND DOWN THROUGH MESSAGES AND ACTIONS ON THE MESSAGES
 	//
-	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'j': // Down a message
-		err := GetCommand("MoveBackMessage").Handler([]string{}, state)
-		if err != nil {
-			state.Status.Errorf(err.Error())
+	// case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'j': // Down a message
+	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == 'j':
+		for i := 0; i < quantity; i++ {
+			err := GetCommand("MoveBackMessage").Handler([]string{}, state)
+			if err != nil {
+				state.Status.Errorf(err.Error())
+			}
 		}
-	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'k': // Up a message
-		err := GetCommand("MoveForwardMessage").Handler([]string{}, state)
-		if err != nil {
-			state.Status.Errorf(err.Error())
+		state.KeyStack = []rune{}
+	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == 'k': // Up a message
+		for i := 0; i < quantity; i++ {
+			err := GetCommand("MoveForwardMessage").Handler([]string{}, state)
+			if err != nil {
+				state.Status.Errorf(err.Error())
+			}
 		}
+		state.KeyStack = []rune{}
 	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'G': // Select first message
 		if state.ActiveConnection() != nil && len(state.ActiveConnection().MessageHistory()) > 0 {
 			state.SelectedMessageIndex = 0
