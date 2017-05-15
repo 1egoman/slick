@@ -97,7 +97,13 @@ func renderAttachment(
 	leftOffset int,
 	windowWidth int,
 ) {
+	selectedActions := []string{"Foo", "Bar"}
+	selectedActionsWidth := len(strings.Join(selectedActions, " "))
+
 	maxAttachmentWidth := windowWidth - leftOffset - 1
+	if isSelected {
+		maxAttachmentWidth -= selectedActionsWidth + 2
+	}
 
 	attachmentColor := tcell.StyleDefault.
 		Foreground(tcell.GetColor("#" + attachment.Color)).
@@ -117,6 +123,21 @@ func renderAttachment(
 		tcell.StyleDefault,
 		title,
 	)
+
+	// Render actions after the attachment title
+	if isSelected {
+		actionsPositionOnEndOfRow := windowWidth - selectedActionsWidth - 1
+		actionsPositionOnEndOfText := leftOffset + 2 + len(title) + 1
+		var actionPosition int
+
+		if actionsPositionOnEndOfRow > actionsPositionOnEndOfText {
+			actionPosition = actionsPositionOnEndOfText
+		} else {
+			actionPosition = actionsPositionOnEndOfRow
+		}
+
+		renderActions(term, selectedActions, actionPosition, row)
+	}
 
 	// Draw each attachment field.
 	for index, field := range attachment.Fields {
