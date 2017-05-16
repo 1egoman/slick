@@ -96,8 +96,9 @@ func renderAttachment(
 	row int,
 	leftOffset int,
 	windowWidth int,
+	index int,
 ) {
-	selectedActions := []string{"Foo", "Bar"}
+	selectedActions := []string{"Link"}
 	selectedActionsWidth := len(strings.Join(selectedActions, " "))
 
 	maxAttachmentWidth := windowWidth - leftOffset - 1
@@ -291,7 +292,7 @@ func (term *TerminalDisplay) DrawMessages(
 		}
 
 		if msg.Attachments != nil {
-			for _, attachment := range *msg.Attachments {
+			for attachmentIndex, attachment := range *msg.Attachments {
 				accessoryRow += 1
 				renderAttachment(
 					term,
@@ -299,7 +300,8 @@ func (term *TerminalDisplay) DrawMessages(
 					index == selectedMessageIndex, // Is the current message selected?
 					accessoryRow,                  // Which row to render the attachment on?
 					prefixWidth,                   // How far to the left should the first attachment be offset?
-					width,
+					width,                         // Width of the window
+					attachmentIndex,               // The index of the given attachent in the selected message
 				)
 				accessoryRow += getAttachmentHeight(attachment) - 1
 			}

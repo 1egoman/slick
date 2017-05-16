@@ -92,17 +92,25 @@ func keystackQuantityParser(keystack []rune) (int, []rune, error) {
 }
 
 // WHen a user presses a key when they are selecting with a message, perform an action.
-func OnMessageInteraction(state *State, key rune) {
+func OnMessageInteraction(state *State, key rune, quantity int) {
 	// Is a message selected?
 	if state.SelectedMessageIndex >= 0 {
 		switch key {
-		case 'o':
+		case 'o': // Open a file
 			err := GetCommand("OpenFile").Handler([]string{}, state)
 			if err != nil {
 				state.Status.Errorf(err.Error())
 			}
-		case 'c':
+		case 'c': // Copy the link to a file
 			err := GetCommand("CopyFile").Handler([]string{}, state)
+			if err != nil {
+				state.Status.Errorf(err.Error())
+			}
+		case 'l': // Open link in attachment
+			err := GetCommand("OpenAttachmentLink").Handler(
+				[]string{fmt.Sprintf("%d", quantity)},
+				state,
+			)
 			if err != nil {
 				state.Status.Errorf(err.Error())
 			}
@@ -229,6 +237,11 @@ func OnCommandExecuted(state *State, quit chan struct{}) error {
 	return nil
 }
 
+// After the user runs a command, reset the key stack.
+func resetKeyStack(state *State) {
+	state.KeyStack = []rune{}
+}
+
 // Fetch more messages when the user has scrolled to the end of the previous message list.
 func FetchMessageHistoryScrollback(state *State) error {
 	msgHistory := state.ActiveConnection().MessageHistory()
@@ -265,12 +278,13 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 				if err != nil {
 					state.Status.Errorf(err.Error())
 				}
-				state.KeyStack = []rune{}
+				resetKeyStack(state)
 			}
 		}
 	}
 
 	quantity, keystackCommand, _ := keystackQuantityParser(state.KeyStack)
+	log.Println(state.KeyStack)
 	switch {
 	case ev.Key() == tcell.KeyCtrlC:
 		log.Println("CLOSE QUIT 1")
@@ -281,7 +295,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 	case ev.Key() == tcell.KeyEscape:
 		state.Mode = "chat"
 		state.FuzzyPicker.Hide()
-		state.KeyStack = []rune{}
+		resetKeyStack(state)
 
 	// 'p' moves to a channel picker, which is a mode for switching teams and channels
 	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'p':
@@ -318,26 +332,30 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 			state.Mode = "chat"
 			state.FuzzyPicker.Hide()
 		}
+		resetKeyStack(state)
 
 	// 'e' moves to write mode. So does ':' and '/'
 	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'w':
 		state.Mode = "writ"
+		resetKeyStack(state)
 	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == ':':
 		state.Mode = "writ"
 		state.Command = []rune{':'}
 		state.CommandCursorPosition = 1
 		enableCommandAutocompletion(state, quit)
+		resetKeyStack(state)
 	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == '/':
 		state.Mode = "writ"
 		state.Command = []rune{'/'}
 		state.CommandCursorPosition = 1
 		enableCommandAutocompletion(state, quit)
+		resetKeyStack(state)
 
 
 	//
 	// MOVEMENT UP AND DOWN THROUGH MESSAGES AND ACTIONS ON THE MESSAGES
 	//
-	// case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'j': // Down a message
+	// `j` moves down a message.
 	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == 'j':
 		for i := 0; i < quantity; i++ {
 			err := GetCommand("MoveBackMessage").Handler([]string{}, state)
@@ -345,7 +363,9 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 				state.Status.Errorf(err.Error())
 			}
 		}
-		state.KeyStack = []rune{}
+		resetKeyStack(state)
+
+	// `k` moves up a message.
 	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == 'k': // Up a message
 		for i := 0; i < quantity; i++ {
 			err := GetCommand("MoveForwardMessage").Handler([]string{}, state)
@@ -353,8 +373,10 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 				state.Status.Errorf(err.Error())
 			}
 		}
-		state.KeyStack = []rune{}
-	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'G': // Select first message
+		resetKeyStack(state)
+
+	// `G` will go to the bottom (newest) of the message history
+	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == 'G': // Select first message
 		if state.ActiveConnection() != nil && len(state.ActiveConnection().MessageHistory()) > 0 {
 			state.SelectedMessageIndex = 0
 			state.BottomDisplayedItem = 0
@@ -362,7 +384,10 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 		} else {
 			state.Status.Errorf("No active connection or message history!")
 		}
-	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'g': // Select last message loaded
+		resetKeyStack(state)
+
+	// `gg` will go to the top (oldest) of the message history
+	case state.Mode == "chat" && len(keystackCommand) == 2 && string(keystackCommand) == "gg":
 		if state.ActiveConnection() != nil && len(state.ActiveConnection().MessageHistory()) > 0{
 			state.SelectedMessageIndex = len(state.ActiveConnection().MessageHistory()) - 1
 			state.BottomDisplayedItem = state.SelectedMessageIndex - messageScrollPadding
@@ -374,6 +399,23 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 		} else {
 			state.Status.Errorf("No active connection or message history!")
 		}
+		resetKeyStack(state)
+
+	// `zz` will center the viewport on a message: 
+	case state.Mode == "chat" && len(keystackCommand) == 2 && string(keystackCommand) == "zz": // Center on a mezzage
+		// Center the selected message
+		if state.ActiveConnection() != nil {
+			state.BottomDisplayedItem = state.SelectedMessageIndex - (state.RenderedMessageNumber / 4)
+
+			// Clamp BottomDisplayedItem at zero.
+			if state.BottomDisplayedItem < 0 {
+				state.BottomDisplayedItem = 0
+			}
+		} else {
+			state.Status.Errorf("No active connection, or message history too short!")
+		}
+		resetKeyStack(state)
+
 	case state.Mode == "chat" && ev.Key() == tcell.KeyCtrlU: // Up a message page
 		pageAmount := state.RenderedMessageNumber / 2
 		if state.ActiveConnection() != nil && state.SelectedMessageIndex < len(state.ActiveConnection().MessageHistory())-1 {
@@ -393,6 +435,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 		} else {
 			state.Status.Errorf("No active connection, or message history too short!")
 		}
+		resetKeyStack(state)
 	case state.Mode == "chat" && ev.Key() == tcell.KeyCtrlD: // Down a message page
 		pageAmount := state.RenderedMessageNumber / 2
 		if state.ActiveConnection() != nil && state.SelectedMessageIndex > 0 {
@@ -411,21 +454,14 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 		} else {
 			state.Status.Errorf("No active connection, or message history too short!")
 		}
-	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && (ev.Rune() == 'o' || ev.Rune() == 'c'):
+		resetKeyStack(state)
+	case state.Mode == "chat" && (
+		string(keystackCommand) == "o" ||
+		string(keystackCommand) == "c" ||
+		string(keystackCommand) == "l" ): // Message interaction
 		// When a user presses a key to interact with a message, handle it.
-		OnMessageInteraction(state, ev.Rune())
-	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'Z':
-		// Center the selected message
-		if state.ActiveConnection() != nil {
-			state.BottomDisplayedItem = state.SelectedMessageIndex - (state.RenderedMessageNumber / 4)
-
-			// Clamp BottomDisplayedItem at zero.
-			if state.BottomDisplayedItem < 0 {
-				state.BottomDisplayedItem = 0
-			}
-		} else {
-			state.Status.Errorf("No active connection, or message history too short!")
-		}
+		OnMessageInteraction(state, keystackCommand[0], quantity)
+		resetKeyStack(state)
 
 	//
 	// MOVEMENT BETWEEN CONNECTIONS

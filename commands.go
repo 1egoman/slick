@@ -255,6 +255,43 @@ var COMMANDS = []Command{
 			return nil
 		},
 	},
+	{
+		Name: "OpenAttachmentLink",
+		Type: NATIVE,
+		Description: "If an attachment of the given index is on the given active, then open the link the attachment contains.",
+		Arguments: "<attachment index>",
+		Permutations: []string{"attachmentlink", "atlink", "atlk"},
+		Handler: func(args []string, state *State) error {
+			var attachmentIndex int
+			var err error
+			if len(args) == 1 {
+				attachmentIndex, err = strconv.Atoi(args[0])
+				if err != nil {
+					return err
+				}
+			} else {
+				return errors.New("Please use more arguments. /attachmentlink <attachment index>")
+			}
+
+			selectedMessageIndex := len(state.ActiveConnection().MessageHistory()) - 1 - state.SelectedMessageIndex
+			selectedMessage := state.ActiveConnection().MessageHistory()[selectedMessageIndex]
+
+			if selectedMessage.Attachments == nil {
+				return errors.New("Selected message has no attachments!")
+			}
+
+			// Open the private image url in the browser
+			if (attachmentIndex - 1) > len(*selectedMessage.Attachments) {
+				return errors.New(fmt.Sprintf("Attachment index %d is too large!", attachmentIndex))
+			} else if titleLink := (*selectedMessage.Attachments)[(attachmentIndex - 1)].TitleLink; len(titleLink) > 0 {
+				open.Run(titleLink)
+			} else {
+				return errors.New("Selected message has no file")
+			}
+
+			return nil
+		},
+	},
 
 	//
 	// MOVE FORWARD / BACKWARD MESSAGES
