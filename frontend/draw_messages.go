@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	// "log"
 
 	"github.com/gdamore/tcell"
 	"github.com/kyokomi/emoji" // convert :smile: to unicode

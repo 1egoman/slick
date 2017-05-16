@@ -283,10 +283,10 @@ var COMMANDS = []Command{
 			// Open the private image url in the browser
 			if (attachmentIndex - 1) > len(*selectedMessage.Attachments) {
 				return errors.New(fmt.Sprintf("Attachment index %d is too large!", attachmentIndex))
-			} else if titleLink := (*selectedMessage.Attachments)[(attachmentIndex - 1)].TitleLink; len(titleLink) > 0 {
+			} else if titleLink := (*selectedMessage.Attachments)[attachmentIndex - 1].TitleLink; len(titleLink) > 0 {
 				open.Run(titleLink)
 			} else {
-				return errors.New("Selected message has no file")
+				return errors.New("Selected message and attachment doesn't have a link that can be opened.")
 			}
 
 			return nil
