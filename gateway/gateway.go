@@ -91,6 +91,13 @@ type Team struct {
 	Domain string `json:"domain"`
 }
 
+type ChannelType int
+const (
+	TYPE_CHANNEL ChannelType = iota // A channel is a open conversation between a large number of people
+	TYPE_DIRECT_MESSAGE             // A DM is a message connection between two people
+	TYPE_GROUP_DIRECT_MESSAGE       // A Group DM is a DM between greater than two people
+)
+
 // A Channel is a independant stream of messages sent by users.
 type Channel struct {
 	Id         string `json:"id"`
@@ -99,6 +106,7 @@ type Channel struct {
 	Created    int    `json:"created"`
 	IsMember   bool   `json:"is_member"`
 	IsArchived bool   `json:"is_archived"`
+	SubType    ChannelType `json:"subtype"`
 }
 
 // A Reaction is an optional subcollection of a message.

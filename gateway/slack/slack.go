@@ -63,6 +63,7 @@ func (c *SlackConnection) Name() string {
 
 // Fetch all channels for the given team
 func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
+	// FETCH CHANNELs
 	log.Printf("Fetching list of channels for team %s", c.Team().Name)
 	resp, err := http.Get("https://slack.com/api/channels.list?token=" + c.token)
 	if err != nil {
@@ -92,6 +93,7 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 		}
 		channelBuffer = append(channelBuffer, gateway.Channel{
 			Id:         channel.Id,
+			SubType:    gateway.TYPE_CHANNEL,
 			Name:       channel.Name,
 			Creator:    creator,
 			Created:    channel.Created,
@@ -99,6 +101,45 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 			IsArchived: channel.IsArchived,
 		})
 	}
+
+
+
+	// FETCH IMs
+	log.Printf("Fetching list of ims for team %s", c.Team().Name)
+	resp, err = http.Get("https://slack.com/api/im.list?token=" + c.token)
+	if err != nil {
+		return nil, err
+	}
+
+	body, _ = ioutil.ReadAll(resp.Body)
+	log.Printf("IM LIST", string(body))
+	var slackImBuffer struct {
+		Ims []struct {
+			Id         string `json:"id"`
+			User       string `json:"user"`
+			Created    int    `json:"created"`
+		} `json:"ims"`
+	}
+	json.Unmarshal(body, &slackImBuffer)
+
+	var otherUser *gateway.User
+	for _, im := range slackImBuffer.Ims {
+		log.Printf("IM %+v", im)
+		otherUser, err = c.UserById(im.User)
+		if err != nil {
+			return nil, err
+		}
+		channelBuffer = append(channelBuffer, gateway.Channel{
+			Id:         im.Id,
+			SubType:    gateway.TYPE_DIRECT_MESSAGE,
+			Name:       fmt.Sprintf("im-%s-%s", c.Self().Name, otherUser.Name),
+			Creator:    c.Self(),
+			Created:    im.Created,
+			IsMember:   true,
+			IsArchived: false,
+		})
+	}
+
 
 	// Set the internal state of the component.
 	// This is used by the `connect` step to prelaod a list of channels for the fuzzy picker
@@ -112,7 +153,12 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel, startTs 
 	log.Printf("Fetching channel messages for team %s starting at %s", c.Team().Name, startTs)
 
 	// Contruct the request url
-	url := "https://slack.com/api/channels.history?token=" + c.token
+	var url string
+	if channel.SubType == gateway.TYPE_CHANNEL {
+		url = "https://slack.com/api/channels.history?token=" + c.token
+	} else if channel.SubType == gateway.TYPE_DIRECT_MESSAGE {
+		url = "https://slack.com/api/im.history?token=" + c.token
+	}
 	url += "&channel=" + channel.Id
 	url += "&count=100"
 
@@ -121,6 +167,7 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel, startTs 
 		url += "&latest=" + *startTs
 	}
 
+	log.Println("Fetching history from slack", url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
