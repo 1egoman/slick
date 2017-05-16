@@ -123,7 +123,6 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 
 	var otherUser *gateway.User
 	for _, im := range slackImBuffer.Ims {
-		log.Printf("IM %+v", im)
 		otherUser, err = c.UserById(im.User)
 		if err != nil {
 			return nil, err

@@ -298,7 +298,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 		resetKeyStack(state)
 
 	// 'p' moves to a channel picker, which is a mode for switching teams and channels
-	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'p':
+	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == 'p':
 		if state.Mode != "pick" {
 			state.Mode = "pick"
 			state.FuzzyPicker.Show(OnPickConnectionChannel)
@@ -335,16 +335,16 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 		resetKeyStack(state)
 
 	// 'e' moves to write mode. So does ':' and '/'
-	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == 'w':
+	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == 'w':
 		state.Mode = "writ"
 		resetKeyStack(state)
-	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == ':':
+	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == ':':
 		state.Mode = "writ"
 		state.Command = []rune{':'}
 		state.CommandCursorPosition = 1
 		enableCommandAutocompletion(state, quit)
 		resetKeyStack(state)
-	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() == '/':
+	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == '/':
 		state.Mode = "writ"
 		state.Command = []rune{'/'}
 		state.CommandCursorPosition = 1
