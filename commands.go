@@ -335,6 +335,53 @@ var COMMANDS = []Command{
 		},
 	},
 
+	//
+	// CHANGE THE ACTIVE CHANNEL
+	//
+	{
+		Name: "Pick",
+		Type: NATIVE,
+		Description: "Pick another connection / channel.",
+		Arguments: "<connection name> <channel name>",
+		Permutations: []string{"pick", "p"},
+		Handler: func(args []string, state *State) error {
+			var connectionName string
+			var channelName string
+			if len(args) == 3 {
+				connectionName = args[1]
+				channelName = args[2]
+			} else {
+				return errors.New("Please specify more args. /pick <connection name> <channel name>")
+			}
+
+			setConnection := false
+			for connectionIndex, connection := range state.Connections {
+				if connection.Name() == connectionName {
+					state.SetActiveConnection(connectionIndex)
+					setConnection = true
+					break
+				}
+			}
+			if !setConnection {
+				return errors.New("No such connection: "+connectionName)
+			}
+
+			setChannel := false
+			for _, channel := range state.ActiveConnection().Channels() {
+				if channel.Name == channelName {
+					state.ActiveConnection().SetSelectedChannel(&channel)
+					setChannel = true
+					break
+				}
+			}
+			if !setChannel {
+				return errors.New("No such channel: "+channelName)
+			}
+
+			return nil
+		},
+	},
+
 
 	//
 	// OPEN IN SLACK
