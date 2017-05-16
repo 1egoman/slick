@@ -74,7 +74,7 @@ func keystackQuantityParser(keystack []rune) (int, []rune, error) {
 
 	// Fetch the preceeding int before the command
 	for index, key := range keystack {
-		if key > '0' && key < '9' {
+		if key >= '0' && key <= '9' {
 			quantityRunes = append(quantityRunes, key)
 		} else {
 			keystack = keystack[index:] // Remove the quantity from the front of the keystack
