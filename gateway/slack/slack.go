@@ -112,7 +112,6 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 	}
 
 	body, _ = ioutil.ReadAll(resp.Body)
-	log.Printf("IM LIST", string(body))
 	var slackImBuffer struct {
 		Ims []struct {
 			Id         string `json:"id"`
@@ -141,6 +140,45 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 	}
 
 
+
+
+	// FETCH MPIMs
+	log.Printf("Fetching list of mp ims for team %s", c.Team().Name)
+	resp, err = http.Get("https://slack.com/api/mpim.list?token=" + c.token)
+	if err != nil {
+		return nil, err
+	}
+
+	body, _ = ioutil.ReadAll(resp.Body)
+	var slackMpimBuffer struct {
+		Groups []struct {
+			Id         string `json:"id"`
+			Name       string `json:"name"`
+			CreatorId  string `json:"creator"`
+			Created    int    `json:"created"`
+			IsMember   bool   `json:"is_member"`
+			IsArchived bool   `json:"is_archived"`
+		} `json:"groups"`
+	}
+	json.Unmarshal(body, &slackMpimBuffer)
+
+	for _, mpim := range slackMpimBuffer.Groups {
+		creator, err = c.UserById(mpim.CreatorId)
+		if err != nil {
+			return nil, err
+		}
+		channelBuffer = append(channelBuffer, gateway.Channel{
+			Id:         mpim.Id,
+			SubType:    gateway.TYPE_GROUP_DIRECT_MESSAGE,
+			Name:       mpim.Name,
+			Creator:    creator,
+			Created:    mpim.Created,
+			IsMember:   mpim.IsMember,
+			IsArchived: mpim.IsArchived,
+		})
+	}
+
+
 	// Set the internal state of the component.
 	// This is used by the `connect` step to prelaod a list of channels for the fuzzy picker
 	c.channels = channelBuffer
@@ -158,6 +196,8 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel, startTs 
 		url = "https://slack.com/api/channels.history?token=" + c.token
 	} else if channel.SubType == gateway.TYPE_DIRECT_MESSAGE {
 		url = "https://slack.com/api/im.history?token=" + c.token
+	} else if channel.SubType == gateway.TYPE_GROUP_DIRECT_MESSAGE {
+		url = "https://slack.com/api/mpim.history?token=" + c.token
 	}
 	url += "&channel=" + channel.Id
 	url += "&count=100"
