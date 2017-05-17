@@ -63,6 +63,8 @@ func (c *SlackConnection) Name() string {
 
 // Fetch all channels for the given team
 func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
+	var channelBuffer []gateway.Channel
+
 	// FETCH CHANNELs
 	log.Printf("Fetching list of channels for team %s", c.Team().Name)
 	resp, err := http.Get("https://slack.com/api/channels.list?token=" + c.token)
@@ -84,7 +86,6 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 	json.Unmarshal(body, &slackChannelBuffer)
 
 	// Convert to more generic message format
-	var channelBuffer []gateway.Channel
 	var creator *gateway.User
 	for _, channel := range slackChannelBuffer.Channels {
 		creator, err = c.UserById(channel.CreatorId)

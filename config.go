@@ -47,6 +47,10 @@ func PathToSavedConnections() string {
 }
 
 func SaveConnection(conn gateway.Connection) error {
+	if conn.SelectedChannel() == nil {
+		return errors.New("Can't save connection with no selected channel!")
+	}
+
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(SerializedConnection{
