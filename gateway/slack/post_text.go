@@ -3,6 +3,9 @@ package gatewaySlack
 import (
 	"log"
 	"errors"
+	"bytes"
+	"mime/multipart"
+	"io"
 
 	"encoding/json"
 	"io/ioutil"
@@ -11,7 +14,7 @@ import (
 )
 
 func (c *SlackConnection) PostText(title string, content string) error {
-	log.Printf("* Posting text to active channel: '%s' '%s'", title, content)
+	log.Printf("* Posting text to active channel: '%s'", title)
 	title = url.QueryEscape(title)
 	content = url.QueryEscape(content)
 
@@ -50,5 +53,46 @@ func (c *SlackConnection) PostText(title string, content string) error {
 		log.Println("Error posting to channel", fileBuffer.Error)
 		return errors.New(fileBuffer.Error)
 	}
+	return nil
+}
+
+func (c *SlackConnection) PostBinary(title string, filename string, content []byte) error {
+	log.Printf("* Posting binary to active channel: '%s'", filename)
+	title = url.QueryEscape(title)
+
+	// Assemble the query string
+	url := "https://slack.com/api/files.upload"
+	url += "?token=" + c.token
+	url += "&file=file"
+	url += "&channels=" + c.selectedChannel.Id
+	if len(title) > 0 {
+		url += "&title=" + title
+	}
+
+    // Prepare a form that you will submit to that URL.
+    var b bytes.Buffer
+    w := multipart.NewWriter(&b)
+    // Add your image file
+    fw, err := w.CreateFormFile("file", filename)
+    if err != nil {
+        return err
+    }
+    if _, err = io.Copy(fw, bytes.NewBuffer(content)); err != nil {
+        return err
+    }
+    // Don't forget to close the multipart writer.
+    // If you don't close it, your request will be missing the terminating boundary.
+    w.Close()
+
+    req, err := http.NewRequest("POST", url, &b)
+    // Don't forget to set the content type, this will contain the boundary.
+    req.Header.Set("Content-Type", w.FormDataContentType())
+
+    client := &http.Client{}
+    _, err = client.Do(req)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

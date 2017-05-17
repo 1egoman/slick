@@ -33,6 +33,7 @@ func (c *SlackConnection) Refresh(force bool) error {
 			for _, channel := range c.channels {
 				if channel.Name == "general" {
 					c.selectedChannel = &channel
+					break
 				}
 			}
 			// or, if that can't be found, select the first one.

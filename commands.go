@@ -236,6 +236,42 @@ var COMMANDS = []Command{
 			return nil
 		},
 	},
+	{
+		Name:         "Upload",
+		Type:         NATIVE,
+		Description:  "Upload a file to a channel.",
+		Arguments:    "<uploaded file path> [uploaded file title]",
+		Permutations: []string{"upload", "up"},
+		Handler:      func(args []string, state *State) error {
+			var title string
+			var uploadPath string
+			if len(args) == 2 { // /upload /path/to/file.xt
+				uploadPath = args[1]
+			} else if len(args) == 3 { // /upload /path/to/file.xt "file-title.png"
+				uploadPath = args[1]
+				title = args[2]
+			} else {
+				return errors.New("Please use more arguments. /upload path/to/file.png [file name]")
+			}
+
+			// Read post from filesystem
+			uploadContent, err := ioutil.ReadFile(uploadPath)
+			if err != nil {
+				return errors.New(fmt.Sprintf("Couldn't read file %s: %s", uploadPath, err.Error()))
+			}
+
+			if state.ActiveConnection() == nil {
+				return errors.New("No active connection!")
+			}
+
+			// Make the post
+			if err = state.ActiveConnection().PostBinary(title, uploadPath, uploadContent); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	},
 
 
 	//

@@ -47,6 +47,9 @@ type Connection interface {
 
 	// Post a large block of text in a given channel
 	PostText(title string, body string) error
+
+	// Upload a file into a given channel
+	PostBinary(title string, filename string, content []byte) error
 }
 
 // Events are emitted when data comes in from a connection
