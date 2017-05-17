@@ -2,3 +2,4 @@ slime
 .*.sw*
 log
 .DS_Store
+vendor/*/

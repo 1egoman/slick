@@ -121,6 +121,51 @@ var COMMANDS = []Command{
 			return nil
 		},
 	},
+	{
+		Name:         "Reconnect",
+		Type:         NATIVE,
+		Description:  "Given a team that has moved into a failure state, reconnect to the server.",
+		Arguments:    "[team name] <token>",
+		Permutations: []string{"reconnect", "recon"},
+		Handler:      func(args []string, state *State) error {
+			var index int
+			if len(args) == 1 { // /disconnect
+				index = state.ActiveConnectionIndex()
+			} else if len(args) == 2 { // /disconnect index
+				// Convert the index from strint to int
+				i, err := strconv.ParseInt(args[1], 10, 0)
+				if err != nil {
+					return errors.New("Error disconnecting: "+err.Error())
+				}
+				index = int(i)
+				if index < 0 && index > len(state.Connections) {
+					return errors.New("No such connection at that index.")
+				}
+			} else {
+				return errors.New("Please use more arguments. /reconnect [team index]")
+			}
+
+			// try to reconnect
+			err := state.Connections[index].Connect()
+			log.Println("Reconnection response: %s", err)
+			if err != nil {
+				return errors.New(fmt.Sprintf("Error in reconnecting: %s", err))
+			}
+			return nil
+		},
+	},
+	{
+		Name:         "Test Bug",
+		Type:         NATIVE,
+		Description:  "Connect to a given team. If no index is specified, then use the active connection.",
+		Arguments:    "[team index]",
+		Permutations: []string{"tb"},
+		Handler:      func(args []string, state *State) error {
+			index := state.ActiveConnectionIndex()
+			state.Connections[index].Disconnect()
+			return nil
+		},
+	},
 
 	//
 	// POSTS
