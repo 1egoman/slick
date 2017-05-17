@@ -50,6 +50,9 @@ func InitialMessageHistoryState(initialSelectedIndex int, initialBottomItemIndex
 	return s
 }
 
+//
+// ALL OTHER KEY EVENTS
+//
 var keyEvents = []struct {
 	Name         string
 	InitialState *State
@@ -220,7 +223,9 @@ func TestHandleKeyboardEvent(t *testing.T) {
 }
 
 
-// Message history movement
+//
+// MESSAGE HISTORY MOVEMENT (j, k, gg, G, ctrl-u, ctrl-d, etc...)
+//
 var messageHistoryKeyEvents = []struct {
 	Name         string
 	InitialState *State
@@ -395,6 +400,38 @@ func TestCreateArgvFromString(t *testing.T) {
 		value := CreateArgvFromString(argv.Input)
 		if !reflect.DeepEqual(value, argv.Output) {
 			t.Errorf("Test index %d failed! Should have gotten %+v, really got %+v", index, argv.Output, value)
+		}
+	}
+}
+
+
+
+//
+// keystackQuantityParser
+//
+func TestKeystackQuantityParser(t *testing.T) {
+	for input, output := range map[string]struct{
+		Quantity int
+		Keystack string
+	}{
+		"5a": {5, "a"},
+		"123a": {123, "a"},
+		"2abc": {2, "abc"},
+		"0a": {0, "a"},
+		"a": {1, "a"},
+		"a123": {1, "a123"},
+		"123": {123, ""},
+	} {
+		quant, stack, err := KeystackQuantityParser([]rune(input))
+		if err != nil {
+			t.Errorf("Error on %s: %s", input, err)
+		}
+
+		if quant != output.Quantity {
+			t.Errorf("Error: quantity doesn't match up for %s", input)
+		}
+		if string(stack) != output.Keystack {
+			t.Errorf("Error: keystack doesn't match up for %s, %s != %s", input, string(stack), output.Keystack)
 		}
 	}
 }

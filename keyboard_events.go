@@ -69,7 +69,7 @@ func enableCommandAutocompletion(state *State, quit chan struct{}) {
 }
 
 // Given a keystack, extract the preceeding quantity.
-func keystackQuantityParser(keystack []rune) (int, []rune, error) {
+func KeystackQuantityParser(keystack []rune) (int, []rune, error) {
 	quantityRunes := []rune{}
 
 	// Fetch the preceeding int before the command
@@ -283,7 +283,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 		}
 	}
 
-	quantity, keystackCommand, _ := keystackQuantityParser(state.KeyStack)
+	quantity, keystackCommand, _ := KeystackQuantityParser(state.KeyStack)
 	log.Println(state.KeyStack)
 	switch {
 	case ev.Key() == tcell.KeyCtrlC:
