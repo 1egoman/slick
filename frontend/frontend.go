@@ -5,6 +5,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/kyokomi/emoji" // convert :smile: to unicode
 	"regexp"
+	"strings"
 
 	"github.com/1egoman/slime/gateway" // The thing to interface with slack
 	"github.com/1egoman/slime/status"
@@ -79,6 +80,8 @@ func NewTerminalDisplay(screen tcell.Screen) *TerminalDisplay {
 			"StatusBarError": tcell.StyleDefault.
 				Foreground(tcell.ColorDarkMagenta).
 				Bold(true),
+			"StatusBarTopBorder": tcell.StyleDefault.
+				Background(tcell.ColorGray),
 
 			"MessageReaction": tcell.StyleDefault,
 			"MessageFile":     tcell.StyleDefault,
@@ -126,8 +129,16 @@ func (term *TerminalDisplay) DrawStatusBar(
 	activeConnection gateway.Connection,
 	stat status.Status,
 ) {
-	_, height := term.screen.Size()
+	width, height := term.screen.Size()
 	lastRow := height - 1
+
+	// If the status bar needs to display mutiple lines to view a larger, multiline message, then
+	// adjust the last row acccordingly.
+	messages := strings.Split(stat.Message, "\n")
+	if stat.Show && len(messages) > 1 {
+		lastRow -= len(messages) - 1 // For each additional message line
+		lastRow -= 1 // For the "Press any key to continue" bit
+	}
 
 	// Clear the row.
 	term.DrawBlankLine(lastRow)
@@ -150,9 +161,23 @@ func (term *TerminalDisplay) DrawStatusBar(
 		}
 
 		// Write status text
-		term.WriteTextStyle(position, lastRow, style, stat.Message)
+		if len(messages) == 1 {
+			// Just render one row, nothing special.
+			term.WriteTextStyle(position, lastRow, style, stat.Message)
+		} else {
+			// Rendering multiple rows is more involved.
+			// Above the top of the picker, draw a border.
+			for i := 0; i < width; i++ {
+				term.screen.SetCell(i, lastRow - 1, term.Styles["StatusBarTopBorder"], ' ')
+			}
+			for ct, line := range messages {
+				term.DrawBlankLine(lastRow + ct)
+				term.WriteTextStyle(position, lastRow+ct, style, line)
+			}
+			term.WriteTextStyle(position, lastRow+len(messages), style, "Press any key to continue...")
+		}
 	} else {
-		// Then, render each conenction
+		// Otherwise, render each conenction
 		for index, item := range connections {
 			// How should the connection look?
 			var style tcell.Style
