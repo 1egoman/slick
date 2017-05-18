@@ -202,7 +202,7 @@ var COMMANDS = []Command{
 			}
 
 			// Make the post
-			if err = state.ActiveConnection().PostText(postTitle, string(postContent)); err != nil {
+			if err = state.ActiveConnection().PostBinary(postTitle, postPath, []byte(postContent)); err != nil {
 				return err
 			}
 

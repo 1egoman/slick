@@ -35,6 +35,7 @@ func main() {
 		err := ParseScript(data, state, term)
 		if err != nil {
 			state.Status.Errorf("lua error: %s", err.Error())
+			log.Printf("lua error: %s", err.Error())
 		}
 	}
 

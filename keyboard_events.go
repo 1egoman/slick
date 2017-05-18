@@ -263,9 +263,6 @@ func FetchMessageHistoryScrollback(state *State) error {
 
 // Break out function to handle only keyboard events. Called by `keyboardEvents`.
 func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) error {
-	// Prior to executing a keyboard command, clear the status.
-	state.Status.Clear()
-
 	// Did the user press a key in the keymap?
 	if state.Mode == "chat" && ev.Key() == tcell.KeyRune {
 		// Add pressed key to the stack of keys
@@ -296,6 +293,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 		state.Mode = "chat"
 		state.FuzzyPicker.Hide()
 		resetKeyStack(state)
+		state.Status.Clear()
 
 	// 'p' moves to a channel picker, which is a mode for switching teams and channels
 	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == 'p':
@@ -593,6 +591,9 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 		state.CommandCursorPosition = 0
 	case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyCtrlE:
 		state.CommandCursorPosition = len(state.Command)
+
+	default:
+		state.Status.Clear()
 	}
 
 	// If the user has scrolled to the end of the list of messages in their active channel, then load more
