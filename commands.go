@@ -3,11 +3,13 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"errors"
 	"strings"
 	"log"
 	"os"
 	"strconv"
+	"os/exec"
 
 	"github.com/1egoman/slime/gateway"
 	"github.com/1egoman/slime/gateway/slack"
@@ -15,6 +17,7 @@ import (
 
 	"github.com/skratchdot/open-golang/open"
 	"github.com/yuin/gopher-lua"
+	"github.com/cjoudrey/gluahttp" // gopher-lua http library
 )
 
 type CommandType int
@@ -682,11 +685,69 @@ func ParseScript(script string, state *State, term *frontend.TerminalDisplay) er
 		return 0
 	}))
 
+	L.SetGlobal("command", L.NewFunction(func(L *lua.LState) int {
+		name := L.ToString(1)
+		callback := L.ToFunction(4)
+		COMMANDS = append(COMMANDS, Command{
+			Name: name,
+			Type: NATIVE,
+			Description: L.ToString(2),
+			Arguments: L.ToString(3),
+			Permutations: []string{name},
+			Handler: func(args []string, state *State) error {
+				log.Println("Running lua command", name, args)
+				// Convert arguments slice into table
+				luaArgs := L.NewTable()
+				for _, arg := range args {
+					luaArgs.Append(lua.LString(arg))
+				}
+
+				return L.CallByParam(lua.P{Fn: callback, NRet: 0}, luaArgs)
+			},
+		})
+		return 0
+	}))
+
 	L.SetGlobal("getenv", L.NewFunction(func(L *lua.LState) int {
 		envName := L.ToString(1)
 		L.Push(lua.LString(os.Getenv(envName)))
 		return 1
 	}))
+
+	L.SetGlobal("shell", L.NewFunction(func(L *lua.LState) int {
+		commandName := L.ToString(1)
+		if len(commandName) == 0 {
+			L.Push(lua.LString("First argument (command name) is required."))
+			return 1
+		}
+
+		var args []string
+		argc := 2
+		for ;; argc++ {
+			arg := L.ToString(argc)
+			if len(arg) > 0 {
+				args = append(args, arg)
+			} else {
+				break
+			}
+		}
+		log.Println("Running command", commandName, "with args", args)
+
+		command := exec.Command(commandName, args...)
+		output, err := command.Output()
+		if err != nil {
+			L.Push(lua.LString(err.Error()))
+			return 1
+		}
+
+		log.Println("Command output", output)
+		L.Push(lua.LNil)
+		L.Push(lua.LString(string(output)))
+		return 1
+	}))
+
+	// Load Gluahttp so the config can make http requests: https://github.com/cjoudrey/gluahttp
+	L.PreloadModule("http", gluahttp.NewHttpModule(&http.Client{}).Loader)
 
 	// Export all commands in the lua context
 	for _, command := range COMMANDS {
