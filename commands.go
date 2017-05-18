@@ -746,6 +746,35 @@ func ParseScript(script string, state *State, term *frontend.TerminalDisplay) er
 		return 1
 	}))
 
+	L.SetGlobal("sendmessage", L.NewFunction(func(L *lua.LState) int {
+		messageText := L.ToString(1)
+		if len(messageText) == 0 {
+			L.Push(lua.LString("First argument (message text) is required."))
+			return 1
+		}
+
+		// Just send a normal message!
+		message := gateway.Message{
+			Sender: state.ActiveConnection().Self(),
+			Text:   messageText,
+		}
+
+		// Sometimes, a message could have a response. This is for example true in the
+		// case of slash commands, sometimes.
+		_, err := state.ActiveConnection().SendMessage(
+			message,
+			state.ActiveConnection().SelectedChannel(),
+		)
+
+		if err != nil {
+			L.Push(lua.LString("Error sending message: "+err.Error()))
+		} else {
+			L.Push(lua.LNil)
+		}
+
+		return 1
+	}))
+
 	// Load Gluahttp so the config can make http requests: https://github.com/cjoudrey/gluahttp
 	L.PreloadModule("http", gluahttp.NewHttpModule(&http.Client{}).Loader)
 
