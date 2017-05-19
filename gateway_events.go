@@ -90,7 +90,6 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 
           message, err := state.ActiveConnection().ParseMessage(event.Data, cachedUsers)
           if err == nil {
-            log.Println("Send notification?", message)
             // Add message to history
             state.ActiveConnection().AppendMessageHistory(*message)
           } else {

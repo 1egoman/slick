@@ -389,10 +389,10 @@ func (c *SlackConnection) ParseMessage(
 		sender = cachedUsers[slackMessageBuffer.UserId]
 	} else {
 		sender, err = c.UserById(slackMessageBuffer.UserId)
-		cachedUsers[slackMessageBuffer.UserId] = sender
 		if err != nil {
 			return nil, err
 		}
+		cachedUsers[slackMessageBuffer.UserId] = sender
 	}
 
 	// Convert the reactions fetched into reaction objects
