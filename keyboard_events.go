@@ -21,7 +21,7 @@ const messageScrollPadding = 7
 func sendTypingIndicator(state *State) error {
 	if state.ActiveConnection() != nil && state.ActiveConnection().SelectedChannel() != nil {
 		outgoing := state.ActiveConnection().Outgoing()
-		if len(outgoing) < cap(outgoing) {
+		if len(outgoing) < cap(outgoing) / 2 { // Only send typing indicator if we have plenty of room in the queue.
 			state.ActiveConnection().Outgoing() <- gateway.Event{
 				Type: "typing",
 				Data: map[string]interface{}{

@@ -88,9 +88,10 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
             break
           }
 
-          // Add message to history
           message, err := state.ActiveConnection().ParseMessage(event.Data, cachedUsers)
           if err == nil {
+            log.Println("Send notification?", message)
+            // Add message to history
             state.ActiveConnection().AppendMessageHistory(*message)
           } else {
             log.Fatalf(err.Error())
@@ -99,6 +100,16 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 			} else {
 				log.Printf("Channel value", channel)
 			}
+
+      // Notify the user about a message if the message wasn't sent by the user.
+      if event.Data["subtype"] == nil && event.Data["user"] != state.ActiveConnection().Self().Id {
+        message, err := state.ActiveConnection().ParseMessage(event.Data, cachedUsers)
+        if err != nil {
+          log.Printf(err.Error())
+        } else {
+          Notification(message.Sender.Name, message.Text)
+        }
+      }
 
     // case "reaction_added":
     //   // If a message was deleted, then delete the message from the message history
