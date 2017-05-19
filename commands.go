@@ -360,12 +360,12 @@ var COMMANDS = []Command{
 			selectedMessageIndex := len(state.ActiveConnection().MessageHistory()) - 1 - state.SelectedMessageIndex
 			selectedMessage := state.ActiveConnection().MessageHistory()[selectedMessageIndex]
 
-			if selectedMessage.Attachments == nil {
+			if selectedMessage.Attachments == nil || len(*selectedMessage.Attachments) == 0 {
 				return errors.New("Selected message has no attachments!")
 			}
 
 			// Open the private image url in the browser
-			if (attachmentIndex - 1) > len(*selectedMessage.Attachments) {
+			if (attachmentIndex - 1) >= len(*selectedMessage.Attachments) {
 				return errors.New(fmt.Sprintf("Attachment index %d is too large!", attachmentIndex))
 			} else if titleLink := (*selectedMessage.Attachments)[attachmentIndex - 1].TitleLink; len(titleLink) > 0 {
 				open.Run(titleLink)
