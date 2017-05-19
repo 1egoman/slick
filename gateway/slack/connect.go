@@ -53,15 +53,36 @@ func (c *SlackConnection) Connect() error {
 			// Listen for messages, and when some are received, write them to a channel.
 			if n, err = c.conn.Read(msgRaw); err != nil {
 				if c.Status() != gateway.DISCONNECTED {
-					log.Println(err.Error())
+					log.Println("Error reading from slack socket", err.Error())
 					c.connectionStatus = gateway.FAILED
+
+					// Try to recover!
+					// If we were disconencted from the slack socket, then attempt to reconnect.
+					// This can happen beacause of rate limiting, timeouts, etc...
+					err = c.requestConnectionUrl()
+					if err != nil {
+						log.Println("Error getting connection url", err)
+						return
+					}
+					c.conn, err = websocket.Dial(c.url, "", origin)
+					if err != nil {
+						log.Println("Error reading from slack socket for second time", err.Error())
+						return
+					} else {
+						log.Println("Was able to reconnect to slack socket!")
+						if n, err = c.conn.Read(msgRaw); err != nil {
+							log.Println("Error reading from slack socket for second time", err.Error())
+							return
+						} else {
+							log.Println("Successful read, recovered from socket error!")
+							c.connectionStatus = gateway.CONNECTED
+						}
+					}
 				}
-				return
 			}
 
 			// Add the latest packet to the message buffer
 			messageBuffer = append(messageBuffer, msgRaw[:n]...)
-			log.Printf("INCOMING PACKET %s: %s", c.Team().Name, messageBuffer)
 
 			// Decode message buffer into a struct so that we can check message type later
 			err = json.Unmarshal(messageBuffer, &msg)
@@ -102,10 +123,32 @@ func (c *SlackConnection) Connect() error {
 			// Send it.
 			if _, err = c.conn.Write(data); err != nil {
 				if c.Status() != gateway.DISCONNECTED {
-					log.Println(err.Error())
+					log.Println("Error writing to slack socket", err.Error())
 					c.connectionStatus = gateway.FAILED
+
+					// Try to recover!
+					// If we were disconencted from the slack socket, then attempt to reconnect.
+					// This can happen beacause of rate limiting, timeouts, etc...
+					err = c.requestConnectionUrl()
+					if err != nil {
+						log.Println("Error getting connection url", err)
+						return
+					}
+					c.conn, err = websocket.Dial(c.url, "", origin)
+					if err != nil {
+						log.Println("Error connecting to slack socket for second time", err.Error())
+						return
+					} else {
+						log.Println("Was able to reconnect to slack socket!")
+						if _, err = c.conn.Write(data); err != nil {
+							log.Println("Error writing to slack socket for second time", err.Error())
+							return
+						} else {
+							log.Println("Successful write, recovered from socket error!")
+							c.connectionStatus = gateway.CONNECTED
+						}
+					}
 				}
-				return
 			}
 		}
 	}(c.outgoing)
