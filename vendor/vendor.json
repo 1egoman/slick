@@ -3,6 +3,12 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "5mydHYvw5yAj51JoQ9SuLfGBJL0=",
+			"path": "github.com/0xAX/notificator",
+			"revision": "82e921414e037b057d5f9c5c8b9a8313dfa584de",
+			"revisionTime": "2016-12-14T07:49:16Z"
+		},
+		{
 			"checksumSHA1": "a6NifIaomYe/FKneLi6f1OZawyQ=",
 			"path": "github.com/cjoudrey/gluahttp",
 			"revision": "b4bfe0c50fea948dcbf3966e120996d6607bbd89",
