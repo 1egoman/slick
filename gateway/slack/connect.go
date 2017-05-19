@@ -19,8 +19,8 @@ func (c *SlackConnection) Connect() error {
 	c.connectionStatus = gateway.CONNECTING
 
 	// Create buffered channels to listen and send messages on
-	c.incoming = make(chan gateway.Event, 1)
-	c.outgoing = make(chan gateway.Event, 1)
+	c.incoming = make(chan gateway.Event, 10)
+	c.outgoing = make(chan gateway.Event, 10)
 
 	// Request a connection url with the token in the struct
 	log.Println("Requesting slack team connection url...")
