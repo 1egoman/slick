@@ -84,11 +84,29 @@ Config files contain a few unique functions:
 - `keymap("key sequence", <callback>)` calls the callback when a given key sequence is pressed. For
   example:
 
-```
+```lua
 keymap("ff", function()
 	print("User pressed ff!")
 end)
 ```
+- `output, err = shell("ls", "-l")` calls the given shell command. Returns stdout and err.
+- `output, err = command("ls", "-l")` calls the given shell command. Returns stdout and err.
+- `getenv("HOME")` returns the contents of an environment variable
+- `sendmessage("Hello World!")` sends a message to the currently active connection and channel.
+- `command("name", "desc", "args", <callback>)` constructs a command. For example:
+
+```lua
+command("hello", "A nice greeting!", "[name]", function(args)
+	if strings.len(args[2]) > 0 then
+		sendmessage("Hello @"..args[2]) -- Greet a user
+	else
+		sendmessage("Hello world!") -- Greet the world
+	end
+end)
+```
+
+Now, if the user runs `/hello`, the message `Hello world!` will be sent. If the user runs `/hello
+bob`, `Hello @bob` will be sent.
 
 ## Commands in config files
 Commands map one-to-one with functions in a config file. For example, the command `/postinline`
