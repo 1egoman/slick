@@ -199,6 +199,26 @@ func (term *TerminalDisplay) DrawStatusBar(
 			term.WriteTextStyle(position, lastRow, style, label)
 			position += len(label) + 1
 		}
+
+		// And the users that are currently typing
+		if activeConnection != nil && activeConnection.TypingUsers() != nil {
+			// Create a slice of user names from the slice of users
+			var userList []string
+			for _, user := range activeConnection.TypingUsers().Users() {
+				userList = append(userList, user.Name)
+			}
+
+			var typingUsers string
+			if len(userList) > 0 {
+				if len(userList) <= 3 {
+					typingUsers = fmt.Sprintf("%s typing...", strings.Join(userList, ", "))
+				} else {
+					typingUsers = "Several typing..."
+				}
+				typingUsersXPos := width - len(typingUsers) - 1
+				term.WriteTextStyle(typingUsersXPos, lastRow, tcell.StyleDefault, typingUsers)
+			}
+		}
 	}
 }
 

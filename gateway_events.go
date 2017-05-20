@@ -92,6 +92,9 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
           if err == nil {
             // Add message to history
             state.ActiveConnection().AppendMessageHistory(*message)
+
+			// If the user that sent the message was typing, they aren't anymore.
+			state.ActiveConnection().TypingUsers().Remove(*message.Sender)
           } else {
             log.Fatalf(err.Error())
           }
@@ -120,6 +123,26 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
     //       }
     //     }
     //   }
+
+		// When a user starts typing, then display that they are typing.
+		case "user_typing":
+			if state.ActiveConnection() != nil {
+				if channel := state.ActiveConnection().SelectedChannel(); event.Data["channel"] == channel.Id {
+					if userId, ok := event.Data["user"].(string); ok {
+						user, err := state.ActiveConnection().UserById(userId)
+						if err != nil {
+							log.Println(err.Error())
+						} else if user != nil {
+							// Add user to the list of users typing.
+							state.ActiveConnection().TypingUsers().Add(*user, time.Now())
+						} else {
+							log.Println("User in `user_typing` event was nil, ignoring...")
+						}
+					} else {
+						log.Println("User id in `user_typing` raw event was not coersable to string, ignoring...")
+					}
+				}
+			}
 
 		case "":
 			log.Printf("Unknown event received: %+v", event)

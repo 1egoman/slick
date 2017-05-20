@@ -24,6 +24,8 @@ func NewWithName(nickname string, token string) *SlackConnection {
 	return &SlackConnection{
 		token: token,
 		nickname: &nickname,
+
+		typingUsers: gateway.NewTypingUsers(),
 	}
 }
 
@@ -48,6 +50,9 @@ type SlackConnection struct {
 
 	// Internal state to store message history of the active channel
 	messageHistory []gateway.Message
+
+	// Managethe users that are currently typing.
+	typingUsers *gateway.TypingUsers
 }
 
 // Return the name of the team.
@@ -555,4 +560,8 @@ func (c *SlackConnection) ToggleMessageReaction(message gateway.Message, reactio
 
 func (c *SlackConnection) Status() gateway.ConnectionStatus {
 	return c.connectionStatus
+}
+
+func (c *SlackConnection) TypingUsers() *gateway.TypingUsers {
+	return c.typingUsers;
 }

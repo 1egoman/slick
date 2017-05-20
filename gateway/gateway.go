@@ -50,6 +50,9 @@ type Connection interface {
 
 	// Upload a file into a given channel
 	PostBinary(title string, filename string, content []byte) error
+
+	// Manage which users are typing.
+	TypingUsers() *TypingUsers
 }
 
 // Events are emitted when data comes in from a connection
