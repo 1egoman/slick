@@ -191,25 +191,6 @@ func getSenderInfo(msg gateway.Message) (string, tcell.Style) {
 	return sender, senderStyle
 }
 
-// Given a string, partition into sections of size `width`.
-func partitionIntoRows(total string, width int) []string {
-	partitions := []string{}
-	lastIndex := 0
-	for index := 0; index < len(total); index++ {
-		if index%width == 0 {
-			partitions = append(partitions, total[lastIndex:index])
-			lastIndex = index
-		}
-	}
-
-	// Add the last undersized partition if it exists
-	if lastIndex < len(total)-1 {
-		partitions = append(partitions, total[lastIndex:])
-	}
-
-	return partitions
-}
-
 // Draw message history in the channel
 func (term *TerminalDisplay) DrawMessages(
 	messages []gateway.Message, // A list of messages to render
