@@ -231,7 +231,10 @@ func (term *TerminalDisplay) DrawMessages(
 			selectedStyle = tcell.StyleDefault
 		}
 
-		parsedMessage, err := parseSlackMessage(msg.Text, userById)
+		// Take our message text and convert it to message parts
+		// TODO: cache this somehow. It's slow as hell.
+		var parsedMessage PrintableMessage
+		err := parseSlackMessage(msg.Text, &parsedMessage, userById)
 		if err != nil {
 			// FIXME: Probably should return an error here? And not return 0?
 			log.Println("Error making message print-worthy (probably because fetching user id => user name failed):", err)
@@ -240,7 +243,8 @@ func (term *TerminalDisplay) DrawMessages(
 
 		// Calculate how many rows the message requires to render.
 		messageColumnWidth := width - prefixWidth
-		messageRows := (parsedMessage.Length() / messageColumnWidth) + 1
+		parsedMessageLines := parsedMessage.Lines(messageColumnWidth)
+		messageRows := len(parsedMessageLines)
 		accessoryRow := row         // The row to start rendering "message accessories" on
 		if len(msg.Text) == 0 {
 			accessoryRow -= 1
@@ -309,41 +313,37 @@ func (term *TerminalDisplay) DrawMessages(
 
 
 		// Render the sender and the message
-		totalWidth := 0
-		rowDelta := -1
-		for _, part := range parsedMessage.Parts() {
-			// If the content won't fit on this line, move to the next line (y++) and reset x to 0
-			if (totalWidth + len(part.Content)) > messageColumnWidth {
-				rowDelta += 1
-				totalWidth = 0
+		for lineIndex, line := range parsedMessageLines {
+			totalWidth := 0
+			for _, part := range line {
+				// How should this part be styled?
+				var style tcell.Style
+				if part.Type == PLAIN_TEXT {
+					style = tcell.StyleDefault
+				} else if part.Type == AT_MENTION_USER {
+					style = tcell.StyleDefault.
+						Foreground(tcell.ColorRed).
+						Bold(true)
+				} else if part.Type == AT_MENTION_GROUP {
+					style = tcell.StyleDefault.
+						Foreground(tcell.ColorYellow).
+						Bold(true)
+				} else if part.Type == CHANNEL {
+					style = tcell.StyleDefault.
+						Foreground(tcell.ColorBlue).
+						Bold(true)
+				}
+
+				// Render the next message part
+				term.WriteTextStyle(
+					prefixWidth + totalWidth,
+					row-messageRows+lineIndex+1,
+					style,
+					part.Content,
+				)
+
+				totalWidth += len(part.Content)
 			}
-
-			var style tcell.Style
-			if part.Type == PLAIN_TEXT {
-				style = tcell.StyleDefault
-			} else if part.Type == AT_MENTION_USER {
-				style = tcell.StyleDefault.
-					Foreground(tcell.ColorRed).
-					Bold(true)
-			} else if part.Type == AT_MENTION_GROUP {
-				style = tcell.StyleDefault.
-					Foreground(tcell.ColorYellow).
-					Bold(true)
-			} else if part.Type == CHANNEL {
-				style = tcell.StyleDefault.
-					Foreground(tcell.ColorBlue).
-					Bold(true)
-			}
-
-			// Render the next message part
-			term.WriteTextStyle(
-				prefixWidth + totalWidth,
-				row-messageRows-rowDelta,
-				style,
-				part.Content,
-			)
-
-			totalWidth += len(part.Content)
 		}
 
 		// Subtract the message's height.

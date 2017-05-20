@@ -30,10 +30,18 @@ type PrintableMessagePart struct {
 
 type PrintableMessage struct {
 	parts []PrintableMessagePart
+
+	// Running `Lines(width)` takes a while, and it's pure. Memoize it for speed.
+	linesCacheWidth int
+	linesCache [][]PrintableMessagePart
 }
 
 func (p *PrintableMessage) Parts() []PrintableMessagePart {
 	return p.parts
+}
+
+func (p *PrintableMessage) SetParts(parts []PrintableMessagePart) {
+	p.parts = parts
 }
 
 // Return the length of the printable message
@@ -53,9 +61,82 @@ func (p *PrintableMessage) Plain() string {
 	}
 	return total
 }
+
+func (p *PrintableMessage) Lines(width int) [][]PrintableMessagePart {
+	// If the result has already been calculated, use it.
+	if p.linesCacheWidth == width && p.linesCache != nil {
+		return p.linesCache
+	}
+
+	var lines [][]PrintableMessagePart
+	var messageParts []PrintableMessagePart
+	var extraWords []string
+
+	for _, part := range p.parts {
+		messageParts = append(messageParts, part)
+		// log.Printf("MESSAGE PARTS %+v", messageParts)
+
+		pm := PrintableMessage{parts: messageParts}
+		if pm.Length() > width {
+			pm = PrintableMessage{parts: messageParts[:len(messageParts) - 1]}
+			maximumLengthOfLastMessagePart := width - pm.Length()
+
+			// log.Printf("WANTED TO DRAW %+v BUT INSTEAD ONLY DID %d", messageParts, maximumLengthOfLastMessagePart)
+
+			// Now, cut down all words that don't fit on this line.
+			// foo bar baz hello world test quux (extraWords = [])
+			// foo bar baz hello world test      (extraWords = [quux])
+			// foo bar baz hello world           (extraWords = [test, quux])
+			// foo bar baz hello                 (extraWords = [world, test, quux])
+			//                    ^
+			//                 "window width"
+			// (done, since the line length < window width)
+
+			wordsInLastMessagePart := strings.Split(part.Content, " ")
+			for len(strings.Join(wordsInLastMessagePart, " ")) > maximumLengthOfLastMessagePart {
+				// Remove one word from the last message part until the 
+				extraWords = append([]string{wordsInLastMessagePart[len(wordsInLastMessagePart) - 1]}, extraWords...)
+				wordsInLastMessagePart = wordsInLastMessagePart[:len(wordsInLastMessagePart)-1]
+			}
+			messageParts[len(messageParts)-1].Content = strings.Join(wordsInLastMessagePart, " ")
+
+			// log.Printf("ACTUALLY DRAWING %+v", messageParts)
+
+			// Now that our line is below the max width, it can be drawn, so add it to the array.
+			lines = append(lines, messageParts)
+			// log.Printf("LINES %+v", lines)
+
+			// Then, clear out the message parts that have been used so far.
+			messageParts = make([]PrintableMessagePart, 0)
+
+			// And start off the next line with any words that were removed from the current line to
+			// make it fit.
+			if len(extraWords) > 0 {
+				messageParts = append(messageParts, PrintableMessagePart{
+					Type: part.Type,
+					Content: strings.Join(extraWords, " "),
+				})
+				extraWords = make([]string, 0)
+			}
+			// log.Printf("LINE BIT CUT OFF %+v", messageParts)
+		}
+	}
+
+	// log.Printf("DONE LOOPING %+v", messageParts)
+
+	// If there are any message parts left over, then add them at the end.
+	if len(messageParts) > 0 {
+		lines = append(lines, messageParts)
+	}
+
+	// log.Printf("RETURNING %+v", lines)
+	p.linesCache = lines
+	p.linesCacheWidth = width
+	return lines
+}
 // Given a string to be displayed in the ui, tokenize the message and return a *PrintableMessage
 // that contains each part as a token.
-func parseSlackMessage(text string, UserById func(string) (*gateway.User, error)) (*PrintableMessage, error) {
+func parseSlackMessage(text string, printableMessage *PrintableMessage, UserById func(string) (*gateway.User, error)) error {
 	text = emoji.Sprintf(text)                         // Emojis
 
 	var parts []PrintableMessagePart
@@ -103,7 +184,7 @@ func parseSlackMessage(text string, UserById func(string) (*gateway.User, error)
 				if len(contentParts) == 1 { // content = ABCDEFGHI
 					user, err := UserById(content)
 					if err != nil {
-						return nil, err
+						return err
 					} else {
 						content = "@" + user.Name
 					}
@@ -142,7 +223,8 @@ func parseSlackMessage(text string, UserById func(string) (*gateway.User, error)
 		})
 	}
 
-	return &PrintableMessage{parts: parts}, nil
+	printableMessage.SetParts(parts)
+	return nil
 }
 
 
