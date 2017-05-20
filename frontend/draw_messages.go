@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
-	// "log"
+	"log"
 
 	"github.com/gdamore/tcell"
 	"github.com/kyokomi/emoji" // convert :smile: to unicode
@@ -215,6 +215,7 @@ func (term *TerminalDisplay) DrawMessages(
 	messages []gateway.Message, // A list of messages to render
 	selectedMessageIndex int, // Index of selected message (-1 for no selected message)
 	bottomDisplayedItem int, // The bottommost message. If 0, bottommost message is most recent.
+	userById func(string) (*gateway.User, error),
 ) int { // Return how many messages were rendered.
 	width, height := term.screen.Size()
 
@@ -249,9 +250,16 @@ func (term *TerminalDisplay) DrawMessages(
 			selectedStyle = tcell.StyleDefault
 		}
 
+		parsedMessage, err := parseSlackMessage(msg.Text, userById)
+		if err != nil {
+			// FIXME: Probably should return an error here? And not return 0?
+			log.Println("Error making message print-worthy (probably because fetching user id => user name failed):", err)
+			return 0
+		}
+
 		// Calculate how many rows the message requires to render.
 		messageColumnWidth := width - prefixWidth
-		messageRows := (len(makePrintWorthy(msg.Text)) / messageColumnWidth) + 1
+		messageRows := (parsedMessage.Length() / messageColumnWidth) + 1
 		accessoryRow := row         // The row to start rendering "message accessories" on
 		if len(msg.Text) == 0 {
 			accessoryRow -= 1
@@ -320,17 +328,41 @@ func (term *TerminalDisplay) DrawMessages(
 
 
 		// Render the sender and the message
-		for rowDelta, messageRow := range partitionIntoRows(
-			makePrintWorthy(msg.Text), // Our message to render to the screen
-			messageColumnWidth,        // The width of each message row
-		) {
-			// Render the message row.
+		totalWidth := 0
+		rowDelta := -1
+		for _, part := range parsedMessage.Parts() {
+			// If the content won't fit on this line, move to the next line (y++) and reset x to 0
+			if (totalWidth + len(part.Content)) > messageColumnWidth {
+				rowDelta += 1
+				totalWidth = 0
+			}
+
+			var style tcell.Style
+			if part.Type == PLAIN_TEXT {
+				style = tcell.StyleDefault
+			} else if part.Type == AT_MENTION_USER {
+				style = tcell.StyleDefault.
+					Foreground(tcell.ColorRed).
+					Bold(true)
+			} else if part.Type == AT_MENTION_GROUP {
+				style = tcell.StyleDefault.
+					Foreground(tcell.ColorYellow).
+					Bold(true)
+			} else if part.Type == CHANNEL {
+				style = tcell.StyleDefault.
+					Foreground(tcell.ColorBlue).
+					Bold(true)
+			}
+
+			// Render the next message part
 			term.WriteTextStyle(
-				prefixWidth, // Sender and timestamp go before message.
-				row-messageRows+rowDelta,
-				tcell.StyleDefault,
-				strings.Trim(messageRow, " "),
+				prefixWidth + totalWidth,
+				row-messageRows-rowDelta,
+				style,
+				part.Content,
 			)
+
+			totalWidth += len(part.Content)
 		}
 
 		// Subtract the message's height.

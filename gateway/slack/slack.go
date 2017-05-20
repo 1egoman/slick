@@ -24,6 +24,7 @@ func NewWithName(nickname string, token string) *SlackConnection {
 	return &SlackConnection{
 		token: token,
 		nickname: &nickname,
+		userCache: make(map[string]gateway.User),
 
 		typingUsers: gateway.NewTypingUsers(),
 	}
@@ -43,6 +44,8 @@ type SlackConnection struct {
 
 	self gateway.User
 	team gateway.Team
+
+	userCache map[string]gateway.User
 
 	// Internal state to store all channels and a pointer to the active one.
 	channels        []gateway.Channel
@@ -248,44 +251,52 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel, startTs 
 }
 
 func (c *SlackConnection) UserById(id string) (*gateway.User, error) {
-	resp, err := http.Get("https://slack.com/api/users.info?token=" + c.token + "&user=" + id)
-	if err != nil {
-		return nil, err
-	}
+	if user, ok := c.userCache[id]; ok {
+		return &user, nil
+	} else {
+		resp, err := http.Get("https://slack.com/api/users.info?token=" + c.token + "&user=" + id)
+		if err != nil {
+			return nil, err
+		}
 
-	// Parse slack user buffer
-	body, _ := ioutil.ReadAll(resp.Body)
-	var slackUserBuffer struct {
-		User struct {
-			Id      string `json:"id"`
-			Name    string `json:"name"`
-			Color   string `json:"color"`
-			Profile struct {
-				Status   string `json:"color"`
-				RealName string `json:"real_name"`
-				Email    string `json:"email"`
-				Phone    string `json:"phone"`
-				Skype    string `json:"skype"`
-				Image    string `json:"image_24"`
-			} `json:"profile"`
-		} `json:"user"`
-	}
-	if err = json.Unmarshal(body, &slackUserBuffer); err != nil {
-		return nil, err
-	}
+		// Parse slack user buffer
+		body, _ := ioutil.ReadAll(resp.Body)
+		var slackUserBuffer struct {
+			User struct {
+				Id      string `json:"id"`
+				Name    string `json:"name"`
+				Color   string `json:"color"`
+				Profile struct {
+					Status   string `json:"color"`
+					RealName string `json:"real_name"`
+					Email    string `json:"email"`
+					Phone    string `json:"phone"`
+					Skype    string `json:"skype"`
+					Image    string `json:"image_24"`
+				} `json:"profile"`
+			} `json:"user"`
+		}
+		if err = json.Unmarshal(body, &slackUserBuffer); err != nil {
+			return nil, err
+		}
 
-	// Convert to a generic User
-	return &gateway.User{
-		Id:       slackUserBuffer.User.Id,
-		Name:     slackUserBuffer.User.Name,
-		Color:    slackUserBuffer.User.Color,
-		Avatar:   slackUserBuffer.User.Profile.Image,
-		Status:   slackUserBuffer.User.Profile.Status,
-		RealName: slackUserBuffer.User.Profile.RealName,
-		Email:    slackUserBuffer.User.Profile.Email,
-		Skype:    slackUserBuffer.User.Profile.Skype,
-		Phone:    slackUserBuffer.User.Profile.Phone,
-	}, nil
+		// Convert to a generic User
+		user := gateway.User{
+			Id:       slackUserBuffer.User.Id,
+			Name:     slackUserBuffer.User.Name,
+			Color:    slackUserBuffer.User.Color,
+			Avatar:   slackUserBuffer.User.Profile.Image,
+			Status:   slackUserBuffer.User.Profile.Status,
+			RealName: slackUserBuffer.User.Profile.RealName,
+			Email:    slackUserBuffer.User.Profile.Email,
+			Skype:    slackUserBuffer.User.Profile.Skype,
+			Phone:    slackUserBuffer.User.Profile.Phone,
+		}
+
+		// Store in cache
+		c.userCache[id] = user
+		return &user, nil
+	}
 }
 
 func (c *SlackConnection) MessageHistory() []gateway.Message {

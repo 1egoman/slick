@@ -94,7 +94,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
             state.ActiveConnection().AppendMessageHistory(*message)
 
 			// If the user that sent the message was typing, they aren't anymore.
-			state.ActiveConnection().TypingUsers().Remove(*message.Sender)
+			state.ActiveConnection().TypingUsers().Remove(message.Sender.Name)
           } else {
             log.Fatalf(err.Error())
           }
@@ -134,7 +134,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 							log.Println(err.Error())
 						} else if user != nil {
 							// Add user to the list of users typing.
-							state.ActiveConnection().TypingUsers().Add(*user, time.Now())
+							state.ActiveConnection().TypingUsers().Add(user.Name, time.Now())
 						} else {
 							log.Println("User in `user_typing` event was nil, ignoring...")
 						}

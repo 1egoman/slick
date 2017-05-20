@@ -1,10 +1,10 @@
 package frontend
 
 import (
+	// "log"
 	"fmt"
 	"github.com/gdamore/tcell"
 	"github.com/kyokomi/emoji" // convert :smile: to unicode
-	"regexp"
 	"strings"
 
 	"github.com/1egoman/slime/gateway" // The thing to interface with slack
@@ -13,19 +13,138 @@ import (
 
 const BottomPadding = 2 // The amount of lines at the bottom of the window to leave available for status bars.
 
-var usernameRegex = regexp.MustCompile("<@[A-Z0-9]+\\|(.+)>")
-var channelRegex = regexp.MustCompile("<#[A-Z0-9]+\\|(.+)>")
+type PrintableMessagePartType int
 
-// Given a string to be displayed in the ui, convert it to be printable.
-// 1. Convert emoji codes like :smile: to their emojis.
-// 2. Replace any <@ID|username> tags with @username
-// 2. Replace any <#ID|channel> tags with #channel
-func makePrintWorthy(text string) string {
-	text = emoji.Sprintf(text)                         // Emojis
-	text = usernameRegex.ReplaceAllString(text, "@$1") // Usernames
-	text = channelRegex.ReplaceAllString(text, "#$1")  // Channels
-	return text
+const (
+	PLAIN_TEXT PrintableMessagePartType = iota
+	AT_MENTION_USER  // (like @foo, @bar, etc)
+	AT_MENTION_GROUP // (like @channel, @here, etc)
+	CHANNEL          // (like #general)
+	CONNECTION       // (like "my custom slack team")
+)
+
+type PrintableMessagePart struct {
+	Type PrintableMessagePartType
+	Content string
 }
+
+type PrintableMessage struct {
+	parts []PrintableMessagePart
+}
+
+func (p *PrintableMessage) Parts() []PrintableMessagePart {
+	return p.parts
+}
+
+// Return the length of the printable message
+func (p *PrintableMessage) Length() int {
+	length := 0
+	for _, part := range p.parts {
+		length += len(part.Content)
+	}
+	return length
+}
+
+// Return the printable message converted to plain text string.
+func (p *PrintableMessage) Plain() string {
+	total := ""
+	for _, part := range p.parts {
+		total += part.Content
+	}
+	return total
+}
+// Given a string to be displayed in the ui, tokenize the message and return a *PrintableMessage
+// that contains each part as a token.
+func parseSlackMessage(text string, UserById func(string) (*gateway.User, error)) (*PrintableMessage, error) {
+	text = emoji.Sprintf(text)                         // Emojis
+
+	var parts []PrintableMessagePart
+
+	// Iterate through each character in the message.
+	// Look for tags that look like <%XXXXXXXXX>, where % is a number of symbols and X is [A-Z0-9]
+	// If one is found, then turn it into a name and replace it.
+	var tagType PrintableMessagePartType
+	startIndex := 0 // Start at the beginning of the message text
+	startContentIndex := -1
+	for index, char := range text {
+		var nextChar rune
+
+		if index + 1 < len(text) - 1 {
+			nextChar = rune(text[index+1])
+		} else {
+			nextChar = ' ' // Placeholder character.
+		}
+
+		if char == '<' {
+			// Since we just discovered the boundry of the next bit of interest, then add the
+			// previous plain text bit (before this tag) to the parts slice.
+			if index > 0 {
+				parts = append(parts, PrintableMessagePart{
+					Type: PLAIN_TEXT,
+					Content: text[startIndex:index - 1],
+				})
+			}
+
+			startIndex = index
+			startContentIndex = index + 2
+			if nextChar == '@' { // ie, <@U5FR33U4R> for @foo
+				tagType = AT_MENTION_USER
+			} else if nextChar == '!' { // ie, <!UDOU3ENS> for @channel
+				tagType = AT_MENTION_GROUP
+			} else if nextChar == '#' { // ie, <#3IDU62ER> for #channel
+				tagType = CHANNEL
+			}
+		} else if char == '>' && startContentIndex >= 0 {
+			content := text[startContentIndex:index]
+			// log.Printf("CONTENT", content, tagType)
+
+			if tagType == AT_MENTION_USER {
+				contentParts := strings.Split(content, "|")
+				if len(contentParts) == 1 { // content = ABCDEFGHI
+					user, err := UserById(content)
+					if err != nil {
+						return nil, err
+					} else {
+						content = "@" + user.Name
+					}
+				} else if len(contentParts) == 2 { // content = ABCDEFJHI|username
+					content = "@" + contentParts[1]
+				}
+			} else if tagType == AT_MENTION_GROUP { // content = here / channel / everyone (a group name)
+				content = "@" + content
+			} else if tagType == CHANNEL {
+				contentParts := strings.Split(content, "|")
+				if len(contentParts) == 1 { // content = general
+					content = "#" + content
+				} else if len(contentParts) == 2 { // content = ABCDEFJHI|general
+					content = "#" + contentParts[1]
+				}
+			}
+
+			parts = append(parts, PrintableMessagePart{
+				Type: tagType,
+				Content: content,
+			})
+
+			// Reset the start indicies
+			startContentIndex = -1
+			startIndex = index + 1
+		}
+	}
+
+	// Add the final plain text part to the message.
+	// bla bla #general foo bar
+	//                  ^^^^^^ = This bit
+	if len(text) > 0 {
+		parts = append(parts, PrintableMessagePart{
+			Type: PLAIN_TEXT,
+			Content: text[startIndex:],
+		})
+	}
+
+	return &PrintableMessage{parts: parts}, nil
+}
+
 
 // Given a line number, reset it to the default style and erase it.
 func (term *TerminalDisplay) DrawBlankLine(line int) {
@@ -203,10 +322,7 @@ func (term *TerminalDisplay) DrawStatusBar(
 		// And the users that are currently typing
 		if activeConnection != nil && activeConnection.TypingUsers() != nil {
 			// Create a slice of user names from the slice of users
-			var userList []string
-			for _, user := range activeConnection.TypingUsers().Users() {
-				userList = append(userList, user.Name)
-			}
+			userList := activeConnection.TypingUsers().Users()
 
 			var typingUsers string
 			if len(userList) > 0 {
