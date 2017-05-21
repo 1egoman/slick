@@ -21,11 +21,13 @@ const (
 	AT_MENTION_GROUP // (like @channel, @here, etc)
 	CHANNEL          // (like #general)
 	CONNECTION       // (like "my custom slack team")
+	LINK             // (like http://example.com)
 )
 
 type PrintableMessagePart struct {
 	Type PrintableMessagePartType
 	Content string
+	Metadata map[string]interface{}
 }
 
 type PrintableMessage struct {
@@ -162,7 +164,7 @@ func parseSlackMessage(text string, printableMessage *PrintableMessage, UserById
 			if index > 0 {
 				parts = append(parts, PrintableMessagePart{
 					Type: PLAIN_TEXT,
-					Content: text[startIndex:index - 1],
+					Content: text[startIndex:index],
 				})
 			}
 
@@ -174,9 +176,14 @@ func parseSlackMessage(text string, printableMessage *PrintableMessage, UserById
 				tagType = AT_MENTION_GROUP
 			} else if nextChar == '#' { // ie, <#3IDU62ER> for #channel
 				tagType = CHANNEL
+			} else {
+				tagType = LINK
+				startContentIndex -= 1 // Links don't have a "idenfiying" character, so one less char is needed
 			}
 		} else if char == '>' && startContentIndex >= 0 {
 			content := text[startContentIndex:index]
+			metadata := make(map[string]interface{})
+
 			// log.Printf("CONTENT", content, tagType)
 
 			if tagType == AT_MENTION_USER {
@@ -199,6 +206,15 @@ func parseSlackMessage(text string, printableMessage *PrintableMessage, UserById
 					content = "#" + content
 				} else if len(contentParts) == 2 { // content = ABCDEFJHI|general
 					content = "#" + contentParts[1]
+				}
+			} else if tagType == LINK {
+				// Links have meta
+				contentParts := strings.Split(content, "|")
+				metadata["Href"] = contentParts[0]
+				if len(contentParts) == 1 { // content = http://example.com
+					content = content // No change
+				} else if len(contentParts) == 2 { // content = http://example.com|label
+					content = contentParts[1]
 				}
 			}
 
@@ -296,6 +312,19 @@ func NewTerminalDisplay(screen tcell.Screen) *TerminalDisplay {
 			"MessageAttachmentFieldTitle": tcell.StyleDefault.
 				Bold(true),
 			"MessageAttachmentFieldValue": tcell.StyleDefault,
+			"MessagePartAtMentionUser": tcell.StyleDefault.
+				Foreground(tcell.ColorRed).
+				Bold(true),
+			"MessagePartAtMentionGroup": tcell.StyleDefault.
+				Foreground(tcell.ColorYellow).
+				Bold(true),
+			"MessagePartChannel": tcell.StyleDefault.
+				Foreground(tcell.ColorBlue).
+				Bold(true),
+			"MessagePartLink": tcell.StyleDefault.
+				Foreground(tcell.ColorDarkCyan).
+				Underline(true).
+				Bold(true),
 
 			"FuzzyPickerTopBorder": tcell.StyleDefault.
 				Background(tcell.ColorGray),

@@ -90,7 +90,6 @@ keymap("ff", function()
 end)
 ```
 - `output, err = shell("ls", "-l")` calls the given shell command. Returns stdout and err.
-- `output, err = command("ls", "-l")` calls the given shell command. Returns stdout and err.
 - `getenv("HOME")` returns the contents of an environment variable
 - `sendmessage("Hello World!")` sends a message to the currently active connection and channel.
 - `command("name", "desc", "args", <callback>)` constructs a command. For example:

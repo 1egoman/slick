@@ -321,17 +321,13 @@ func (term *TerminalDisplay) DrawMessages(
 				if part.Type == PLAIN_TEXT {
 					style = tcell.StyleDefault
 				} else if part.Type == AT_MENTION_USER {
-					style = tcell.StyleDefault.
-						Foreground(tcell.ColorRed).
-						Bold(true)
+					style = term.Styles["MessagePartAtMentionUser"]
 				} else if part.Type == AT_MENTION_GROUP {
-					style = tcell.StyleDefault.
-						Foreground(tcell.ColorYellow).
-						Bold(true)
+					style = term.Styles["MessagePartAtMentionGroup"]
 				} else if part.Type == CHANNEL {
-					style = tcell.StyleDefault.
-						Foreground(tcell.ColorBlue).
-						Bold(true)
+					style = term.Styles["MessagePartChannel"]
+				} else if part.Type == LINK {
+					style = term.Styles["MessagePartLink"]
 				}
 
 				// Render the next message part
