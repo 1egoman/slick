@@ -233,7 +233,7 @@ func (term *TerminalDisplay) DrawMessages(
 
 		// Take our message text and convert it to message parts
 		// TODO: cache this somehow. It's slow as hell.
-		var parsedMessage PrintableMessage
+		var parsedMessage gateway.PrintableMessage
 		err := parseSlackMessage(msg.Text, &parsedMessage, userById)
 		if err != nil {
 			// FIXME: Probably should return an error here? And not return 0?
@@ -318,15 +318,15 @@ func (term *TerminalDisplay) DrawMessages(
 			for _, part := range line {
 				// How should this part be styled?
 				var style tcell.Style
-				if part.Type == PLAIN_TEXT {
+				if part.Type == gateway.PRINTABLE_MESSAGE_PLAIN_TEXT {
 					style = tcell.StyleDefault
-				} else if part.Type == AT_MENTION_USER {
+				} else if part.Type == gateway.PRINTABLE_MESSAGE_AT_MENTION_USER {
 					style = term.Styles["MessagePartAtMentionUser"]
-				} else if part.Type == AT_MENTION_GROUP {
+				} else if part.Type == gateway.PRINTABLE_MESSAGE_AT_MENTION_GROUP {
 					style = term.Styles["MessagePartAtMentionGroup"]
-				} else if part.Type == CHANNEL {
+				} else if part.Type == gateway.PRINTABLE_MESSAGE_CHANNEL {
 					style = term.Styles["MessagePartChannel"]
-				} else if part.Type == LINK {
+				} else if part.Type == gateway.PRINTABLE_MESSAGE_LINK {
 					style = term.Styles["MessagePartLink"]
 				}
 

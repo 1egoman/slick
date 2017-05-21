@@ -73,13 +73,13 @@ func KeystackQuantityParser(keystack []rune) (int, []rune, error) {
 	quantityRunes := []rune{}
 
 	// Fetch the preceeding int before the command
-	for index, key := range keystack {
+	for _, key := range keystack {
 		if key >= '0' && key <= '9' {
 			quantityRunes = append(quantityRunes, key)
 		} else {
-			keystack = keystack[index:] // Remove the quantity from the front of the keystack
 			break
 		}
+		keystack = keystack[1:] // Remove a rune of the quantity from the front of the keystack
 	}
 	
 	// Convert the quantity to an int

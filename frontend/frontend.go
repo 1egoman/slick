@@ -13,140 +13,20 @@ import (
 
 const BottomPadding = 2 // The amount of lines at the bottom of the window to leave available for status bars.
 
-type PrintableMessagePartType int
-
-const (
-	PLAIN_TEXT PrintableMessagePartType = iota
-	AT_MENTION_USER  // (like @foo, @bar, etc)
-	AT_MENTION_GROUP // (like @channel, @here, etc)
-	CHANNEL          // (like #general)
-	CONNECTION       // (like "my custom slack team")
-	LINK             // (like http://example.com)
-)
-
-type PrintableMessagePart struct {
-	Type PrintableMessagePartType
-	Content string
-	Metadata map[string]interface{}
-}
-
-type PrintableMessage struct {
-	parts []PrintableMessagePart
-
-	// Running `Lines(width)` takes a while, and it's pure. Memoize it for speed.
-	linesCacheWidth int
-	linesCache [][]PrintableMessagePart
-}
-
-func (p *PrintableMessage) Parts() []PrintableMessagePart {
-	return p.parts
-}
-
-func (p *PrintableMessage) SetParts(parts []PrintableMessagePart) {
-	p.parts = parts
-}
-
-// Return the length of the printable message
-func (p *PrintableMessage) Length() int {
-	length := 0
-	for _, part := range p.parts {
-		length += len(part.Content)
-	}
-	return length
-}
-
-// Return the printable message converted to plain text string.
-func (p *PrintableMessage) Plain() string {
-	total := ""
-	for _, part := range p.parts {
-		total += part.Content
-	}
-	return total
-}
-
-func (p *PrintableMessage) Lines(width int) [][]PrintableMessagePart {
-	// If the result has already been calculated, use it.
-	if p.linesCacheWidth == width && p.linesCache != nil {
-		return p.linesCache
-	}
-
-	var lines [][]PrintableMessagePart
-	var messageParts []PrintableMessagePart
-	var extraWords []string
-
-	for _, part := range p.parts {
-		messageParts = append(messageParts, part)
-		// log.Printf("MESSAGE PARTS %+v", messageParts)
-
-		pm := PrintableMessage{parts: messageParts}
-		if pm.Length() > width {
-			pm = PrintableMessage{parts: messageParts[:len(messageParts) - 1]}
-			maximumLengthOfLastMessagePart := width - pm.Length()
-
-			// log.Printf("WANTED TO DRAW %+v BUT INSTEAD ONLY DID %d", messageParts, maximumLengthOfLastMessagePart)
-
-			// Now, cut down all words that don't fit on this line.
-			// foo bar baz hello world test quux (extraWords = [])
-			// foo bar baz hello world test      (extraWords = [quux])
-			// foo bar baz hello world           (extraWords = [test, quux])
-			// foo bar baz hello                 (extraWords = [world, test, quux])
-			//                    ^
-			//                 "window width"
-			// (done, since the line length < window width)
-
-			wordsInLastMessagePart := strings.Split(part.Content, " ")
-			for len(strings.Join(wordsInLastMessagePart, " ")) > maximumLengthOfLastMessagePart {
-				// Remove one word from the last message part until the 
-				extraWords = append([]string{wordsInLastMessagePart[len(wordsInLastMessagePart) - 1]}, extraWords...)
-				wordsInLastMessagePart = wordsInLastMessagePart[:len(wordsInLastMessagePart)-1]
-			}
-			messageParts[len(messageParts)-1].Content = strings.Join(wordsInLastMessagePart, " ")
-
-			// log.Printf("ACTUALLY DRAWING %+v", messageParts)
-
-			// Now that our line is below the max width, it can be drawn, so add it to the array.
-			lines = append(lines, messageParts)
-			// log.Printf("LINES %+v", lines)
-
-			// Then, clear out the message parts that have been used so far.
-			messageParts = make([]PrintableMessagePart, 0)
-
-			// And start off the next line with any words that were removed from the current line to
-			// make it fit.
-			if len(extraWords) > 0 {
-				messageParts = append(messageParts, PrintableMessagePart{
-					Type: part.Type,
-					Content: strings.Join(extraWords, " "),
-				})
-				extraWords = make([]string, 0)
-			}
-			// log.Printf("LINE BIT CUT OFF %+v", messageParts)
-		}
-	}
-
-	// log.Printf("DONE LOOPING %+v", messageParts)
-
-	// If there are any message parts left over, then add them at the end.
-	if len(messageParts) > 0 {
-		lines = append(lines, messageParts)
-	}
-
-	// log.Printf("RETURNING %+v", lines)
-	p.linesCache = lines
-	p.linesCacheWidth = width
-	return lines
-}
 // Given a string to be displayed in the ui, tokenize the message and return a *PrintableMessage
 // that contains each part as a token.
-func parseSlackMessage(text string, printableMessage *PrintableMessage, UserById func(string) (*gateway.User, error)) error {
+func parseSlackMessage(text string, printableMessage *gateway.PrintableMessage, UserById func(string) (*gateway.User, error)) error {
 	text = emoji.Sprintf(text)                         // Emojis
+	text = strings.Replace(text, "&amp;", "&", -1)
+	text = strings.Replace(text, "&gt;", ">", -1)
+	text = strings.Replace(text, "&gt;", "<", -1)
 
-	var parts []PrintableMessagePart
+	var parts []gateway.PrintableMessagePart
 
 	// Iterate through each character in the message.
 	// Look for tags that look like <%XXXXXXXXX>, where % is a number of symbols and X is [A-Z0-9]
 	// If one is found, then turn it into a name and replace it.
-	var tagType PrintableMessagePartType
+	var tagType gateway.PrintableMessagePartType
 	startIndex := 0 // Start at the beginning of the message text
 	startContentIndex := -1
 	for index, char := range text {
@@ -162,8 +42,8 @@ func parseSlackMessage(text string, printableMessage *PrintableMessage, UserById
 			// Since we just discovered the boundry of the next bit of interest, then add the
 			// previous plain text bit (before this tag) to the parts slice.
 			if index > 0 {
-				parts = append(parts, PrintableMessagePart{
-					Type: PLAIN_TEXT,
+				parts = append(parts, gateway.PrintableMessagePart{
+					Type: gateway.PRINTABLE_MESSAGE_PLAIN_TEXT,
 					Content: text[startIndex:index],
 				})
 			}
@@ -171,13 +51,13 @@ func parseSlackMessage(text string, printableMessage *PrintableMessage, UserById
 			startIndex = index
 			startContentIndex = index + 2
 			if nextChar == '@' { // ie, <@U5FR33U4R> for @foo
-				tagType = AT_MENTION_USER
+				tagType = gateway.PRINTABLE_MESSAGE_AT_MENTION_USER
 			} else if nextChar == '!' { // ie, <!UDOU3ENS> for @channel
-				tagType = AT_MENTION_GROUP
+				tagType = gateway.PRINTABLE_MESSAGE_AT_MENTION_GROUP
 			} else if nextChar == '#' { // ie, <#3IDU62ER> for #channel
-				tagType = CHANNEL
+				tagType = gateway.PRINTABLE_MESSAGE_CHANNEL
 			} else {
-				tagType = LINK
+				tagType = gateway.PRINTABLE_MESSAGE_LINK
 				startContentIndex -= 1 // Links don't have a "idenfiying" character, so one less char is needed
 			}
 		} else if char == '>' && startContentIndex >= 0 {
@@ -186,7 +66,7 @@ func parseSlackMessage(text string, printableMessage *PrintableMessage, UserById
 
 			// log.Printf("CONTENT", content, tagType)
 
-			if tagType == AT_MENTION_USER {
+			if tagType == gateway.PRINTABLE_MESSAGE_AT_MENTION_USER {
 				contentParts := strings.Split(content, "|")
 				if len(contentParts) == 1 { // content = ABCDEFGHI
 					user, err := UserById(content)
@@ -198,16 +78,16 @@ func parseSlackMessage(text string, printableMessage *PrintableMessage, UserById
 				} else if len(contentParts) == 2 { // content = ABCDEFJHI|username
 					content = "@" + contentParts[1]
 				}
-			} else if tagType == AT_MENTION_GROUP { // content = here / channel / everyone (a group name)
+			} else if tagType == gateway.PRINTABLE_MESSAGE_AT_MENTION_GROUP { // content = here / channel / everyone (a group name)
 				content = "@" + content
-			} else if tagType == CHANNEL {
+			} else if tagType == gateway.PRINTABLE_MESSAGE_CHANNEL {
 				contentParts := strings.Split(content, "|")
 				if len(contentParts) == 1 { // content = general
 					content = "#" + content
 				} else if len(contentParts) == 2 { // content = ABCDEFJHI|general
 					content = "#" + contentParts[1]
 				}
-			} else if tagType == LINK {
+			} else if tagType == gateway.PRINTABLE_MESSAGE_LINK {
 				// Links have meta
 				contentParts := strings.Split(content, "|")
 				metadata["Href"] = contentParts[0]
@@ -218,7 +98,7 @@ func parseSlackMessage(text string, printableMessage *PrintableMessage, UserById
 				}
 			}
 
-			parts = append(parts, PrintableMessagePart{
+			parts = append(parts, gateway.PrintableMessagePart{
 				Type: tagType,
 				Content: content,
 			})
@@ -233,8 +113,8 @@ func parseSlackMessage(text string, printableMessage *PrintableMessage, UserById
 	// bla bla #general foo bar
 	//                  ^^^^^^ = This bit
 	if len(text) > 0 {
-		parts = append(parts, PrintableMessagePart{
-			Type: PLAIN_TEXT,
+		parts = append(parts, gateway.PrintableMessagePart{
+			Type: gateway.PRINTABLE_MESSAGE_PLAIN_TEXT,
 			Content: text[startIndex:],
 		})
 	}
@@ -242,7 +122,6 @@ func parseSlackMessage(text string, printableMessage *PrintableMessage, UserById
 	printableMessage.SetParts(parts)
 	return nil
 }
-
 
 // Given a line number, reset it to the default style and erase it.
 func (term *TerminalDisplay) DrawBlankLine(line int) {
