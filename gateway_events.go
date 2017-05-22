@@ -50,6 +50,15 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 				},
 			}
 
+		case "desktop_notification":
+			if title, ok := event.Data["title"].(string); ok {
+				if content, ok := event.Data["content"].(string); ok {
+					if image, ok := event.Data["avatarImage"].(string); ok {
+						Notification(title, content, image)
+					}
+				}
+			}
+
 		// When a message is received for the selected channel, add to the message history
 		// "message" events come in when the gateway receives a message sent by someone else.
 		case "message":
@@ -102,16 +111,6 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 			} else {
 				log.Printf("Channel value", channel)
 			}
-
-      // Notify the user about a message if the message wasn't sent by the user.
-      if event.Data["subtype"] == nil && event.Data["user"] != state.ActiveConnection().Self().Id {
-        message, err := state.ActiveConnection().ParseMessage(event.Data, cachedUsers)
-        if err != nil {
-          log.Printf(err.Error())
-        } else {
-          Notification(message.Sender.Name, message.Text)
-        }
-      }
 
     // case "reaction_added":
     //   // If a message was deleted, then delete the message from the message history
