@@ -625,7 +625,7 @@ func RunCommand(command Command, args []string, state *State) error {
 	} else {
 		message := gateway.Message{
 			Sender: state.ActiveConnection().Self(),
-			Text:   fmt.Sprintf("/%s %s", command.Permutations[0], strings.Join(args, " ")),
+			Text:   strings.Join(args, " "),
 		}
 
 		// Sometimes, a message could have a response. This is for example true in the
