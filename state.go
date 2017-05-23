@@ -35,6 +35,9 @@ type State struct {
 
 	// Actions to perform when a user presses a key
 	KeyActions []KeyAction
+
+	// A map of configuration options for the editor.
+	Configuration map[string]string
 }
 
 func NewInitialState() *State {
@@ -67,6 +70,45 @@ func NewInitialStateMode(mode string) *State {
 
 		// Status message
 		Status: status.Status{},
+
+		// Configuration options
+		Configuration: map[string]string{
+			// Should relative line numbers be shown for each message?
+			"MessageList.RelativeLine": "true",
+			// The format for the tiemstamp in front of each message.
+			// Reference date: `Mon Jan 2 15:04:05 MST 2006`
+			"MessageList.TimestampFormat": " 15:04:05",
+
+			"CommandBar.PrefixColor": "white:blue:",
+			"CommandBar.TextColor": "white::",
+			"StatusBar.ActiveConnectionColor": "white:blue:",
+			"StatusBar.GatewayConnectedColor": "white::",
+			"StatusBar.GatewayConnectingColor": ":darkmagenta:",
+			"StatusBar.GatewayFailedColor": ":red:",
+			"StatusBar.LogColor": "white::",
+			"StatusBar.ErrorColor": "darkmagenta::B",
+			"StatusBar.TopBorderColor": ":gray:",
+
+			"Message.ReactionColor": "::",
+			"Message.LineNumbersColor": "black:silver:",
+			"Message.FileColor":     "::",
+			"Message.SelectedColor": ":teal:",
+			"Message.Action.Color": "::",
+			"Message.Action.HighlightColor": "red::",
+			"Message.Attachment.TitleColor": "green::",
+			"Message.Attachment.FieldTitleColor": "::B",
+			"Message.Attachment.FieldValueColor": "::",
+			"Message.Part.AtMentionUserColor": "red::B",
+			"Message.Part.AtMentionGroupColor": "yellow::B",
+			"Message.Part.ChannelColor": "blue::B",
+			"Message.Part.LinkColor": "cyan::BU",
+			"Message.LineNumber.Color": "black:silver:",
+			"Message.LineNumber.ActiveColor": "black:white:",
+
+			"FuzzyPicker.TopBorderColor": ":gray:",
+			"FuzzyPicker.ActiveItemColor": ":teal:",
+			"FuzzyPicker.ChannelNotMemberColor": "gray::",
+		},
 	}
 }
 

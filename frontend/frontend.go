@@ -9,6 +9,7 @@ import (
 
 	"github.com/1egoman/slime/gateway" // The thing to interface with slack
 	"github.com/1egoman/slime/status"
+	"github.com/1egoman/slime/color"
 )
 
 const BottomPadding = 2 // The amount of lines at the bottom of the window to leave available for status bars.
@@ -157,68 +158,11 @@ type Display interface {
 }
 
 func NewTerminalDisplay(screen tcell.Screen) *TerminalDisplay {
-	return &TerminalDisplay{
-		screen: screen,
-		Styles: map[string]tcell.Style{
-			"CommandBarPrefix": tcell.StyleDefault.
-				Background(tcell.ColorBlue).
-				Foreground(tcell.ColorWhite),
-			"CommandBarText": tcell.StyleDefault,
-			"StatusBarActiveConnection": tcell.StyleDefault.
-				Background(tcell.ColorBlue).
-				Foreground(tcell.ColorWhite),
-			"StatusBarGatewayConnected": tcell.StyleDefault,
-			"StatusBarGatewayConnecting": tcell.StyleDefault.
-				Background(tcell.ColorDarkMagenta),
-			"StatusBarGatewayFailed": tcell.StyleDefault.
-				Background(tcell.ColorRed),
-			"StatusBarLog": tcell.StyleDefault,
-			"StatusBarError": tcell.StyleDefault.
-				Foreground(tcell.ColorDarkMagenta).
-				Bold(true),
-			"StatusBarTopBorder": tcell.StyleDefault.
-				Background(tcell.ColorGray),
-
-			"MessageReaction": tcell.StyleDefault,
-			"MessageFile":     tcell.StyleDefault,
-			"MessageActionHighlight": tcell.StyleDefault.
-				Foreground(tcell.ColorRed),
-			"MessageAction": tcell.StyleDefault,
-			"MessageSelected": tcell.StyleDefault.
-				Background(tcell.ColorTeal),
-			"MessageAttachmentTitle": tcell.StyleDefault.
-				Foreground(tcell.ColorGreen),
-			"MessageAttachmentFieldTitle": tcell.StyleDefault.
-				Bold(true),
-			"MessageAttachmentFieldValue": tcell.StyleDefault,
-			"MessagePartAtMentionUser": tcell.StyleDefault.
-				Foreground(tcell.ColorRed).
-				Bold(true),
-			"MessagePartAtMentionGroup": tcell.StyleDefault.
-				Foreground(tcell.ColorYellow).
-				Bold(true),
-			"MessagePartChannel": tcell.StyleDefault.
-				Foreground(tcell.ColorBlue).
-				Bold(true),
-			"MessagePartLink": tcell.StyleDefault.
-				Foreground(tcell.ColorDarkCyan).
-				Underline(true).
-				Bold(true),
-
-			"FuzzyPickerTopBorder": tcell.StyleDefault.
-				Background(tcell.ColorGray),
-			"FuzzyPickerActiveItem": tcell.StyleDefault.
-				Background(tcell.ColorSilver),
-			"FuzzyPickerChannelNotMember": tcell.StyleDefault.
-				Foreground(tcell.ColorGray),
-		},
-	}
+	return &TerminalDisplay{screen: screen}
 }
 
 type TerminalDisplay struct {
 	screen tcell.Screen
-
-	Styles map[string]tcell.Style
 }
 
 func (term *TerminalDisplay) Screen() tcell.Screen {
@@ -238,6 +182,7 @@ func (term *TerminalDisplay) DrawStatusBar(
 	connections []gateway.Connection,
 	activeConnection gateway.Connection,
 	stat status.Status,
+	config map[string]string,
 ) {
 	width, height := term.screen.Size()
 	lastRow := height - 1
@@ -265,9 +210,9 @@ func (term *TerminalDisplay) DrawStatusBar(
 		// Get the color of the text on the status bar
 		var style tcell.Style
 		if stat.Type == status.STATUS_ERROR {
-			style = term.Styles["StatusBarError"]
+			style = color.DeSerializeStyleTcell(config["StatusBar.ErrorColor"])
 		} else {
-			style = term.Styles["StatusBarLog"]
+			style = color.DeSerializeStyleTcell(config["StatusBar.LogColor"])
 		}
 
 		// Write status text
@@ -278,7 +223,7 @@ func (term *TerminalDisplay) DrawStatusBar(
 			// Rendering multiple rows is more involved.
 			// Above the top of the picker, draw a border.
 			for i := 0; i < width; i++ {
-				term.screen.SetCell(i, lastRow - 1, term.Styles["StatusBarTopBorder"], ' ')
+				term.screen.SetCell(i, lastRow - 1, color.DeSerializeStyleTcell(config["StatusBar.TopBorderColor"]), ' ')
 			}
 			for ct, line := range messages {
 				term.DrawBlankLine(lastRow + ct)
@@ -292,13 +237,13 @@ func (term *TerminalDisplay) DrawStatusBar(
 			// How should the connection look?
 			var style tcell.Style
 			if item == activeConnection {
-				style = term.Styles["StatusBarActiveConnection"]
+				style = color.DeSerializeStyleTcell(config["StatusBar.ActiveConnectionColor"])
 			} else if item.Status() == gateway.CONNECTING {
-				style = term.Styles["StatusBarGatewayConnecting"]
+				style = color.DeSerializeStyleTcell(config["StatusBar.GatewayConnectingColor"])
 			} else if item.Status() == gateway.CONNECTED {
-				style = term.Styles["StatusBarGatewayConnected"]
+				style = color.DeSerializeStyleTcell(config["StatusBar.GatewayConnectedColor"])
 			} else if item.Status() == gateway.FAILED {
-				style = term.Styles["StatusBarGatewayFailed"]
+				style = color.DeSerializeStyleTcell(config["StatusBar.GatewayFailedColor"])
 			} else {
 				// SOme weird case has no coloring.
 				style = tcell.StyleDefault
@@ -334,6 +279,7 @@ func (term *TerminalDisplay) DrawCommandBar(
 	cursorPosition int,
 	currentChannel *gateway.Channel,
 	currentTeamName string,
+	config map[string]string,
 ) {
 	_, height := term.screen.Size()
 	row := height - 2
@@ -349,8 +295,8 @@ func (term *TerminalDisplay) DrawCommandBar(
 	prefix += " >"
 
 	// Write what the user is typing
-	term.WriteTextStyle(0, row, term.Styles["CommandBarPrefix"], prefix)
-	term.WriteTextStyle(len(prefix)+1, row, term.Styles["CommandBarText"], command)
+	term.WriteTextStyle(0, row, color.DeSerializeStyleTcell(config["CommandBarPrefixColor"]), prefix)
+	term.WriteTextStyle(len(prefix)+1, row, color.DeSerializeStyleTcell(config["CommandBarTextColor"]), command)
 
 	// Show the cursor at the cursor position
 	term.screen.ShowCursor(len(prefix)+1+cursorPosition, row)

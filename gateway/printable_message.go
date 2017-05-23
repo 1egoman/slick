@@ -94,7 +94,7 @@ func (p *PrintableMessage) Lines(width int) [][]PrintableMessagePart {
 
 			wordsInLastMessagePart := strings.Split(part.Content, " ")
 			for len(strings.Join(wordsInLastMessagePart, " ")) > maximumLengthOfLastMessagePart {
-				// Remove one word from the last message part until the 
+				// Remove one word from the last message part
 				extraWords = append([]string{wordsInLastMessagePart[len(wordsInLastMessagePart) - 1]}, extraWords...)
 				wordsInLastMessagePart = wordsInLastMessagePart[:len(wordsInLastMessagePart)-1]
 			}

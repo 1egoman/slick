@@ -10,10 +10,18 @@ import (
 	"github.com/kyokomi/emoji" // convert :smile: to unicode
 
 	"github.com/1egoman/slime/gateway" // The thing to interface with slack
+	"github.com/1egoman/slime/color"
 )
 
 // Given an array of reactions and a row to render them on, render them.
-func renderReactions(term *TerminalDisplay, reactions []gateway.Reaction, row int, leftOffset int) {
+func renderReactions(
+	term *TerminalDisplay,
+	config map[string]string,
+
+	reactions []gateway.Reaction,
+	row int,
+	leftOffset int,
+) {
 	reactionOffset := leftOffset
 
 	// Add a prefix to the reactino list
@@ -28,7 +36,7 @@ func renderReactions(term *TerminalDisplay, reactions []gateway.Reaction, row in
 		term.WriteTextStyle(
 			reactionOffset,
 			row, // Last row, below the message
-			term.Styles["MessageReaction"],
+			color.DeSerializeStyleTcell(config["Message.Reaction.Color"]),
 			reactionEmoji,
 		)
 
@@ -70,7 +78,15 @@ func getAttachmentHeight(attachment gateway.Attachment) int {
 }
 
 // Given a pointer to a file and a row to render it on, render it.
-func renderFile(term *TerminalDisplay, file *gateway.File, isSelected bool, row int, leftOffset int) {
+func renderFile(
+	term *TerminalDisplay,
+	config map[string]string,
+
+	file *gateway.File,
+	isSelected bool,
+	row int,
+	leftOffset int,
+) {
 	if file != nil {
 		var messageActions []string
 		if isSelected {
@@ -82,16 +98,18 @@ func renderFile(term *TerminalDisplay, file *gateway.File, isSelected bool, row 
 			file.Name,
 			formatAbreviatedLink(file.Permalink),
 		)
-		term.WriteTextStyle(leftOffset, row, term.Styles["MessageFile"], fileRow)
+		term.WriteTextStyle(leftOffset, row, color.DeSerializeStyleTcell(config["Message.FileColor"]), fileRow)
 
 		// Render actions after the file
 		messageActionOffset := leftOffset + len(fileRow) + 1 // Add a space netween file and actions
-		renderActions(term, messageActions, messageActionOffset, row)
+		renderActions(term, config, messageActions, messageActionOffset, row)
 	}
 }
 
 func renderAttachment(
 	term *TerminalDisplay,
+	config map[string]string,
+
 	attachment gateway.Attachment,
 	isSelected bool,
 	row int,
@@ -138,7 +156,7 @@ func renderAttachment(
 			actionPosition = actionsPositionOnEndOfRow
 		}
 
-		renderActions(term, selectedActions, actionPosition, row)
+		renderActions(term, config, selectedActions, actionPosition, row)
 	}
 
 	// Draw each attachment field.
@@ -147,13 +165,13 @@ func renderAttachment(
 		term.WriteTextStyle(
 			leftOffset + 2,
 			row + index + 1,
-			term.Styles["MessageAttachmentFieldTitle"],
+			color.DeSerializeStyleTcell(config["Message.Attachment.FieldTitleColor"]),
 			field.Title+":",
 		)
 		term.WriteTextStyle(
 			leftOffset + 2 + len(field.Title) + 2,
 			row + index + 1,
-			term.Styles["MessageAttachmentFieldValue"],
+			color.DeSerializeStyleTcell(config["Message.Attachment.FieldValueColor"]),
 			field.Value,
 		)
 	}
@@ -162,13 +180,20 @@ func renderAttachment(
 // Render actions that can be done with the message
 // Uppercase letters in the actions are highlighted in a different color (they are the key to
 // press to do the thing)
-func renderActions(term *TerminalDisplay, actions []string, leftOffset int, row int) {
+func renderActions(
+	term *TerminalDisplay,
+	config map[string]string,
+
+	actions []string,
+	leftOffset int,
+	row int,
+) {
 	for _, action := range actions {
 		for _, char := range action {
 			if char >= 'A' && char <= 'Z' {
-				term.WriteTextStyle(leftOffset, row, term.Styles["MessageActionHighlight"], string(char))
+				term.WriteTextStyle(leftOffset, row, color.DeSerializeStyleTcell(config["Message.Action.HighlightColor"]), string(char))
 			} else {
-				term.WriteTextStyle(leftOffset, row, term.Styles["MessageAction"], string(char))
+				term.WriteTextStyle(leftOffset, row, color.DeSerializeStyleTcell(config["Message.Action.Color"]), string(char))
 			}
 			leftOffset += 1 // Add one space between actions
 		}
@@ -191,12 +216,22 @@ func getSenderInfo(msg gateway.Message) (string, tcell.Style) {
 	return sender, senderStyle
 }
 
+func getRelativeLineNumber(activeLine int, currentLine int) int {
+	value := currentLine - activeLine
+	if value < 0 {
+		return -1 * value
+	} else {
+		return value
+	}
+}
+
 // Draw message history in the channel
 func (term *TerminalDisplay) DrawMessages(
 	messages []gateway.Message, // A list of messages to render
 	selectedMessageIndex int, // Index of selected message (-1 for no selected message)
 	bottomDisplayedItem int, // The bottommost message. If 0, bottommost message is most recent.
 	userById func(string) (*gateway.User, error),
+	config map[string]string,
 ) int { // Return how many messages were rendered.
 	width, height := term.screen.Size()
 
@@ -220,13 +255,21 @@ func (term *TerminalDisplay) DrawMessages(
 		// Get sender information
 		sender, senderStyle := getSenderInfo(msg)
 
-		timestamp := time.Unix(int64(msg.Timestamp), 0).Format("15:04:05")
+		// Calculate the width of the message prefix.
+		timestamp := time.Unix(int64(msg.Timestamp), 0).Format(config["MessageList.TimestampFormat"])
 		prefixWidth := len(timestamp) + 1 + len(sender) + 1
+		var relativeLineWidth int
+		if _, ok := config["MessageList.RelativeLine"]; ok {
+			// The relative line gutter width should be the same length as the height. If we've got
+			// over one hundred lines then we're going to have three digit relative line numbers.
+			relativeLineWidth = len(fmt.Sprintf("%d", height))
+			prefixWidth += relativeLineWidth
+		}
 
 		// Is the message selected?
 		var selectedStyle tcell.Style
 		if index == selectedMessageIndex {
-			selectedStyle = term.Styles["MessageSelected"]
+			selectedStyle = color.DeSerializeStyleTcell(config["Message.SelectedColor"])
 		} else {
 			selectedStyle = tcell.StyleDefault
 		}
@@ -268,16 +311,42 @@ func (term *TerminalDisplay) DrawMessages(
 			accessoryRow -= attachmentSize
 		}
 
+		// The number of characters from the left that messages should be offset by.
+		messageOffset := 0
+
+		// Draw a relative line number at the end of the line, if requested.
+		if _, ok := config["MessageList.RelativeLine"]; ok {
+			relativeLineNumber := getRelativeLineNumber(selectedMessageIndex, index)
+
+			// Color the active line number different than the rest
+			var style tcell.Style
+			if selectedMessageIndex == index {
+				style = color.DeSerializeStyleTcell(config["Message.LineNumber.ActiveColor"])
+			} else {
+				style = color.DeSerializeStyleTcell(config["Message.LineNumber.Color"])
+			}
+
+			term.WriteTextStyle(
+				messageOffset,
+				row-messageRows+1,
+				style,
+				fmt.Sprintf("%"+fmt.Sprintf("%d", relativeLineWidth)+"d", relativeLineNumber),
+			)
+			messageOffset += relativeLineWidth // Each line number needs this many columns
+		}
+
 		// Draw the sender and timestamp on the first row of a message
-		term.WriteTextStyle(0, row-messageRows+1, selectedStyle, timestamp)
-		term.WriteTextStyle(len(timestamp)+1, row-messageRows+1, senderStyle, sender)
+		term.WriteTextStyle(messageOffset, row-messageRows+1, selectedStyle, timestamp)
+		messageOffset += len(timestamp)+1
+		term.WriteTextStyle(messageOffset, row-messageRows+1, senderStyle, sender)
+		messageOffset += len(sender)
 
 		// Render reactions and file attachment after message
 		// log.Printf("attach %+v", msg.Attachments)
 		if msg.File != nil {
 			accessoryRow += 1
 			renderFile(
-				term,
+				term, config,
 				msg.File,                      // File to render
 				index == selectedMessageIndex, // Is the current message selected?
 				accessoryRow,                  // Which row should the file be rendered on?
@@ -289,7 +358,7 @@ func (term *TerminalDisplay) DrawMessages(
 			for attachmentIndex, attachment := range *msg.Attachments {
 				accessoryRow += 1
 				renderAttachment(
-					term,
+					term, config,
 					attachment,                    // Attachment to render
 					index == selectedMessageIndex, // Is the current message selected?
 					accessoryRow,                  // Which row to render the attachment on?
@@ -304,7 +373,7 @@ func (term *TerminalDisplay) DrawMessages(
 		if len(msg.Reactions) > 0 {
 			accessoryRow += 1
 			renderReactions(
-				term,
+				term, config,
 				msg.Reactions, // Reactions to render
 				accessoryRow,  // Which row should the reactions be rendered on?
 				prefixWidth,   // How far from the left should the first reaction be offset?
@@ -321,18 +390,18 @@ func (term *TerminalDisplay) DrawMessages(
 				if part.Type == gateway.PRINTABLE_MESSAGE_PLAIN_TEXT {
 					style = tcell.StyleDefault
 				} else if part.Type == gateway.PRINTABLE_MESSAGE_AT_MENTION_USER {
-					style = term.Styles["MessagePartAtMentionUser"]
+					style = color.DeSerializeStyleTcell(config["Message.Part.AtMentionUserColor"])
 				} else if part.Type == gateway.PRINTABLE_MESSAGE_AT_MENTION_GROUP {
-					style = term.Styles["MessagePartAtMentionGroup"]
+					style = color.DeSerializeStyleTcell(config["Message.Part.AtMentionGroupColor"])
 				} else if part.Type == gateway.PRINTABLE_MESSAGE_CHANNEL {
-					style = term.Styles["MessagePartChannel"]
+					style = color.DeSerializeStyleTcell(config["Message.Part.ChannelColor"])
 				} else if part.Type == gateway.PRINTABLE_MESSAGE_LINK {
-					style = term.Styles["MessagePartLink"]
+					style = color.DeSerializeStyleTcell(config["Message.Part.LinkColor"])
 				}
 
 				// Render the next message part
 				term.WriteTextStyle(
-					prefixWidth + totalWidth,
+					messageOffset + 1 + totalWidth,
 					row-messageRows+lineIndex+1,
 					style,
 					part.Content,

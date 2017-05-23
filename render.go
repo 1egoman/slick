@@ -35,6 +35,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 			len(state.ActiveConnection().MessageHistory())-1-state.SelectedMessageIndex, // Is a message selected?
 			state.BottomDisplayedItem,                                                   // Bottommost item
 			state.ActiveConnection().UserById,
+			state.Configuration,
 		)
 	} else {
 		term.DrawBlankLines(0, -1 * frontend.BottomPadding)
@@ -47,6 +48,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 			state.CommandCursorPosition,                // The cursor position
 			nil,                                        // The selected channel
 			"(no active connec)",                       // The selected team name
+			state.Configuration,
 		)
 	} else {
 		term.DrawCommandBar(
@@ -54,6 +56,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 			state.CommandCursorPosition,                // The cursor position
 			state.ActiveConnection().SelectedChannel(), // The selected channel
 			state.ActiveConnection().Name(),            // The selected team name
+			state.Configuration,
 		)
 	}
 
@@ -62,6 +65,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		state.Connections,        // A list of all connections
 		state.ActiveConnection(), // Which conenction is active (to highlight the active one differently)
 		state.Status,             // Status message to display
+		state.Configuration,
 	)
 
 
@@ -76,6 +80,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 			state.FuzzyPicker.SelectedItem,
 			state.FuzzyPicker.BottomItem,
 			state.FuzzyPicker.Rank,
+			state.Configuration,
 		)
 	}
 

@@ -3,6 +3,7 @@ package frontend
 import (
 	"strings"
 	"github.com/gdamore/tcell"
+	"github.com/1egoman/slime/color"
 )
 
 // The amount of rows at max that can be in the fuzzy picker.
@@ -13,6 +14,7 @@ func (term *TerminalDisplay) DrawFuzzyPicker(
 	selectedIndex int,
 	bottomDisplayedItem int,
 	rank func(string)int,
+	config map[string]string,
 ) {
 	width, height := term.screen.Size()
 
@@ -39,7 +41,7 @@ func (term *TerminalDisplay) DrawFuzzyPicker(
 
 	// Above the top of the picker, draw a border.
 	for i := 0; i < width; i++ {
-		term.screen.SetCell(i, startingRow-1, term.Styles["FuzzyPickerTopBorder"], ' ')
+		term.screen.SetCell(i, startingRow-1, color.DeSerializeStyleTcell(config["FuzzyPicker.TopBorderColor"]), ' ')
 	}
 
 	for ct, item := range items {
@@ -56,8 +58,8 @@ func (term *TerminalDisplay) DrawFuzzyPicker(
 		// Add selected prefix for selected item
 		style := tcell.StyleDefault
 		if ct == projectedSelectedIndex {
-			term.WriteTextStyle(0, row, term.Styles["FuzzyPickerActiveItem"], ">")
-			style = term.Styles["FuzzyPickerActiveItem"]
+			term.WriteTextStyle(0, row, color.DeSerializeStyleTcell(config["FuzzyPicker.ActiveItemColor"]), ">")
+			style = color.DeSerializeStyleTcell(config["FuzzyPicker.ActiveItemColor"])
 		}
 
 		// Draw item
