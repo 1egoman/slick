@@ -207,7 +207,8 @@ func NewTerminalDisplay(screen tcell.Screen) *TerminalDisplay {
 
 			"FuzzyPickerTopBorder": tcell.StyleDefault.
 				Background(tcell.ColorGray),
-			"FuzzyPickerActivePrefix": tcell.StyleDefault,
+			"FuzzyPickerActiveItem": tcell.StyleDefault.
+				Background(tcell.ColorSilver),
 			"FuzzyPickerChannelNotMember": tcell.StyleDefault.
 				Foreground(tcell.ColorGray),
 		},

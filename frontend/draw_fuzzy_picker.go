@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"strings"
 	"github.com/gdamore/tcell"
 )
 
@@ -53,10 +54,20 @@ func (term *TerminalDisplay) DrawFuzzyPicker(
 		}
 
 		// Add selected prefix for selected item
+		style := tcell.StyleDefault
 		if ct == projectedSelectedIndex {
-			term.WriteTextStyle(0, row, term.Styles["FuzzyPickerActivePrefix"], ">")
+			term.WriteTextStyle(0, row, term.Styles["FuzzyPickerActiveItem"], ">")
+			style = term.Styles["FuzzyPickerActiveItem"]
 		}
+
 		// Draw item
-		term.WriteText(2, row, item)
+		// If a tab is present, then the part after the tab should on on the right
+		tabIndex := strings.Index(item, "\t")
+		if tabIndex >= 0 {
+			term.WriteTextStyle(width - (len(item) - tabIndex) - 1, row, style, item[tabIndex:]) // right bit
+			term.WriteTextStyle(2, row, style, item[:tabIndex]) // left bit
+		} else {
+			term.WriteTextStyle(2, row, style, item)
+		}
 	}
 }
