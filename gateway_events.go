@@ -40,6 +40,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 				Sender: nil,
 				Text:   "Got Hello...",
 				Hash:   "hello",
+				Timestamp: int(time.Now().Unix()),
 			})
 
 			// Send an outgoing message

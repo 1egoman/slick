@@ -303,16 +303,26 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 
 			var items []interface{}
 			stringItems := []string{}
+			var accessories string
 
 			// Accumulate all channels into `items`, and their respective labels into `stringLabels`
 			for _, connection := range state.Connections {
 				for _, channel := range connection.Channels() {
+					accessories = ""
+					if channel.IsArchived {
+						accessories += "(archived) "
+					}
+					if !channel.IsMember {
+						accessories += "(not a member) "
+					}
+
 					// Add string representation of item to `stringItems`
 					// Follows the pattern of "my-team #my-channel"
 					stringItems = append(stringItems, fmt.Sprintf(
-						"#%s %s",
+						"#%s %s\t%s",
 						channel.Name,
 						connection.Name(),
+						accessories,
 					))
 
 					// Add backing representation of item to `item`
