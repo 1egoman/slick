@@ -291,6 +291,25 @@ var COMMANDS = []Command{
 		},
 	},
 
+	//
+	// SET CONFIGURATION OPTIONS
+	//
+	{
+		Name:         "Set",
+		Type:         NATIVE,
+		Description:  "Sets a configuration option",
+		Arguments:    "<option name> <option value>",
+		Permutations: []string{"set"},
+		Handler:      func(args []string, state *State) error {
+			if len(args) == 3 {
+				state.Configuration[args[1]] = args[2]
+				return nil
+			} else {
+				return errors.New("Please use more arguments. /set foo bar")
+			}
+		},
+	},
+
 
 	//
 	// MESSAGE ACTIONS
