@@ -295,8 +295,8 @@ func (term *TerminalDisplay) DrawCommandBar(
 	prefix += " >"
 
 	// Write what the user is typing
-	term.WriteTextStyle(0, row, color.DeSerializeStyleTcell(config["CommandBarPrefixColor"]), prefix)
-	term.WriteTextStyle(len(prefix)+1, row, color.DeSerializeStyleTcell(config["CommandBarTextColor"]), command)
+	term.WriteTextStyle(0, row, color.DeSerializeStyleTcell(config["CommandBar.PrefixColor"]), prefix)
+	term.WriteTextStyle(len(prefix)+1, row, color.DeSerializeStyleTcell(config["CommandBar.TextColor"]), command)
 
 	// Show the cursor at the cursor position
 	term.screen.ShowCursor(len(prefix)+1+cursorPosition, row)

@@ -79,7 +79,7 @@ func NewInitialStateMode(mode string) *State {
 			// Reference date: `Mon Jan 2 15:04:05 MST 2006`
 			"MessageList.TimestampFormat": " 15:04:05",
 
-			"CommandBar.PrefixColor": "white:blue:",
+			"CommandBar.PrefixColor": "white::",
 			"CommandBar.TextColor": "white::",
 			"StatusBar.ActiveConnectionColor": "white:blue:",
 			"StatusBar.GatewayConnectedColor": "white::",
@@ -90,7 +90,6 @@ func NewInitialStateMode(mode string) *State {
 			"StatusBar.TopBorderColor": ":gray:",
 
 			"Message.ReactionColor": "::",
-			"Message.LineNumbersColor": "black:silver:",
 			"Message.FileColor":     "::",
 			"Message.SelectedColor": ":teal:",
 			"Message.Action.Color": "::",
@@ -102,11 +101,11 @@ func NewInitialStateMode(mode string) *State {
 			"Message.Part.AtMentionGroupColor": "yellow::B",
 			"Message.Part.ChannelColor": "blue::B",
 			"Message.Part.LinkColor": "cyan::BU",
-			"Message.LineNumber.Color": "black:silver:",
-			"Message.LineNumber.ActiveColor": "black:white:",
+			"Message.LineNumber.Color": "white::",
+			"Message.LineNumber.ActiveColor": "teal::",
 
 			"FuzzyPicker.TopBorderColor": ":gray:",
-			"FuzzyPicker.ActiveItemColor": ":teal:",
+			"FuzzyPicker.ActiveItemColor": "::B",
 			"FuzzyPicker.ChannelNotMemberColor": "gray::",
 		},
 	}

@@ -452,7 +452,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		resetKeyStack(state)
 
 	case state.Mode == "chat" && ev.Key() == tcell.KeyCtrlU: // Up a message page
-		pageAmount := state.RenderedMessageNumber / 2
+		pageAmount := 12//state.RenderedMessageNumber / 2
 		if state.ActiveConnection() != nil && state.SelectedMessageIndex < len(state.ActiveConnection().MessageHistory())-1 {
 			state.SelectedMessageIndex += pageAmount
 			state.BottomDisplayedItem += pageAmount
@@ -472,7 +472,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		}
 		resetKeyStack(state)
 	case state.Mode == "chat" && ev.Key() == tcell.KeyCtrlD: // Down a message page
-		pageAmount := state.RenderedMessageNumber / 2
+		pageAmount := 12//state.RenderedMessageNumber / 2
 		if state.ActiveConnection() != nil && state.SelectedMessageIndex > 0 {
 			state.SelectedMessageIndex -= pageAmount
 			state.BottomDisplayedItem -= pageAmount

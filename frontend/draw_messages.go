@@ -262,7 +262,7 @@ func (term *TerminalDisplay) DrawMessages(
 		if _, ok := config["MessageList.RelativeLine"]; ok {
 			// The relative line gutter width should be the same length as the height. If we've got
 			// over one hundred lines then we're going to have three digit relative line numbers.
-			relativeLineWidth = len(fmt.Sprintf("%d", height))
+			relativeLineWidth = len(fmt.Sprintf("%d", height)) + 1
 			prefixWidth += relativeLineWidth
 		}
 
@@ -326,13 +326,14 @@ func (term *TerminalDisplay) DrawMessages(
 				style = color.DeSerializeStyleTcell(config["Message.LineNumber.Color"])
 			}
 
+			w := fmt.Sprintf("%d", relativeLineWidth)
 			term.WriteTextStyle(
 				messageOffset,
 				row-messageRows+1,
 				style,
-				fmt.Sprintf("%"+fmt.Sprintf("%d", relativeLineWidth)+"d", relativeLineNumber),
+				fmt.Sprintf("%"+w+"d ", relativeLineNumber),
 			)
-			messageOffset += relativeLineWidth // Each line number needs this many columns
+			messageOffset += relativeLineWidth + 1 // Each line number needs this many columns, +1 padding
 		}
 
 		// Draw the sender and timestamp on the first row of a message
