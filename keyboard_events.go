@@ -6,6 +6,7 @@ import (
 	"strings"
 	"errors"
 	"strconv"
+	"io/ioutil"
 
 	"github.com/1egoman/slime/frontend" // The thing to draw to the screen
 	"github.com/1egoman/slime/gateway"  // The thing to interface with slack
@@ -36,13 +37,13 @@ func sendTypingIndicator(state *State) error {
 }
 
 // When the user presses ':' or '/', enable the autocomplete menu.
-func enableCommandAutocompletion(state *State, quit chan struct{}) {
+func enableCommandAutocompletion(state *State, term *frontend.TerminalDisplay, quit chan struct{}) {
 	// Also, take care of autocomplete of slash commands
 	// As the user types, show them above the command bar in a fuzzy picker.
 	if !state.FuzzyPicker.Visible {
 		// When the user presses enter, run the slash command the user typed.
 		state.FuzzyPicker.Show(func(state *State) {
-			err := OnCommandExecuted(state, quit)
+			err := OnCommandExecuted(state, term, quit)
 			if err != nil {
 				log.Fatalf(err.Error())
 			}
@@ -200,7 +201,7 @@ func CreateArgvFromString(input string) []string {
 }
 
 // When the user presses enter in `writ` mode after typing some stuff...
-func OnCommandExecuted(state *State, quit chan struct{}) error {
+func OnCommandExecuted(state *State, term *frontend.TerminalDisplay, quit chan struct{}) error {
 	// Parse the command and create a list of arguments
 	args := CreateArgvFromString(string(state.Command))
 
@@ -212,11 +213,37 @@ func OnCommandExecuted(state *State, quit chan struct{}) error {
 	// Remove the first charater (slash or colon) from the command.
 	arg0 := args[0][1:]
 
+	// SPECIAL CASES
+	// Since these commands need access to "priviliged" things, they are harded here.
+	// `quit` - needs to be able to close the `quit` channel
+	// `require` - needs `term` to pass to `ParseScript`.
 	if arg0 == "quit" || arg0 == "q" {
 		// :q or :quit closes the app, and is a special case.
 		log.Println("CLOSE QUIT 2")
 		close(quit)
 		return nil
+	} else if arg0 == "require" || arg0 == "r" || arg0 == "source" {
+		var luaPath string
+		if len(args) == 2 { // /require foo.lua
+			luaPath = args[1]
+		} else {
+			state.Status.Errorf("Please use more arguments. /require foo.lua")
+			return nil
+		}
+
+		// Read post from filesystem
+		luaContents, err := ioutil.ReadFile(luaPath)
+		if err != nil {
+			state.Status.Errorf("Couldn't readfile %s: %s", luaPath, err.Error())
+			return nil
+		}
+
+		err = ParseScript(string(luaContents), state, term)
+		if err != nil {
+			state.Status.Errorf("lua error: %s", err.Error())
+		} else {
+			return nil
+		}
 	} else {
 		// Otherwise, find the command that the user typed.
 		for _, command := range COMMANDS {
@@ -262,7 +289,7 @@ func FetchMessageHistoryScrollback(state *State) error {
 }
 
 // Break out function to handle only keyboard events. Called by `keyboardEvents`.
-func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) error {
+func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.TerminalDisplay, quit chan struct{}) error {
 	// Did the user press a key in the keymap?
 	if state.Mode == "chat" && ev.Key() == tcell.KeyRune {
 		// Add pressed key to the stack of keys
@@ -350,13 +377,13 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, quit chan struct{}) e
 		state.Mode = "writ"
 		state.Command = []rune{':'}
 		state.CommandCursorPosition = 1
-		enableCommandAutocompletion(state, quit)
+		enableCommandAutocompletion(state, term, quit)
 		resetKeyStack(state)
 	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == '/':
 		state.Mode = "writ"
 		state.Command = []rune{'/'}
 		state.CommandCursorPosition = 1
-		enableCommandAutocompletion(state, quit)
+		enableCommandAutocompletion(state, term, quit)
 		resetKeyStack(state)
 
 
@@ -632,7 +659,7 @@ func keyboardEvents(state *State, term *frontend.TerminalDisplay, screen tcell.S
 			if state.Mode == "chat" && ev.Key() == tcell.KeyCtrlL {
 				screen.Sync()
 			} else {
-				err := HandleKeyboardEvent(ev, state, quit)
+				err := HandleKeyboardEvent(ev, state, term, quit)
 				if err != nil {
 					log.Fatalf(err.Error())
 				}

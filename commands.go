@@ -37,6 +37,12 @@ type Command struct {
 }
 
 var COMMANDS = []Command{
+	//
+	// SPECIAL CASES
+	// `Quit` needs access to the `quit` channel to close the app and `Require` needs access to a
+	// reference to `term` to pass to `ParseScript`. Since these are "special cases", they don't
+	// have handlers and are taken care of seperately in `OnCommandExecuted` in keyboard_events.go.
+	//
 	{
 		Name:         "Quit",
 		Type:         NATIVE,
@@ -44,6 +50,15 @@ var COMMANDS = []Command{
 		Permutations: []string{"quit", "q"},
 		/* NO HANDLER, SPECIAL CASE */
 	},
+	{
+		Name:         "Require",
+		Type:         NATIVE,
+		Description:  "Run a lua file.",
+		Arguments:    "<path to lua file>",
+		Permutations: []string{"require", "r", "source"},
+		/* NO HANDLER, SPECIAL CASE */
+	},
+
 
 	//
 	// CONNECT TO A TEAM
