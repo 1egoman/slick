@@ -74,7 +74,7 @@ func NewInitialStateMode(mode string) *State {
 		// Configuration options
 		Configuration: map[string]string{
 			// Should relative line numbers be shown for each message?
-			"Message.RelativeLine": "true",
+			// "Message.RelativeLine": "true",
 
 			// The format for the tiemstamp in front of each message.
 			// Reference date: `Mon Jan 2 15:04:05 MST 2006`
@@ -98,8 +98,9 @@ func NewInitialStateMode(mode string) *State {
 			"Message.LineNumber.Color": "white::",
 			"Message.LineNumber.ActiveColor": "teal::",
 
-			"CommandBar.PrefixColor": "white::",
-			"CommandBar.TextColor": "white::",
+			"CommandBar.PrefixColor": "::",
+			"CommandBar.TextColor": "::",
+
 			"StatusBar.ActiveConnectionColor": "white:blue:",
 			"StatusBar.GatewayConnectedColor": "white::",
 			"StatusBar.GatewayConnectingColor": ":darkmagenta:",
