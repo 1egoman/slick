@@ -41,4 +41,4 @@ color (usually white) and the default background color (usually black) will take
 
 - `::` - Apply no styles and fall back to the defaults.
 
-![gifs/Colors.D.png](gifs/Dolors.D.png)
+![gifs/Colors.D.png](gifs/Colors.D.png)
