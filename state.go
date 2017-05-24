@@ -74,20 +74,14 @@ func NewInitialStateMode(mode string) *State {
 		// Configuration options
 		Configuration: map[string]string{
 			// Should relative line numbers be shown for each message?
-			"MessageList.RelativeLine": "true",
+			"Message.RelativeLine": "true",
+
 			// The format for the tiemstamp in front of each message.
 			// Reference date: `Mon Jan 2 15:04:05 MST 2006`
-			"MessageList.TimestampFormat": " 15:04:05",
+			"Message.TimestampFormat": " 15:04:05",
 
-			"CommandBar.PrefixColor": "white::",
-			"CommandBar.TextColor": "white::",
-			"StatusBar.ActiveConnectionColor": "white:blue:",
-			"StatusBar.GatewayConnectedColor": "white::",
-			"StatusBar.GatewayConnectingColor": ":darkmagenta:",
-			"StatusBar.GatewayFailedColor": ":red:",
-			"StatusBar.LogColor": "white::",
-			"StatusBar.ErrorColor": "darkmagenta::B",
-			"StatusBar.TopBorderColor": ":gray:",
+			// How many messages should Ctrl-U / Ctrl-D page by? 
+			"Message.PageAmount": "12",
 
 			"Message.ReactionColor": "::",
 			"Message.FileColor":     "::",
@@ -103,6 +97,16 @@ func NewInitialStateMode(mode string) *State {
 			"Message.Part.LinkColor": "cyan::BU",
 			"Message.LineNumber.Color": "white::",
 			"Message.LineNumber.ActiveColor": "teal::",
+
+			"CommandBar.PrefixColor": "white::",
+			"CommandBar.TextColor": "white::",
+			"StatusBar.ActiveConnectionColor": "white:blue:",
+			"StatusBar.GatewayConnectedColor": "white::",
+			"StatusBar.GatewayConnectingColor": ":darkmagenta:",
+			"StatusBar.GatewayFailedColor": ":red:",
+			"StatusBar.LogColor": "white::",
+			"StatusBar.ErrorColor": "darkmagenta::B",
+			"StatusBar.TopBorderColor": ":gray:",
 
 			"FuzzyPicker.TopBorderColor": ":gray:",
 			"FuzzyPicker.ActiveItemColor": "::B",

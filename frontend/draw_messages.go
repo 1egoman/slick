@@ -256,10 +256,10 @@ func (term *TerminalDisplay) DrawMessages(
 		sender, senderStyle := getSenderInfo(msg)
 
 		// Calculate the width of the message prefix.
-		timestamp := time.Unix(int64(msg.Timestamp), 0).Format(config["MessageList.TimestampFormat"])
+		timestamp := time.Unix(int64(msg.Timestamp), 0).Format(config["Message.TimestampFormat"])
 		prefixWidth := len(timestamp) + 1 + len(sender) + 1
 		var relativeLineWidth int
-		if _, ok := config["MessageList.RelativeLine"]; ok {
+		if _, ok := config["Message.RelativeLine"]; ok {
 			// The relative line gutter width should be the same length as the height. If we've got
 			// over one hundred lines then we're going to have three digit relative line numbers.
 			relativeLineWidth = len(fmt.Sprintf("%d", height)) + 1
@@ -315,7 +315,7 @@ func (term *TerminalDisplay) DrawMessages(
 		messageOffset := 0
 
 		// Draw a relative line number at the end of the line, if requested.
-		if _, ok := config["MessageList.RelativeLine"]; ok {
+		if _, ok := config["Message.RelativeLine"]; ok {
 			relativeLineNumber := getRelativeLineNumber(selectedMessageIndex, index)
 
 			// Color the active line number different than the rest
