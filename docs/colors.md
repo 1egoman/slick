@@ -28,13 +28,17 @@ color (usually white) and the default background color (usually black) will take
 ## Examples
 
 - `red:green:` - foreground color of red, background color of green, and no formatting.
+
 ![gifs/Colors.A.png](gifs/Colors.A.png)
 
 - `teal::B` - foreground color of teal, no background color, and bold 
+
 ![gifs/Colors.B.png](gifs/Colors.B.png)
 
 - `:#FF0000:` - background of `#FF0000`
+
 ![gifs/Colors.C.png](gifs/Colors.C.png)
 
 - `::` - Apply no styles and fall back to the defaults.
-![gifs/Dolors.D.png](gifs/Dolors.D.png)
+
+![gifs/Colors.D.png](gifs/Dolors.D.png)
