@@ -24,6 +24,6 @@ deployment:
 
           cp slime "$RELEASES/slime-${os}-${arch}"
 
-          echo "Done building GOOS=${GOOS} GOARCH=${GOARCH}"
+          echo "Done building GOOS=${os} GOARCH=${arch}"
         done
       done
