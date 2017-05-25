@@ -17,7 +17,7 @@ deployment:
 
           echo
           echo "==="
-          echo "Building GOOS=${GOOS} GOARCH=${GOARCH}"
+          echo "Building GOOS=${os} GOARCH=${arch}"
           echo "==="
 
           GOOS="${os}" GOARCH="${arch}" go build -v
@@ -27,5 +27,3 @@ deployment:
           echo "Done building GOOS=${GOOS} GOARCH=${GOARCH}"
         done
       done
-
-      ls built_releases/
