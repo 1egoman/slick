@@ -17,6 +17,9 @@ const CONFIG_FILE_NAME = ".slimerc"
 func GetConfigFileContents() map[string]string {
 	configFiles := make(map[string]string)
 
+	homeFilename := path.Join(os.Getenv("HOME"), CONFIG_FILE_NAME)
+	crawledHome := false
+
 	pathElements := strings.Split(os.Getenv("PWD"), "/")
 	for index := 0; index <= len(pathElements); index++ {
 		filename := "/" + path.Join(path.Join(pathElements[:index]...), CONFIG_FILE_NAME)
@@ -25,15 +28,22 @@ func GetConfigFileContents() map[string]string {
 		if err != nil {
 			continue
 		}
+		log.Println("Config exists!", filename)
+
+		// When traversing through the tree, did we come across the `~/.slimerc`?
+		if homeFilename == filename {
+			crawledHome = true
+		}
 
 		configFiles[filename] = string(data)
 	}
 
-	// Finally, look for ~/.slimerc last.
-	filename := path.Join(os.Getenv("HOME"), CONFIG_FILE_NAME)
-	data, err := ioutil.ReadFile(filename)
-	if err == nil {
-		configFiles[filename] = string(data)
+	// Finally, look for ~/.slimerc last, if applicable.
+	if !crawledHome {
+		data, err := ioutil.ReadFile(homeFilename)
+		if err == nil {
+			configFiles[homeFilename] = string(data)
+		}
 	}
 
 	return configFiles
