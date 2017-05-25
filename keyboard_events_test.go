@@ -47,6 +47,9 @@ func InitialMessageHistoryState(initialSelectedIndex int, initialBottomItemIndex
 			Hash: string(i),
 		})
 	}
+
+	// Page by 5
+	s.Configuration["Message.PageAmount"] = "5"
 	return s
 }
 
@@ -208,7 +211,7 @@ func TestHandleKeyboardEvent(t *testing.T) {
 
 		// Run the test.
 		for _, key := range test.Keys {
-			HandleKeyboardEvent(key, test.InitialState, quit)
+			HandleKeyboardEvent(key, test.InitialState, nil, quit)
 		}
 
 		// Verify it passed.
@@ -302,11 +305,11 @@ var messageHistoryKeyEvents = []struct {
 		},
 	},
 	{
-		"In chat mode, the message history can be scrolled up a half page at a time with Ctrl+U",
+		"In chat mode, the message history can be scrolled up in bulk with Ctrl+U",
 		InitialMessageHistoryState(3, 3), // Selecting index 14, and item 4 is on the bottom
 		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyCtrlU, ' ', tcell.ModNone)},
 		func(state *State) bool {
-			// Note: we are rendering 10 items per page, 8 == (10 / 2) + 3
+			// Note: we are rendering 10 items per page, 8 == state.Configuration["Message.PageAmount"] + 3
 			return state.SelectedMessageIndex == 8 &&
 				state.BottomDisplayedItem == 8
 		},
@@ -321,11 +324,11 @@ var messageHistoryKeyEvents = []struct {
 		},
 	},
 	{
-		"In chat mode, the message history can be scrolled down a half page at a time with Ctrl+D",
+		"In chat mode, the message history can be scrolled up in bulk with Ctrl+D",
 		InitialMessageHistoryState(14, 4), // Selecting index 14, and item 4 is on the bottom
 		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyCtrlD, ' ', tcell.ModNone)},
 		func(state *State) bool {
-			// Note: we are rendering 10 items per page, 9 == 14 - (10 / 2)
+			// Note: we are rendering 10 items per page, 9 == 14 - state.Configuration["Message.PageAmount"]
 			return state.SelectedMessageIndex == 9 &&
 				state.BottomDisplayedItem == 0
 		},
@@ -365,7 +368,7 @@ func TestHandleMessageMovementKeyboardEvents(t *testing.T) {
 
 			// Run the test.
 			for _, key := range test.Keys {
-				HandleKeyboardEvent(key, test.InitialState, quit)
+				HandleKeyboardEvent(key, test.InitialState, nil, quit)
 			}
 
 			// Verify it passed.
