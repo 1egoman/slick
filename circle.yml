@@ -8,16 +8,23 @@ deployment:
     branch: master
     commands:
     - |
-      mkdir built_releases/
+      set +e
+      RELEASES="$CIRCLE_ARTIFACTS/releases/"
+      mkdir -p $RELEASES
 
       for os in linux darwin; do
         for arch in 386 amd64 arm arm64; do
-          export GOOS="${os}"
-          export GOARCH="${arch}"
 
-          go build -v
+          echo
+          echo "==="
+          echo "Building GOOS=${GOOS} GOARCH=${GOARCH}"
+          echo "==="
 
-          cp slime "built_releases/slime-${os}-${arch}"
+          GOOS="${os}" GOARCH="${arch}" go build -v
+
+          cp slime "$RELEASES/slime-${os}-${arch}"
+
+          echo "Done building GOOS=${GOOS} GOARCH=${GOARCH}"
         done
       done
 
