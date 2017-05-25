@@ -1,4 +1,9 @@
 test:
   override:
     - go test -v ./... # no -race for now, I guess I have races?
-  post: echo foo
+
+deployment:
+  release:
+    branch: master
+    commands:
+      - echo foo
