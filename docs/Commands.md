@@ -6,7 +6,7 @@ changes--adding commands, logging output, and even macros--are easy to create wi
 slime.
 
 ## .slimerc
-Similar to other apps, slime has a *r*untime *c*onfiguration file. When slime starts, it looks in
+Similar to other apps, slime has a **r**untime **c**onfiguration file. When slime starts, it looks in
 your current directory for a `.slimerc`, and slowly walks back up to `/`, looking for a `.slimerc`
 at each level. If one is found, it is executed. Finally, it will try to run a `.slimerc` in your
 home folder, ie, `~/.slimerc`.
