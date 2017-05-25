@@ -15,7 +15,6 @@ deployment:
       for os in linux darwin; do
         for arch in 386 amd64 arm arm64; do
 
-          echo
           echo "==="
           echo "Building GOOS=${os} GOARCH=${arch}"
           echo "==="
