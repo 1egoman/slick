@@ -236,14 +236,14 @@ func (term *TerminalDisplay) DrawStatusBar(
 		for index, item := range connections {
 			// How should the connection look?
 			var style tcell.Style
-			if item == activeConnection {
-				style = color.DeSerializeStyleTcell(config["StatusBar.ActiveConnectionColor"])
-			} else if item.Status() == gateway.CONNECTING {
+			if item.Status() == gateway.CONNECTING {
 				style = color.DeSerializeStyleTcell(config["StatusBar.GatewayConnectingColor"])
-			} else if item.Status() == gateway.CONNECTED {
-				style = color.DeSerializeStyleTcell(config["StatusBar.GatewayConnectedColor"])
 			} else if item.Status() == gateway.FAILED {
 				style = color.DeSerializeStyleTcell(config["StatusBar.GatewayFailedColor"])
+			} else if item == activeConnection {
+				style = color.DeSerializeStyleTcell(config["StatusBar.ActiveConnectionColor"])
+			} else if item.Status() == gateway.CONNECTED {
+				style = color.DeSerializeStyleTcell(config["StatusBar.GatewayConnectedColor"])
 			} else {
 				// SOme weird case has no coloring.
 				style = tcell.StyleDefault

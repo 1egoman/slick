@@ -73,6 +73,8 @@ func NewInitialStateMode(mode string) *State {
 
 		// Configuration options
 		Configuration: map[string]string{
+			// Disable connection caching
+			"Connection.Cache": "true",
 			// Should relative line numbers be shown for each message?
 			// "Message.RelativeLine": "true",
 
@@ -111,7 +113,6 @@ func NewInitialStateMode(mode string) *State {
 
 			"FuzzyPicker.TopBorderColor": ":gray:",
 			"FuzzyPicker.ActiveItemColor": "::B",
-			"FuzzyPicker.ChannelNotMemberColor": "gray::",
 		},
 	}
 }

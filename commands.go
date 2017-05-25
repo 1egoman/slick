@@ -167,8 +167,16 @@ var COMMANDS = []Command{
 			err := state.Connections[index].Connect()
 			log.Println("Reconnection response: %s", err)
 			if err != nil {
-				return errors.New(fmt.Sprintf("Error in reconnecting: %s", err))
+				return errors.New(fmt.Sprintf("Error in reconnecting (connect): %s", err))
 			}
+
+			// then, refresh the connection
+			err = state.Connections[index].Refresh(true)
+			log.Println("Refresh response: %s", err)
+			if err != nil {
+				return errors.New(fmt.Sprintf("Error in reconnecting (refresh): %s", err))
+			}
+
 			return nil
 		},
 	},
@@ -298,11 +306,14 @@ var COMMANDS = []Command{
 		Name:         "Set",
 		Type:         NATIVE,
 		Description:  "Sets a configuration option",
-		Arguments:    "<option name> <option value>",
+		Arguments:    "<option name> [option value]",
 		Permutations: []string{"set"},
 		Handler:      func(args []string, state *State) error {
-			if len(args) == 3 {
+			if len(args) == 3 { // set foo bar
 				state.Configuration[args[1]] = args[2]
+				return nil
+			} else if len(args) == 2 { // set foo
+				delete(state.Configuration, args[1])
 				return nil
 			} else {
 				return errors.New("Please use more arguments. /set foo bar")

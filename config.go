@@ -29,6 +29,13 @@ func GetConfigFileContents() map[string]string {
 		configFiles[filename] = string(data)
 	}
 
+	// Finally, look for ~/.slimerc last.
+	filename := path.Join(os.Getenv("HOME"), CONFIG_FILE_NAME)
+	data, err := ioutil.ReadFile(filename)
+	if err == nil {
+		configFiles[filename] = string(data)
+	}
+
 	return configFiles
 }
 
