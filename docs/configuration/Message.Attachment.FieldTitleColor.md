@@ -1,7 +1,7 @@
 # Message.Attachment.FieldTitleColor
 
 - Type: `color`
-- Default: `::B` [(format explanation)](../colors.md)
+- Default: `::B` [(format explanation)](../Colors.md)
 
 This configuration option specifies the colors used to render the title of each field in an
 attachment.

@@ -1,7 +1,7 @@
 # Message.Part.ChannelColor
 
 - Type: `color`
-- Default: `blue::B` [(format explanation)](../colors.md)
+- Default: `blue::B` [(format explanation)](../Colors.md)
 
 This configuration option specifies the style used to render `#channel`s within a message, like
 `#general` or `#random`.

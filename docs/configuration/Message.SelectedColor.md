@@ -1,7 +1,7 @@
 # Message.SelectedColor
 
 - Type: `color`
-- Default: `:teal:` [(format explanation)](../colors.md)
+- Default: `:teal:` [(format explanation)](../Colors.md)
 
 This configuration option specifies the color of the timestamp on a selected message.
 

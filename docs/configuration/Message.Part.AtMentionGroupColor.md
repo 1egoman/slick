@@ -1,7 +1,7 @@
 # Message.Part.AtMentionGroupColor
 
 - Type: `color`
-- Default: `yellow::B` [(format explanation)](../colors.md)
+- Default: `yellow::B` [(format explanation)](../Colors.md)
 
 This configuration option specifies the style of `@mentions` toward groups, such as `@channel`,
 `@everyone` and `@here`.

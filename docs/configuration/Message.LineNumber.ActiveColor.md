@@ -1,7 +1,7 @@
 # Message.LineNumber.ActiveColor
 
 - Type: `color`
-- Default: `teal::` [(format explanation)](../colors.md)
+- Default: `teal::` [(format explanation)](../Colors.md)
 
 This configuration option specifies the style used to render the selected line number.
 

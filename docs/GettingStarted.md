@@ -9,6 +9,10 @@ Learn more [here](Installing.md). TL;DR: [Download the latest release](https://g
 
 ## Usage
 - [Modes](Modes.md)
+- [Commands](Commands.md)
+- [Actions](Actions.md)
 
 ## Configuring
-Learn about all slime's commands [here](Commands.md).
+- [Scripting](Scripting.md)
+  - [Color Format](Colors.md)
+- [Configuration Parameters](configuration/README.md)

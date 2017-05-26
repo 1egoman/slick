@@ -1,7 +1,7 @@
 # Message.ReactionColor
 
 - Type: `color`
-- Default: `::` [(format explanation)](../colors.md)
+- Default: `::` [(format explanation)](../Colors.md)
 
 This configuration options specified the color of the list of reactions on a message.
 

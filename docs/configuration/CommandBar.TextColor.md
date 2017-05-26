@@ -1,7 +1,7 @@
 # CommandBar.TextColor
 
 - Type: `color`
-- Default: `::` [(format explanation)](../colors.md)
+- Default: `::` [(format explanation)](../Colors.md)
 
 This configuration option specifies the style for the command bar input area.
 

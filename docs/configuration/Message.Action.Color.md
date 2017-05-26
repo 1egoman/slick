@@ -1,7 +1,7 @@
 # Message.Action.Color
 
 - Type: `color`
-- Default: `::` [(format explanation)](../colors.md)
+- Default: `::` [(format explanation)](../Colors.md)
 
 This configuration option specifies the color of the non-highlighted part of a action.
 

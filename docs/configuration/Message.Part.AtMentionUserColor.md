@@ -1,7 +1,7 @@
 # Message.Part.AtMentionUserColor
 
 - Type: `color`
-- Default: `red::B` [(format explanation)](../colors.md)
+- Default: `red::B` [(format explanation)](../Colors.md)
 
 This configuration option specifies the style used to render `@mentions` toward other users.
 

@@ -1,7 +1,7 @@
 # Message.LineNumber.Color
 
 - Type: `color`
-- Default: `white::` [(format explanation)](../colors.md)
+- Default: `white::` [(format explanation)](../Colors.md)
 
 This configuration option specifies the style used to render non-selected line numbers, if the
 [`Message.RelativeLine`](Message.RelativeLine.md) configuration is set.
