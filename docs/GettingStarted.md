@@ -8,8 +8,10 @@ allows for nearly infinite customization.
 Learn more [here](Installing.md). TL;DR: [Download the latest release](https://github.com/1egoman/slime/releases).
 
 ## Usage
+- [Connecting to Slack team](Connecting.md) - Do this first!
 - [Modes](Modes.md)
 - [Commands](Commands.md)
+- [Messages](Messages.md)
 - [Actions](Actions.md)
 
 ## Configuring

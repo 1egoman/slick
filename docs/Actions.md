@@ -5,7 +5,7 @@ Attachments and files both have a number of named actions after them:
 ![Two Actions](gifs/Actions.png)
 
 The highlighted letter indicates what key to press to trigger the action. (In the above action,
-press `o` to open the attachment.)
+press `o` to open the attachment, and `c` to copy the attachment.)
 
 ## Multiple sets of actions
 

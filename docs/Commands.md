@@ -12,6 +12,12 @@ about its syntax. Once done typing the command, press `enter`:
 
 (Learn about [PostInline](commands/PostInline.md))
 
+## Quoting
+Each word in a command by default becomes an argument to the command. For example, in `/foo bar`
+baz`, the first argument is `bar` and the second is `baz`. However, what if you want to pass the
+string `bar baz` as the combind first argument to `/foo`? If you surround the argument in quotes, like
+`/foo "bar baz"`, then `bar baz` will be considered a single command.
+
 ## Styling
 - [CommandBar.PrefixColor](configuration/CommandBar.PrefixColor.md)
 - [CommandBar.TextColor](configuration/CommandBar.TextColor.md)
