@@ -7,9 +7,9 @@ import (
 	"github.com/kyokomi/emoji" // convert :smile: to unicode
 	"strings"
 
-	"github.com/1egoman/slime/gateway" // The thing to interface with slack
-	"github.com/1egoman/slime/status"
-	"github.com/1egoman/slime/color"
+	"github.com/1egoman/slick/gateway" // The thing to interface with slack
+	"github.com/1egoman/slick/status"
+	"github.com/1egoman/slick/color"
 )
 
 const BottomPadding = 2 // The amount of lines at the bottom of the window to leave available for status bars.

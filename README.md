@@ -1,4 +1,4 @@
-# Slime
+# Slick
 
 A terminal-based slack client. Written in [go](//golang.org) and [lua](//lua.org).
 

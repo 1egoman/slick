@@ -20,8 +20,8 @@ deployment:
 
           GOOS="${os}" GOARCH="${arch}" go build -v
 
-          chmod +x slime
-          cp slime "$RELEASES/slime-${os}-${arch}"
+          chmod +x slick
+          cp slick "$RELEASES/slick-${os}-${arch}"
 
           echo "Done building GOOS=${os} GOARCH=${arch}"
         done

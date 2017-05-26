@@ -1,9 +1,9 @@
 package main_test
 
 import (
-	. "github.com/1egoman/slime"
-	"github.com/1egoman/slime/gateway"
-	"github.com/1egoman/slime/gateway/slack"
+	. "github.com/1egoman/slick"
+	"github.com/1egoman/slick/gateway"
+	"github.com/1egoman/slick/gateway/slack"
 	"github.com/jarcoal/httpmock"
 	"testing"
 	"errors"

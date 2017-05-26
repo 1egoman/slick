@@ -9,7 +9,7 @@ import (
 
 	"strings"
 
-	"github.com/1egoman/slime/gateway"
+	"github.com/1egoman/slick/gateway"
 )
 
 func sendSlashCommand(c *SlackConnection, message gateway.Message, channel *gateway.Channel) (*gateway.Message, error) {

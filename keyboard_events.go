@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"io/ioutil"
 
-	"github.com/1egoman/slime/frontend" // The thing to draw to the screen
-	"github.com/1egoman/slime/gateway"  // The thing to interface with slack
+	"github.com/1egoman/slick/frontend" // The thing to draw to the screen
+	"github.com/1egoman/slick/gateway"  // The thing to interface with slack
 	"github.com/gdamore/tcell"
 )
 
@@ -56,7 +56,7 @@ func enableCommandAutocompletion(state *State, term *frontend.TerminalDisplay, q
 				state.FuzzyPicker.StringItems = append(
 					state.FuzzyPicker.StringItems,
 					fmt.Sprintf(
-						"%s%s %s\t%s - %s", // ie: "/quit (/q)        Quit - quits slime"
+						"%s%s %s\t%s - %s", // ie: "/quit (/q)        Quit - quits slick"
 						string(state.Command[0]),
 						strings.Join(command.Permutations, " "),
 						command.Arguments,

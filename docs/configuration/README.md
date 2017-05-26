@@ -1,6 +1,6 @@
 # Configuration Parameters
 
-These configuration options can be set at runtime (like `/set "option name" "option value"`) or in your [`.slimerc`](Scripting.md#slimerc):
+These configuration options can be set at runtime (like `/set "option name" "option value"`) or in your [`.slickrc`](Scripting.md#slickrc):
 ```lua
 Set("option name", "option value")
 ```

@@ -9,10 +9,10 @@ import (
 	"bytes"
 	"io/ioutil"
 	"encoding/gob"
-	"github.com/1egoman/slime/gateway"
+	"github.com/1egoman/slick/gateway"
 )
 
-const CONFIG_FILE_NAME = ".slimerc"
+const CONFIG_FILE_NAME = ".slickrc"
 
 func GetConfigFileContents() map[string]string {
 	configFiles := make(map[string]string)
@@ -30,7 +30,7 @@ func GetConfigFileContents() map[string]string {
 		}
 		log.Println("Config exists!", filename)
 
-		// When traversing through the tree, did we come across the `~/.slimerc`?
+		// When traversing through the tree, did we come across the `~/.slickrc`?
 		if homeFilename == filename {
 			crawledHome = true
 		}
@@ -38,7 +38,7 @@ func GetConfigFileContents() map[string]string {
 		configFiles[filename] = string(data)
 	}
 
-	// Finally, look for ~/.slimerc last, if applicable.
+	// Finally, look for ~/.slickrc last, if applicable.
 	if !crawledHome {
 		data, err := ioutil.ReadFile(homeFilename)
 		if err == nil {
@@ -60,7 +60,7 @@ type SerializedConnection struct {
 }
 
 func PathToSavedConnections() string {
-	return os.Getenv("HOME") + "/.slimecache/"
+	return os.Getenv("HOME") + "/.slickcache/"
 }
 
 func SaveConnection(conn gateway.Connection) error {

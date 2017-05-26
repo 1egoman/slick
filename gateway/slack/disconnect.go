@@ -1,7 +1,7 @@
 package gatewaySlack
 
 import (
-	"github.com/1egoman/slime/gateway"
+	"github.com/1egoman/slick/gateway"
 )
 
 func (c *SlackConnection) Disconnect() error {
