@@ -3,6 +3,14 @@
 	"ignore": "test",
 	"package": [
 		{
+			"path": "--help",
+			"revision": ""
+		},
+		{
+			"path": "-V",
+			"revision": ""
+		},
+		{
 			"checksumSHA1": "5mydHYvw5yAj51JoQ9SuLfGBJL0=",
 			"path": "github.com/0xAX/notificator",
 			"revision": "82e921414e037b057d5f9c5c8b9a8313dfa584de",
@@ -21,7 +29,7 @@
 			"revisionTime": "2015-12-15T21:28:35Z"
 		},
 		{
-			"checksumSHA1": "/YSim9+8m3Zulor162s5zW8/+xY=",
+			"checksumSHA1": "nw10PFGUNxJ0YXzLr+zF/ToR7EE=",
 			"path": "github.com/gdamore/tcell",
 			"revision": "44772c121bb7838819d3ba4a7e84c0c2d617328e",
 			"revisionTime": "2016-12-05T23:37:37Z"
@@ -99,7 +107,7 @@
 			"revisionTime": "2017-04-20T13:36:16Z"
 		},
 		{
-			"checksumSHA1": "9cg4nSGfKTIWKb6bWV7U4lnuFKA=",
+			"checksumSHA1": "7kYqxy64WhMjFIFZgN7tJ3lbKxM=",
 			"path": "golang.org/x/text/encoding/internal/identifier",
 			"revision": "a9a820217f98f7c8a207ec1e45a874e1fe12c478",
 			"revisionTime": "2017-04-20T13:36:16Z"

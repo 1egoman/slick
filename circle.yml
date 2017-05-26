@@ -14,7 +14,6 @@ deployment:
 
       for os in linux darwin; do
         for arch in 386 amd64 arm arm64; do
-
           echo "==="
           echo "Building GOOS=${os} GOARCH=${arch}"
           echo "==="
@@ -27,3 +26,6 @@ deployment:
           echo "Done building GOOS=${os} GOARCH=${arch}"
         done
       done
+
+      echo "Compressing..."
+      zip -r $RELEASES/releases.zip $RELEASES/*
