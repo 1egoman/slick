@@ -14,4 +14,4 @@ Feel free to adjust the team name, specify your slack token as the second parame
 3. Start slime. Depending on the size of the team it [may take a few seconds](MessageCaching.md) but
    eventually, slime will fully connect:
 
-![Connected](gifs/Conencted.md)
+![Connected](gifs/Connected.png)
