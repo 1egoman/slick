@@ -3,7 +3,7 @@ package frontend
 import (
 	"strings"
 	"github.com/gdamore/tcell"
-	"github.com/1egoman/slime/color"
+	"github.com/1egoman/slick/color"
 )
 
 // The amount of rows at max that can be in the fuzzy picker.

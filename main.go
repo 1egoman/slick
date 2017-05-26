@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/1egoman/slime/frontend" // The thing to draw to the screen
+	"github.com/1egoman/slick/frontend" // The thing to draw to the screen
 	"github.com/gdamore/tcell"
 )
 
@@ -17,7 +17,7 @@ func main() {
 	defer logFile.Close()
 	log.SetOutput(logFile)
 	log.SetFlags(log.Lshortfile)
-	log.Println("Starting Slime...")
+	log.Println("Starting Slick...")
 
 	state := NewInitialState()
 

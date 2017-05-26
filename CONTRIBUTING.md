@@ -70,9 +70,9 @@ a constructor called `gatewaySlack.New` that takes a single parameter - the auth
 ```
 
 # Config files
-Slime configuration files are written in lua. Configuration files are searched from the current
-directory up to the root, and each must have the name or `.slimerc`. For example, if the current
-folder or any folder below the current folder contains a file named `.slimerc`, it will be loaded
+Slick configuration files are written in lua. Configuration files are searched from the current
+directory up to the root, and each must have the name or `.slickrc`. For example, if the current
+folder or any folder below the current folder contains a file named `.slickrc`, it will be loaded
 automatically.
 
 Config files contain a few unique functions:

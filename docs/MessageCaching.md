@@ -1,5 +1,5 @@
 # Message Caching
-To help speed up loading of new slack channels, slime caches a number of attributes about each
+To help speed up loading of new slack channels, slick caches a number of attributes about each
 connection:
 
 ```golang
@@ -11,17 +11,17 @@ type SerializedConnection struct {
 ```
 
 This struct is packed with [gob](https://golang.org/pkg/encoding/gob/) and saved into
-`~/.slimecache/<connection name>` before slime exits. Then, when slime starts up, this file is read
+`~/.slickcache/<connection name>` before slick exits. Then, when slick starts up, this file is read
 into memory, unpacked, and used to quickly show conenction details right away to make the experience
 feel much more snappy.
 
 ## The cache seems to be keeping me from pulling down the latest updates from slack!
-- First, try running `/reconnect`. This will cause slime to reconnect and pull down the latest
+- First, try running `/reconnect`. This will cause slick to reconnect and pull down the latest
   channel list and user details from slack's servers.
-- If that doesn't seem to be working, close all instances of slime, clear your cache: `rm -rf ~/.slimecache`, and
-  start slime again. Note that slime writes to the cache on exit, so make sure that all copies of
-  slime are closed before clearing the cache.
+- If that doesn't seem to be working, close all instances of slick, clear your cache: `rm -rf ~/.slickcache`, and
+  start slick again. Note that slick writes to the cache on exit, so make sure that all copies of
+  slick are closed before clearing the cache.
 
 ## This cache thing is more trouble than it's worth, I don't want it.
-- :frowning: - [Leave an issue](https://github.com/1egoman/slime/issues/new)?
-- To disabling the cache, clear the `Connection.Cache` configuration option: add `Set("Connection.Cache")` to your `.slimerc`.
+- :frowning: - [Leave an issue](https://github.com/1egoman/slick/issues/new)?
+- To disabling the cache, clear the `Connection.Cache` configuration option: add `Set("Connection.Cache")` to your `.slickrc`.

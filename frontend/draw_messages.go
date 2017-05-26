@@ -9,8 +9,8 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/kyokomi/emoji" // convert :smile: to unicode
 
-	"github.com/1egoman/slime/gateway" // The thing to interface with slack
-	"github.com/1egoman/slime/color"
+	"github.com/1egoman/slick/gateway" // The thing to interface with slack
+	"github.com/1egoman/slick/color"
 )
 
 // Given an array of reactions and a row to render them on, render them.

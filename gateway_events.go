@@ -4,8 +4,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/1egoman/slime/frontend" // The thing to draw to the screen
-	"github.com/1egoman/slime/gateway"  // The thing to interface with slack
+	"github.com/1egoman/slick/frontend" // The thing to draw to the screen
+	"github.com/1egoman/slick/gateway"  // The thing to interface with slack
 )
 
 // Once conencted, listen for events from the active gateway. When an event comes in, act on it.

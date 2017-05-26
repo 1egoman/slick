@@ -4,7 +4,7 @@ import (
 	"log"
 	"sort"
 
-	"github.com/1egoman/slime/frontend"
+	"github.com/1egoman/slick/frontend"
 )
 
 // Given application state and a frontend, render the state to the screen.
