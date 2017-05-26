@@ -547,6 +547,15 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		log.Println("Enter pressed")
 		if state.FuzzyPicker.Visible {
 			state.FuzzyPicker.OnSelected(state)
+
+		// If the command starts with a slash or colon, then run it.
+		} else if state.Command[0] == '/' || state.Command[0] == ':' {
+			err := OnCommandExecuted(state, term, quit)
+			if err != nil {
+				log.Fatalf(err.Error())
+			}
+
+		// Otherwise, send as a message.
 		} else if state.Mode == "writ" && state.ActiveConnection() != nil {
 			// Just send a normal message!
 			message := gateway.Message{
