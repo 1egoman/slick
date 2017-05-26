@@ -1,7 +1,7 @@
 # Commands
 
 Just like vim, slime has an expressive scripting system to help make the app better. Slime uses
-[lua](www.lua.org), a common embeddable scripting language. This means that many highter level
+[lua](www.lua.org), a common embeddable scripting language. This means that many higher level
 changes--adding commands, logging output, and even macros--are easy to create without rebuilding
 slime.
 
