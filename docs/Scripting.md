@@ -73,7 +73,7 @@ this from lua:
 Connect("Team Name", "slack-token-here")
 ```
 
-As a rule of thumb, the lua function is the pascal-case varient of the command that you'd type.
+As a rule of thumb, the lua function is the pascal-case variant of the command that you'd type.
 
 ![LuaCommandNames.png](gifs/LuaCommandNames.png)
 
@@ -94,7 +94,7 @@ require("./foo")
 On startup, `Hello world` is logged to the status bar.
 
 ## Interactively
-Especially when testing something, it can be helpful to interatively load in a script. The `Require`
+Especially when testing something, it can be helpful to iteratively load in a script. The `Require`
 command does this from within the editor. Just run `/require bar.lua` to load in and execute a
 script.
 
@@ -102,3 +102,6 @@ script.
 We've added a few modules that can be loaded in by lua to run more powerful tasks:
 
 - `http`: [Gluahttp](https://github.com/cjoudrey/gluahttp) is available with `require("http")`.
+
+# Examples
+A few examples of plugins are available [here](../examples).
