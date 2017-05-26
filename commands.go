@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"os/exec"
 
-	"github.com/1egoman/slime/gateway"
-	"github.com/1egoman/slime/gateway/slack"
-	"github.com/1egoman/slime/frontend"
+	"github.com/1egoman/slick/gateway"
+	"github.com/1egoman/slick/gateway/slack"
+	"github.com/1egoman/slick/frontend"
 
 	"github.com/skratchdot/open-golang/open"
 	"github.com/yuin/gopher-lua"
@@ -46,7 +46,7 @@ var COMMANDS = []Command{
 	{
 		Name:         "Quit",
 		Type:         NATIVE,
-		Description:  "Quits slime.",
+		Description:  "Quits slick.",
 		Permutations: []string{"quit", "q"},
 		/* NO HANDLER, SPECIAL CASE */
 	},

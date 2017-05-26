@@ -10,7 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/1egoman/slime/gateway"
+	"github.com/1egoman/slick/gateway"
 	"golang.org/x/net/websocket"
 )
 

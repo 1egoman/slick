@@ -1,6 +1,6 @@
 # Slack Gateway
 
-All code that communicates between slime and slack lives here.
+All code that communicates between slick and slack lives here.
 
 ## Constructing
 ```go

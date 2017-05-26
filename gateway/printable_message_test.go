@@ -2,7 +2,7 @@ package gateway_test
 
 import (
 	// "fmt"
-	. "github.com/1egoman/slime/gateway"
+	. "github.com/1egoman/slick/gateway"
 	"testing"
 	"reflect"
 )

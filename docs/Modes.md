@@ -1,6 +1,6 @@
 # Modes
 
-Just like vim or emacs, slime is modal. Slime either operates in `chat` mode (the default), `write`
+Just like vim or emacs, slick is modal. Slick either operates in `chat` mode (the default), `write`
 mode, or `pick` mode. The current mode is visible in the bottom left corner of the screen:
 
 ![Mode Location](gifs/ModeLocation.png)
@@ -9,7 +9,7 @@ Within any mode, press `esc` to go back to `chat` mode.
 
 # `chat` mode
 
-This is the default mode that slime starts in.
+This is the default mode that slick starts in.
 
 ![Chat Mode](gifs/ChatMode.png)
 

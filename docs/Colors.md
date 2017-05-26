@@ -1,10 +1,10 @@
 # Colors
 
-Slime uses colors extensively throughout its config to change the appearence of onscreen elements.
+Slick uses colors extensively throughout its config to change the appearence of onscreen elements.
 
 ## Format
 
-Slime's color format consists of three colon-seperated parts:
+Slick's color format consists of three colon-seperated parts:
 
 `FOREGROUND:BACKGROUND:FORMAT`
 

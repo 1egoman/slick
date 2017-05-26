@@ -1,7 +1,7 @@
 package gatewaySlack
 
 import (
-	"github.com/1egoman/slime/gateway" // The thing to interface with slack
+	"github.com/1egoman/slick/gateway" // The thing to interface with slack
 	"log"
 )
 

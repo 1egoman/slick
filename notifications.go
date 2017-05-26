@@ -7,11 +7,11 @@ import (
 	"github.com/0xAX/notificator"
 )
 
-var imagePath string = "/tmp/slime_notification.png"
+var imagePath string = "/tmp/slick_notification.png"
 
 var notify *notificator.Notificator = notificator.New(notificator.Options{
-	DefaultIcon: "/tmp/slime_notification.png",
-	AppName:     "Slime",
+	DefaultIcon: "/tmp/slick_notification.png",
+	AppName:     "Slick",
 })
 
 // Send a notification when a message is received.

@@ -5,7 +5,7 @@ import (
 )
 
 const INFO_PAGE = `
-Slime
+Slick
 
 By Ryan Gaus and contributors.
 Open source and MIT licensed.

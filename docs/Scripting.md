@@ -1,30 +1,30 @@
 # Commands
 
-Just like vim, slime has an expressive scripting system to help make the app better. Slime uses
+Just like vim, slick has an expressive scripting system to help make the app better. Slick uses
 [lua](www.lua.org), a common embeddable scripting language. This means that many higher level
 changes--adding commands, logging output, and even macros--are easy to create without rebuilding
-slime.
+slick.
 
-## .slimerc
-Similar to other apps, slime has a **r**untime **c**onfiguration file. When slime starts, it looks in
-your current directory for a `.slimerc`, and slowly walks back up to `/`, looking for a `.slimerc`
-at each level. If one is found, it is executed. Finally, it will try to run a `.slimerc` in your
-home folder, ie, `~/.slimerc`.
+## .slickrc
+Similar to other apps, slick has a **r**untime **c**onfiguration file. When slick starts, it looks in
+your current directory for a `.slickrc`, and slowly walks back up to `/`, looking for a `.slickrc`
+at each level. If one is found, it is executed. Finally, it will try to run a `.slickrc` in your
+home folder, ie, `~/.slickrc`.
 
 ## Lua example
-Within any of those `.slimerc` files, you can write lua and slime will execute it on startup:
+Within any of those `.slickrc` files, you can write lua and slick will execute it on startup:
 
 ```bash
-$ echo 'print("Hello world!")' > ~/.slimerc
-$ slime
+$ echo 'print("Hello world!")' > ~/.slickrc
+$ slick
 ```
 
 ![Lua Example](gifs/LuaExample.png)
 
 # Helper functions
 
-What you saw above--the use of `print--is a helper function. To allow lua to effect slime, a number
-of functions have been defined to allow lua to effectively call into slime and slime call into lua.
+What you saw above--the use of `print--is a helper function. To allow lua to effect slick, a number
+of functions have been defined to allow lua to effectively call into slick and slick call into lua.
 Here are a number of them:
 
 - `print` / `error` / `clear`: Log to the bottom bar, log to the bottom bar as an error, and clear
@@ -62,7 +62,7 @@ the command. For example, `/mycommand foo` would have an arguments table of `["m
 
 # Commands
 Any command that is available inside the editor can be run from lua. A list is available in
-[`commands.go`](https://github.com/1egoman/slime/blob/master/commands.go), inside of the `COMMANDS`
+[`commands.go`](https://github.com/1egoman/slick/blob/master/commands.go), inside of the `COMMANDS`
 constant.
 
 For example, let's say we want to connect to a new slack team. `Connect` can do this. Typically,
@@ -79,7 +79,7 @@ As a rule of thumb, the lua function is the pascal-case variant of the command t
 
 In the above, a number of command names are highlighted in the fuzzy picker. The magenta ones (among
 others) can be run in lua. The cyan commands are notable exceptions and cannot:
-- `Quit`: It's impossible to close slime from lua.
+- `Quit`: It's impossible to close slick from lua.
 - `Require`: The builtin `require` does the same thing, so it's unnecessary.
 
 # Including other scripts
@@ -87,7 +87,7 @@ Lua has a `require` function that can load in other scripts. For example:
 ```
 -- foo.lua
 print("Hello world!")
--- .slimerc
+-- .slickrc
 require("./foo")
 ```
 

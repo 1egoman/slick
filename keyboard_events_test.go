@@ -3,9 +3,9 @@ package main_test
 import (
 	"fmt"
 	"reflect"
-	. "github.com/1egoman/slime"
-	"github.com/1egoman/slime/gateway"
-	"github.com/1egoman/slime/gateway/slack"
+	. "github.com/1egoman/slick"
+	"github.com/1egoman/slick/gateway"
+	"github.com/1egoman/slick/gateway/slack"
 	"github.com/gdamore/tcell"
 	"github.com/jarcoal/httpmock"
 	"testing"
@@ -349,7 +349,7 @@ func TestHandleMessageMovementKeyboardEvents(t *testing.T) {
 		func() { // (Function closure exists so that we can defer inside.)
 			defer httpmock.DeactivateAndReset()
 
-			// When moving between messages, if we move to the last message, then slime will try to load
+			// When moving between messages, if we move to the last message, then slick will try to load
 			// the next page of events. We don't want this to happen.
 			if test.InitialState.ActiveConnection() != nil {
 				selectedChannelId := test.InitialState.ActiveConnection().SelectedChannel().Id
