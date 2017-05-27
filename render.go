@@ -35,6 +35,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 			len(state.ActiveConnection().MessageHistory())-1-state.SelectedMessageIndex, // Is a message selected?
 			state.BottomDisplayedItem,                                                   // Bottommost item
 			state.ActiveConnection().UserById,
+			state.ActiveConnection().UserOnline,
 			state.Configuration,
 		)
 	} else {

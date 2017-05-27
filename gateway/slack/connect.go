@@ -181,7 +181,7 @@ func (c *SlackConnection) Connect() error {
 func (c *SlackConnection) requestConnectionUrl() error {
 	// Make request to slack's api to get websocket credentials
 	// https://api.slack.com/methods/rtm.connect
-	resp, err := http.Get("https://slack.com/api/rtm.connect?token=" + c.token)
+	resp, err := http.Get("https://slack.com/api/rtm.start?token=" + c.token)
 
 	if err != nil {
 		return err
@@ -194,6 +194,10 @@ func (c *SlackConnection) requestConnectionUrl() error {
 		Url  string       `json:"url"`
 		Team gateway.Team `json:"team"`
 		Self gateway.User `json:"self"`
+		Users []struct {
+			Id string `json:"id"`
+			Presence string `json:"presence"`
+		} `json:"users"`
 	}
 	err = json.Unmarshal(body, &connectionBuffer)
 	if err != nil {
@@ -205,6 +209,15 @@ func (c *SlackConnection) requestConnectionUrl() error {
 	c.url = connectionBuffer.Url
 	c.self = connectionBuffer.Self
 	c.team = connectionBuffer.Team
+
+	// Add online statuses for each user
+	for _, user := range connectionBuffer.Users {
+		if user.Presence == "away" {
+			c.userPresence[user.Id] = false
+		} else {
+			c.userPresence[user.Id] = true
+		}
+	}
 
 	return nil
 }

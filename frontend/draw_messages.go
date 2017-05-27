@@ -231,6 +231,7 @@ func (term *TerminalDisplay) DrawMessages(
 	selectedMessageIndex int, // Index of selected message (-1 for no selected message)
 	bottomDisplayedItem int, // The bottommost message. If 0, bottommost message is most recent.
 	userById func(string) (*gateway.User, error),
+	userOnline func(user *gateway.User) bool,
 	config map[string]string,
 ) int { // Return how many messages were rendered.
 	width, height := term.screen.Size()
@@ -339,9 +340,23 @@ func (term *TerminalDisplay) DrawMessages(
 		// Draw the sender and timestamp on the first row of a message
 		term.WriteTextStyle(messageOffset, row-messageRows+1, selectedStyle, timestamp)
 		messageOffset += len(timestamp)+1
-		// term.WriteTextStyle(messageOffset, row-messageRows+1, tcell.StyleDefault.Foreground(tcell.ColorGreen), "*")
-		term.WriteTextStyle(messageOffset, row-messageRows+1, tcell.StyleDefault.Foreground(tcell.ColorSilver), "*")
-		messageOffset += 1
+		if msg.Sender != nil && userOnline(msg.Sender) {
+			term.WriteTextStyle(
+				messageOffset,
+				row-messageRows+1,
+				tcell.StyleDefault.Foreground(tcell.ColorGreen),
+				"*",
+			)
+			messageOffset += 1
+		} else if msg.Sender != nil {
+			term.WriteTextStyle(
+				messageOffset,
+				row-messageRows+1,
+				tcell.StyleDefault.Foreground(tcell.ColorSilver),
+				"*",
+			)
+			messageOffset += 1
+		}
 		term.WriteTextStyle(messageOffset, row-messageRows+1, senderStyle, sender)
 		messageOffset += len(sender)
 

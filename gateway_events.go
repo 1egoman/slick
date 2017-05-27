@@ -144,6 +144,27 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 				}
 			}
 
+		// When the user's presence value changes, update the active connection
+		// {"type":"presence_change","presence":"away","user":"U5FR33U4T"}
+		case "presence_change":
+			if state.ActiveConnection() != nil {
+				// Get user presence status
+				status := false
+				if value, ok := event.Data["presence"].(string); ok && value == "active" {
+					status = true
+				}
+
+				// Get user instance
+				if userId, ok := event.Data["user"].(string); ok {
+					user, err := state.ActiveConnection().UserById(userId)
+					if err != nil {
+						log.Println(err.Error())
+					} else {
+						state.ActiveConnection().SetUserOnline(user, status)
+					}
+				}
+			}
+
 		case "":
 			log.Printf("Unknown event received: %+v", event)
 		}

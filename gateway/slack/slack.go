@@ -26,7 +26,11 @@ func NewWithName(nickname string, token string) *SlackConnection {
 		nickname: &nickname,
 		userCache: make(map[string]gateway.User),
 
+		// Which users are typing?
 		typingUsers: gateway.NewTypingUsers(),
+
+		// Which users are online?
+		userPresence: make(map[string]bool),
 	}
 }
 
@@ -56,6 +60,9 @@ type SlackConnection struct {
 
 	// Managethe users that are currently typing.
 	typingUsers *gateway.TypingUsers
+
+	// A list of users mapping to whether they are online of offline.
+	userPresence map[string]bool
 }
 
 // Return the name of the team.
@@ -297,6 +304,13 @@ func (c *SlackConnection) UserById(id string) (*gateway.User, error) {
 		c.userCache[id] = user
 		return &user, nil
 	}
+}
+
+func (c *SlackConnection) UserOnline(user *gateway.User) bool {
+	return c.userPresence[user.Id]
+}
+func (c *SlackConnection) SetUserOnline(user *gateway.User, status bool) {
+	c.userPresence[user.Id] = status
 }
 
 func (c *SlackConnection) MessageHistory() []gateway.Message {

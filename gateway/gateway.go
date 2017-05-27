@@ -45,6 +45,9 @@ type Connection interface {
 
 	UserById(string) (*User, error)
 
+	UserOnline(user *User) bool
+	SetUserOnline(user *User, status bool)
+
 	// Post a large block of text in a given channel
 	PostText(title string, body string) error
 
