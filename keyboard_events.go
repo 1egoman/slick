@@ -11,6 +11,7 @@ import (
 	"github.com/1egoman/slick/frontend" // The thing to draw to the screen
 	"github.com/1egoman/slick/gateway"  // The thing to interface with slack
 	"github.com/gdamore/tcell"
+	"github.com/kyokomi/emoji" // convert :smile: to unicode
 )
 
 // FIXME: This unit is in messages, it should be in rows. The problem is that 1 message isn't always
@@ -549,7 +550,9 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 			state.FuzzyPicker.OnSelected(state)
 
 		// If the command starts with a slash or colon, then run it.
-		} else if state.Command[0] == '/' || state.Command[0] == ':' {
+		} else if (state.Command[0] == '/' ||
+		// Make sure the command doesn't start with :emoji: - Fixes #18.
+		emoji.Sprint(state.Command)[0] == ':') {
 			err := OnCommandExecuted(state, term, quit)
 			if err != nil {
 				log.Fatalf(err.Error())
