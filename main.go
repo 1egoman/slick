@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"path"
 
 	"github.com/1egoman/slick/frontend" // The thing to draw to the screen
 	"github.com/gdamore/tcell"
@@ -10,7 +11,7 @@ import (
 
 func main() {
 	// Configure logger to log to file
-	logFile, err := os.Create("./log")
+	logFile, err := os.Create(path.Join(os.Getenv("HOME"), ".slimelog"))
 	if err != nil {
 		log.Fatal(err)
 	}

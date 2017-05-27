@@ -92,8 +92,8 @@ func (p *PrintableMessage) Lines(width int) [][]PrintableMessagePart {
 			//                 "window width"
 			// (done, since the line length < window width)
 
+			wordsInLastMessagePart := strings.Split(part.Content, " ")
 			if maximumLengthOfLastMessagePart > 0 { // Ensure that we should remove words. Fixes #9.
-				wordsInLastMessagePart := strings.Split(part.Content, " ")
 				for len(strings.Join(wordsInLastMessagePart, " ")) > maximumLengthOfLastMessagePart {
 					// Remove one word from the last message part
 					log.Printf("len(wordsInLastMessagePart) = %d", len(wordsInLastMessagePart))
