@@ -339,6 +339,9 @@ func (term *TerminalDisplay) DrawMessages(
 		// Draw the sender and timestamp on the first row of a message
 		term.WriteTextStyle(messageOffset, row-messageRows+1, selectedStyle, timestamp)
 		messageOffset += len(timestamp)+1
+		// term.WriteTextStyle(messageOffset, row-messageRows+1, tcell.StyleDefault.Foreground(tcell.ColorGreen), "*")
+		term.WriteTextStyle(messageOffset, row-messageRows+1, tcell.StyleDefault.Foreground(tcell.ColorSilver), "*")
+		messageOffset += 1
 		term.WriteTextStyle(messageOffset, row-messageRows+1, senderStyle, sender)
 		messageOffset += len(sender)
 

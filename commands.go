@@ -1,23 +1,23 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/http"
-	"errors"
-	"strings"
 	"log"
+	"net/http"
 	"os"
-	"strconv"
 	"os/exec"
+	"strconv"
+	"strings"
 
+	"github.com/1egoman/slick/frontend"
 	"github.com/1egoman/slick/gateway"
 	"github.com/1egoman/slick/gateway/slack"
-	"github.com/1egoman/slick/frontend"
 
+	"github.com/cjoudrey/gluahttp" // gopher-lua http library
 	"github.com/skratchdot/open-golang/open"
 	"github.com/yuin/gopher-lua"
-	"github.com/cjoudrey/gluahttp" // gopher-lua http library
 )
 
 type CommandType int
@@ -59,7 +59,6 @@ var COMMANDS = []Command{
 		/* NO HANDLER, SPECIAL CASE */
 	},
 
-
 	//
 	// CONNECT TO A TEAM
 	//
@@ -69,7 +68,7 @@ var COMMANDS = []Command{
 		Description:  "Connect to a given team",
 		Arguments:    "[team name] <token>",
 		Permutations: []string{"connect", "con"},
-		Handler:      func(args []string, state *State) error {
+		Handler: func(args []string, state *State) error {
 			var name string
 			var token string
 			if len(args) == 2 { // /connect token-here
@@ -90,7 +89,7 @@ var COMMANDS = []Command{
 			} else {
 				connection = gatewaySlack.New(token)
 			}
-			
+
 			// Initialize the connection
 			err := connection.Connect()
 			log.Printf("Connection response: %s", err)
@@ -110,7 +109,7 @@ var COMMANDS = []Command{
 		Description:  "Connect to a given team. If no index is specified, then use the active connection.",
 		Arguments:    "[team index]",
 		Permutations: []string{"disconnect", "dis"},
-		Handler:      func(args []string, state *State) error {
+		Handler: func(args []string, state *State) error {
 			var index int
 			if len(args) == 1 { // /disconnect
 				index = state.ActiveConnectionIndex()
@@ -118,7 +117,7 @@ var COMMANDS = []Command{
 				// Convert the index from strint to int
 				i, err := strconv.ParseInt(args[1], 10, 0)
 				if err != nil {
-					return errors.New("Error disconnecting: "+err.Error())
+					return errors.New("Error disconnecting: " + err.Error())
 				}
 				index = int(i)
 				if index < 0 && index > len(state.Connections) {
@@ -145,7 +144,7 @@ var COMMANDS = []Command{
 		Description:  "Given a team that has moved into a failure state, reconnect to the server.",
 		Arguments:    "[team name] <token>",
 		Permutations: []string{"reconnect", "recon"},
-		Handler:      func(args []string, state *State) error {
+		Handler: func(args []string, state *State) error {
 			var index int
 			if len(args) == 1 { // /disconnect
 				index = state.ActiveConnectionIndex()
@@ -153,7 +152,7 @@ var COMMANDS = []Command{
 				// Convert the index from strint to int
 				i, err := strconv.ParseInt(args[1], 10, 0)
 				if err != nil {
-					return errors.New("Error disconnecting: "+err.Error())
+					return errors.New("Error disconnecting: " + err.Error())
 				}
 				index = int(i)
 				if index < 0 && index > len(state.Connections) {
@@ -186,7 +185,7 @@ var COMMANDS = []Command{
 		Description:  "Connect to a given team. If no index is specified, then use the active connection.",
 		Arguments:    "[team index]",
 		Permutations: []string{"tb"},
-		Handler:      func(args []string, state *State) error {
+		Handler: func(args []string, state *State) error {
 			index := state.ActiveConnectionIndex()
 			state.Connections[index].Disconnect()
 			return nil
@@ -202,7 +201,7 @@ var COMMANDS = []Command{
 		Description:  "Make a post in the current channel with the contents of the specified file.",
 		Arguments:    "<post file> [post name]",
 		Permutations: []string{"post", "p"},
-		Handler:      func(args []string, state *State) error {
+		Handler: func(args []string, state *State) error {
 			var postTitle string
 			var postPath string
 			if len(args) == 3 { // /post "post content" "post title"
@@ -238,7 +237,7 @@ var COMMANDS = []Command{
 		Description:  "Make a post in the current channel using the given text.",
 		Arguments:    "<post content> [post name]",
 		Permutations: []string{"postinline", "pin"},
-		Handler:      func(args []string, state *State) error {
+		Handler: func(args []string, state *State) error {
 			var postTitle string
 			var postContent string
 			if len(args) == 3 { // /postinline "post content" "post title"
@@ -268,7 +267,7 @@ var COMMANDS = []Command{
 		Description:  "Upload a file to a channel.",
 		Arguments:    "<uploaded file path> [uploaded file title]",
 		Permutations: []string{"upload", "up"},
-		Handler:      func(args []string, state *State) error {
+		Handler: func(args []string, state *State) error {
 			var title string
 			var uploadPath string
 			if len(args) == 2 { // /upload /path/to/file.xt
@@ -308,7 +307,7 @@ var COMMANDS = []Command{
 		Description:  "Sets a configuration option",
 		Arguments:    "<option name> [option value]",
 		Permutations: []string{"set"},
-		Handler:      func(args []string, state *State) error {
+		Handler: func(args []string, state *State) error {
 			if len(args) == 3 { // set foo bar
 				state.Configuration[args[1]] = args[2]
 				return nil
@@ -321,16 +320,15 @@ var COMMANDS = []Command{
 		},
 	},
 
-
 	//
 	// MESSAGE ACTIONS
 	//
 
 	{
-		Name: "Reaction",
-		Type: NATIVE,
-		Description: "Post a reaction to the selected message",
-		Arguments: "<raection name>",
+		Name:         "Reaction",
+		Type:         NATIVE,
+		Description:  "Post a reaction to the selected message",
+		Arguments:    "<raection name>",
 		Permutations: []string{"react"},
 		Handler: func(args []string, state *State) error {
 			selectedMessageIndex := len(state.ActiveConnection().MessageHistory()) - 1 - state.SelectedMessageIndex
@@ -345,10 +343,10 @@ var COMMANDS = []Command{
 		},
 	},
 	{
-		Name: "OpenFile",
-		Type: NATIVE,
-		Description: "If a file is attached to the current message, open it.",
-		Arguments: "",
+		Name:         "OpenFile",
+		Type:         NATIVE,
+		Description:  "If a file is attached to the current message, open it.",
+		Arguments:    "",
 		Permutations: []string{"openfile", "opf"},
 		Handler: func(args []string, state *State) error {
 			selectedMessageIndex := len(state.ActiveConnection().MessageHistory()) - 1 - state.SelectedMessageIndex
@@ -365,10 +363,10 @@ var COMMANDS = []Command{
 		},
 	},
 	{
-		Name: "CopyFile",
-		Type: NATIVE,
-		Description: "If a file is attached to the current message, copy it into the system clipboard.",
-		Arguments: "",
+		Name:         "CopyFile",
+		Type:         NATIVE,
+		Description:  "If a file is attached to the current message, copy it into the system clipboard.",
+		Arguments:    "",
 		Permutations: []string{"copyfile", "cpf"},
 		Handler: func(args []string, state *State) error {
 			selectedMessageIndex := len(state.ActiveConnection().MessageHistory()) - 1 - state.SelectedMessageIndex
@@ -385,10 +383,10 @@ var COMMANDS = []Command{
 		},
 	},
 	{
-		Name: "OpenAttachmentLink",
-		Type: NATIVE,
-		Description: "If an attachment of the given index is on the given active, then open the link the attachment contains.",
-		Arguments: "<attachment index>",
+		Name:         "OpenAttachmentLink",
+		Type:         NATIVE,
+		Description:  "If an attachment of the given index is on the given active, then open the link the attachment contains.",
+		Arguments:    "<attachment index>",
 		Permutations: []string{"attachmentlink", "atlink", "atlk"},
 		Handler: func(args []string, state *State) error {
 			var attachmentIndex int
@@ -412,7 +410,7 @@ var COMMANDS = []Command{
 			// Open the private image url in the browser
 			if (attachmentIndex - 1) >= len(*selectedMessage.Attachments) {
 				return errors.New(fmt.Sprintf("Attachment index %d is too large!", attachmentIndex))
-			} else if titleLink := (*selectedMessage.Attachments)[attachmentIndex - 1].TitleLink; len(titleLink) > 0 {
+			} else if titleLink := (*selectedMessage.Attachments)[attachmentIndex-1].TitleLink; len(titleLink) > 0 {
 				open.Run(titleLink)
 			} else {
 				return errors.New("Selected message and attachment doesn't have a link that can be opened.")
@@ -426,10 +424,10 @@ var COMMANDS = []Command{
 	// MOVE FORWARD / BACKWARD MESSAGES
 	//
 	{
-		Name: "MoveBackMessage",
-		Type: NATIVE,
-		Description: "Move selected message back to the previous message in time.",
-		Arguments: "",
+		Name:         "MoveBackMessage",
+		Type:         NATIVE,
+		Description:  "Move selected message back to the previous message in time.",
+		Arguments:    "",
 		Permutations: []string{},
 		Handler: func(args []string, state *State) error {
 			if state.ActiveConnection() != nil && state.SelectedMessageIndex > 0 {
@@ -445,10 +443,10 @@ var COMMANDS = []Command{
 		},
 	},
 	{
-		Name: "MoveForwardMessage",
-		Type: NATIVE,
-		Description: "Move selected message forward to the next message in time.",
-		Arguments: "",
+		Name:         "MoveForwardMessage",
+		Type:         NATIVE,
+		Description:  "Move selected message forward to the next message in time.",
+		Arguments:    "",
 		Permutations: []string{},
 		Handler: func(args []string, state *State) error {
 			if state.ActiveConnection() != nil && state.SelectedMessageIndex < len(state.ActiveConnection().MessageHistory())-1 {
@@ -468,10 +466,10 @@ var COMMANDS = []Command{
 	// CHANGE THE ACTIVE CHANNEL
 	//
 	{
-		Name: "Pick",
-		Type: NATIVE,
-		Description: "Pick another connection / channel.",
-		Arguments: "<connection name> <channel name>",
+		Name:         "Pick",
+		Type:         NATIVE,
+		Description:  "Pick another connection / channel.",
+		Arguments:    "<connection name> <channel name>",
 		Permutations: []string{"pick", "p"},
 		Handler: func(args []string, state *State) error {
 			var connectionName string
@@ -492,7 +490,7 @@ var COMMANDS = []Command{
 				}
 			}
 			if !setConnection {
-				return errors.New("No such connection: "+connectionName)
+				return errors.New("No such connection: " + connectionName)
 			}
 
 			setChannel := false
@@ -504,22 +502,21 @@ var COMMANDS = []Command{
 				}
 			}
 			if !setChannel {
-				return errors.New("No such channel: "+channelName)
+				return errors.New("No such channel: " + channelName)
 			}
 
 			return nil
 		},
 	},
 
-
 	//
 	// OPEN IN SLACK
 	//
 	{
-		Name: "OpenInSlack",
-		Type: NATIVE,
-		Description: "Open the current channel in the slack app.",
-		Arguments: "",
+		Name:         "OpenInSlack",
+		Type:         NATIVE,
+		Description:  "Open the current channel in the slack app.",
+		Arguments:    "",
 		Permutations: []string{"slack", "ops"},
 		Handler: func(args []string, state *State) error {
 			team := state.ActiveConnection().Team()
@@ -527,11 +524,10 @@ var COMMANDS = []Command{
 			if team == nil || channel == nil {
 				return errors.New("Selected team or channel was nil.")
 			}
-			open.Run("slack://channel?team="+team.Id+"&id="+channel.Id)
+			open.Run("slack://channel?team=" + team.Id + "&id=" + channel.Id)
 			return nil
 		},
 	},
-
 
 	//
 	// BUILT INTO SLACK
@@ -691,7 +687,7 @@ func RunCommand(command Command, args []string, state *State) error {
 }
 
 type KeyAction struct {
-	Key []rune
+	Key     []rune
 	Handler func(*State) error
 }
 
@@ -734,10 +730,10 @@ func ParseScript(script string, state *State, term *frontend.TerminalDisplay) er
 		name := L.ToString(1)
 		callback := L.ToFunction(4)
 		COMMANDS = append(COMMANDS, Command{
-			Name: name,
-			Type: NATIVE,
-			Description: L.ToString(2),
-			Arguments: L.ToString(3),
+			Name:         name,
+			Type:         NATIVE,
+			Description:  L.ToString(2),
+			Arguments:    L.ToString(3),
 			Permutations: []string{name},
 			Handler: func(args []string, state *State) error {
 				log.Println("Running lua command", name, args)
@@ -768,7 +764,7 @@ func ParseScript(script string, state *State, term *frontend.TerminalDisplay) er
 
 		var args []string
 		argc := 2
-		for ;; argc++ {
+		for ; ; argc++ {
 			arg := L.ToString(argc)
 			if len(arg) > 0 {
 				args = append(args, arg)
@@ -812,7 +808,7 @@ func ParseScript(script string, state *State, term *frontend.TerminalDisplay) er
 		)
 
 		if err != nil {
-			L.Push(lua.LString("Error sending message: "+err.Error()))
+			L.Push(lua.LString("Error sending message: " + err.Error()))
 		} else {
 			L.Push(lua.LNil)
 		}
@@ -825,12 +821,12 @@ func ParseScript(script string, state *State, term *frontend.TerminalDisplay) er
 
 	// Export all commands in the lua context
 	for _, command := range COMMANDS {
-		func(command Command) { // Close over command so it 
+		func(command Command) { // Close over command so it
 			L.SetGlobal(command.Name, L.NewFunction(func(L *lua.LState) int {
 				// Collect all arguments into an array
 				args := []string{"__COMMAND"}
 				argc := 1
-				for ;; argc += 1 {
+				for ; ; argc += 1 {
 					arg := L.ToString(argc)
 					if len(arg) > 0 {
 						args = append(args, arg)
@@ -842,7 +838,7 @@ func ParseScript(script string, state *State, term *frontend.TerminalDisplay) er
 				log.Printf("* Running command %s with args %v", command.Name, args)
 				command := GetCommand(command.Name)
 				if command.Handler == nil {
-					L.Push(lua.LString("No handler defined for the command "+command.Name+"."))
+					L.Push(lua.LString("No handler defined for the command " + command.Name + "."))
 					return 1
 				}
 

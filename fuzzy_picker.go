@@ -26,9 +26,6 @@ fuzzyPicker.Show(func(state *State) {
 
 / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /*/
 
-
-
-
 // A struct that wraps a collection of string items and norma items, and sorts both based on the
 // closeness of each of `StringItems` to `Needle`.
 type FuzzySorter struct {

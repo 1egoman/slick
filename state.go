@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/1egoman/slick/status"
 	"github.com/1egoman/slick/gateway" // The thing to interface with slack
+	"github.com/1egoman/slick/status"
 )
 
 // This struct contains the main application state. I have fluxy intentions.
@@ -13,7 +13,7 @@ type State struct {
 	CommandCursorPosition int
 
 	// A list of all keys that have been pressed to make up the current command.
-	KeyStack              []rune
+	KeyStack []rune
 
 	// All the connections that are currently made to outside services.
 	Connections      []gateway.Connection
@@ -82,36 +82,36 @@ func NewInitialStateMode(mode string) *State {
 			// Reference date: `Mon Jan 2 15:04:05 MST 2006`
 			"Message.TimestampFormat": " 15:04:05",
 
-			// How many messages should Ctrl-U / Ctrl-D page by? 
+			// How many messages should Ctrl-U / Ctrl-D page by?
 			"Message.PageAmount": "12",
 
-			"Message.ReactionColor": "::",
-			"Message.FileColor":     "::",
-			"Message.SelectedColor": ":teal:",
-			"Message.Action.Color": "::",
-			"Message.Action.HighlightColor": "red::",
-			"Message.Attachment.TitleColor": "green::",
+			"Message.ReactionColor":              "::",
+			"Message.FileColor":                  "::",
+			"Message.SelectedColor":              ":teal:",
+			"Message.Action.Color":               "::",
+			"Message.Action.HighlightColor":      "red::",
+			"Message.Attachment.TitleColor":      "green::",
 			"Message.Attachment.FieldTitleColor": "::B",
 			"Message.Attachment.FieldValueColor": "::",
-			"Message.Part.AtMentionUserColor": "red::B",
-			"Message.Part.AtMentionGroupColor": "yellow::B",
-			"Message.Part.ChannelColor": "blue::B",
-			"Message.Part.LinkColor": "cyan::BU",
-			"Message.LineNumber.Color": "white::",
-			"Message.LineNumber.ActiveColor": "teal::",
+			"Message.Part.AtMentionUserColor":    "red::B",
+			"Message.Part.AtMentionGroupColor":   "yellow::B",
+			"Message.Part.ChannelColor":          "blue::B",
+			"Message.Part.LinkColor":             "cyan::BU",
+			"Message.LineNumber.Color":           "white::",
+			"Message.LineNumber.ActiveColor":     "teal::",
 
 			"CommandBar.PrefixColor": "::",
-			"CommandBar.TextColor": "::",
+			"CommandBar.TextColor":   "::",
 
-			"StatusBar.ActiveConnectionColor": "white:blue:",
-			"StatusBar.GatewayConnectedColor": "white::",
+			"StatusBar.ActiveConnectionColor":  "white:blue:",
+			"StatusBar.GatewayConnectedColor":  "white::",
 			"StatusBar.GatewayConnectingColor": ":darkmagenta:",
-			"StatusBar.GatewayFailedColor": ":red:",
-			"StatusBar.LogColor": "white::",
-			"StatusBar.ErrorColor": "darkmagenta::B",
-			"StatusBar.TopBorderColor": ":gray:",
+			"StatusBar.GatewayFailedColor":     ":red:",
+			"StatusBar.LogColor":               "white::",
+			"StatusBar.ErrorColor":             "darkmagenta::B",
+			"StatusBar.TopBorderColor":         ":gray:",
 
-			"FuzzyPicker.TopBorderColor": ":gray:",
+			"FuzzyPicker.TopBorderColor":  ":gray:",
 			"FuzzyPicker.ActiveItemColor": "::B",
 		},
 	}

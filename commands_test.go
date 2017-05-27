@@ -1,52 +1,52 @@
 package main_test
 
 import (
+	"errors"
 	. "github.com/1egoman/slick"
 	"github.com/1egoman/slick/gateway"
 	"github.com/1egoman/slick/gateway/slack"
 	"github.com/jarcoal/httpmock"
 	"testing"
-	"errors"
 )
 
 func TestHttpBasedCommands(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
-	for _, test := range []struct{
-		Name string
-		Command string
-		Args []string
-		Url string
+	for _, test := range []struct {
+		Name     string
+		Command  string
+		Args     []string
+		Url      string
 		Response string
-		Error error
+		Error    error
 	}{
 		{
-			Name: `/postinline "post body" works`,
-			Command: "PostInline",
-			Args: []string{"postinline", "post body"},
-			Url: "https://slack.com/api/files.upload?token=token&channels=channel-id&content=post+body",
+			Name:     `/postinline "post body" works`,
+			Command:  "PostInline",
+			Args:     []string{"postinline", "post body"},
+			Url:      "https://slack.com/api/files.upload?token=token&channels=channel-id&content=post+body",
 			Response: `{"ok": true}`,
 		},
 		{
-			Name: `/postinline "post body" "post title" works`,
-			Command: "PostInline",
-			Args: []string{"postinline", "post body", "post title"},
-			Url: "https://slack.com/api/files.upload?token=token&channels=channel-id&content=post+body&title=post+title",
+			Name:     `/postinline "post body" "post title" works`,
+			Command:  "PostInline",
+			Args:     []string{"postinline", "post body", "post title"},
+			Url:      "https://slack.com/api/files.upload?token=token&channels=channel-id&content=post+body&title=post+title",
 			Response: `{"ok": true}`,
 		},
 		{
-			Name: `/postinline alone doesn't work`,
+			Name:    `/postinline alone doesn't work`,
 			Command: "PostInline",
-			Args: []string{"postinline"},
-			Error: errors.New("Please use more arguments. /postinline \"post content\" [\"post title\"]"),
+			Args:    []string{"postinline"},
+			Error:   errors.New("Please use more arguments. /postinline \"post content\" [\"post title\"]"),
 		},
 		{
-			Name: `If /postinline throws underlying errors we know about it`,
-			Command: "PostInline",
-			Args: []string{"postinline", "post body", "post title"},
-			Url: "https://slack.com/api/files.upload?token=token&channels=channel-id&content=post+body&title=post+title",
+			Name:     `If /postinline throws underlying errors we know about it`,
+			Command:  "PostInline",
+			Args:     []string{"postinline", "post body", "post title"},
+			Url:      "https://slack.com/api/files.upload?token=token&channels=channel-id&content=post+body&title=post+title",
 			Response: `{"ok": true, "error": "My Error"}`,
-			Error: errors.New("My Error"),
+			Error:    errors.New("My Error"),
 		},
 	} {
 		// Listen for command response

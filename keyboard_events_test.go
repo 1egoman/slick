@@ -2,12 +2,12 @@ package main_test
 
 import (
 	"fmt"
-	"reflect"
 	. "github.com/1egoman/slick"
 	"github.com/1egoman/slick/gateway"
 	"github.com/1egoman/slick/gateway/slack"
 	"github.com/gdamore/tcell"
 	"github.com/jarcoal/httpmock"
+	"reflect"
 	"testing"
 )
 
@@ -42,9 +42,9 @@ func InitialMessageHistoryState(initialSelectedIndex int, initialBottomItemIndex
 	for i := 1; i <= 15; i++ {
 		s.ActiveConnection().AppendMessageHistory(gateway.Message{
 			Timestamp: i,
-			Sender: &gateway.User{Name: "my-user"},
-			Text:   fmt.Sprintf("Hello world! %d", i),
-			Hash: string(i),
+			Sender:    &gateway.User{Name: "my-user"},
+			Text:      fmt.Sprintf("Hello world! %d", i),
+			Hash:      string(i),
 		})
 	}
 
@@ -225,7 +225,6 @@ func TestHandleKeyboardEvent(t *testing.T) {
 	}
 }
 
-
 //
 // MESSAGE HISTORY MOVEMENT (j, k, gg, G, ctrl-u, ctrl-d, etc...)
 //
@@ -356,7 +355,7 @@ func TestHandleMessageMovementKeyboardEvents(t *testing.T) {
 				httpmock.Activate()
 				httpmock.RegisterResponder(
 					"GET",
-					"https://slack.com/api/channels.history?token=token&channel=" + selectedChannelId + "&count=100",
+					"https://slack.com/api/channels.history?token=token&channel="+selectedChannelId+"&count=100",
 					httpmock.NewStringResponder(200, `{"ok": true, "messages": []}`),
 				)
 			}
@@ -381,21 +380,20 @@ func TestHandleMessageMovementKeyboardEvents(t *testing.T) {
 	}
 }
 
-
 //
 // CreateArgvFromString
 //
 
-var argvTests  = []struct{
-	Input string
+var argvTests = []struct {
+	Input  string
 	Output []string
 }{
-	{`a b c d`, []string{`a`, `b`, `c`, `d`}}, // no quotes or escapes
-	{`a b "c d"`, []string{`a`, `b`, `c d`}}, // quotes at end
-	{`a "b c" d`, []string{`a`, `b c`, `d`}}, // quotes in middle
-	{`a b "c d`, []string{`a`, `b`, `c d`}}, // mismatched quotes
+	{`a b c d`, []string{`a`, `b`, `c`, `d`}},     // no quotes or escapes
+	{`a b "c d"`, []string{`a`, `b`, `c d`}},      // quotes at end
+	{`a "b c" d`, []string{`a`, `b c`, `d`}},      // quotes in middle
+	{`a b "c d`, []string{`a`, `b`, `c d`}},       // mismatched quotes
 	{`a \"b c d`, []string{`a`, `\"b`, `c`, `d`}}, // escaped quote
-	{`a \b c d`, []string{`a`, `\b`, `c`, `d`}}, // backslash in the args
+	{`a \b c d`, []string{`a`, `\b`, `c`, `d`}},   // backslash in the args
 }
 
 func TestCreateArgvFromString(t *testing.T) {
@@ -407,23 +405,21 @@ func TestCreateArgvFromString(t *testing.T) {
 	}
 }
 
-
-
 //
 // keystackQuantityParser
 //
 func TestKeystackQuantityParser(t *testing.T) {
-	for input, output := range map[string]struct{
+	for input, output := range map[string]struct {
 		Quantity int
 		Keystack string
 	}{
-		"5a": {5, "a"},
+		"5a":   {5, "a"},
 		"123a": {123, "a"},
 		"2abc": {2, "abc"},
-		"0a": {0, "a"},
-		"a": {1, "a"},
+		"0a":   {0, "a"},
+		"a":    {1, "a"},
 		"a123": {1, "a123"},
-		"123": {123, ""},
+		"123":  {123, ""},
 	} {
 		quant, stack, err := KeystackQuantityParser([]rune(input))
 		if err != nil {

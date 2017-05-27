@@ -1,10 +1,10 @@
 package main
 
 import (
-	"io"
-	"os"
-	"net/http"
 	"github.com/0xAX/notificator"
+	"io"
+	"net/http"
+	"os"
 )
 
 var imagePath string = "/tmp/slick_notification.png"

@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"strings"
 	"errors"
-	"strconv"
+	"fmt"
 	"io/ioutil"
+	"log"
+	"strconv"
+	"strings"
 
 	"github.com/1egoman/slick/frontend" // The thing to draw to the screen
 	"github.com/1egoman/slick/gateway"  // The thing to interface with slack
@@ -23,7 +23,7 @@ const messageScrollPadding = 7
 func sendTypingIndicator(state *State) error {
 	if state.ActiveConnection() != nil && state.ActiveConnection().SelectedChannel() != nil {
 		outgoing := state.ActiveConnection().Outgoing()
-		if len(outgoing) < cap(outgoing) / 2 { // Only send typing indicator if we have plenty of room in the queue.
+		if len(outgoing) < cap(outgoing)/2 { // Only send typing indicator if we have plenty of room in the queue.
 			state.ActiveConnection().Outgoing() <- gateway.Event{
 				Type: "typing",
 				Data: map[string]interface{}{
@@ -83,7 +83,7 @@ func KeystackQuantityParser(keystack []rune) (int, []rune, error) {
 		}
 		keystack = keystack[1:] // Remove a rune of the quantity from the front of the keystack
 	}
-	
+
 	// Convert the quantity to an int
 	if len(quantityRunes) == 0 {
 		return 1, keystack, nil
@@ -275,7 +275,7 @@ func FetchMessageHistoryScrollback(state *State) error {
 	msgHistory := state.ActiveConnection().MessageHistory()
 	messages, err := state.ActiveConnection().FetchChannelMessages(
 		*state.ActiveConnection().SelectedChannel(), // Channel
-		&(msgHistory[0].Hash), // *string
+		&(msgHistory[0].Hash),                       // *string
 	)
 
 	if err != nil {
@@ -387,7 +387,6 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		enableCommandAutocompletion(state, term, quit)
 		resetKeyStack(state)
 
-
 	//
 	// MOVEMENT UP AND DOWN THROUGH MESSAGES AND ACTIONS ON THE MESSAGES
 	//
@@ -424,7 +423,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 
 	// `gg` will go to the top (oldest) of the message history
 	case state.Mode == "chat" && len(keystackCommand) == 2 && string(keystackCommand) == "gg":
-		if state.ActiveConnection() != nil && len(state.ActiveConnection().MessageHistory()) > 0{
+		if state.ActiveConnection() != nil && len(state.ActiveConnection().MessageHistory()) > 0 {
 			state.SelectedMessageIndex = len(state.ActiveConnection().MessageHistory()) - 1
 			state.BottomDisplayedItem = state.SelectedMessageIndex - messageScrollPadding
 			log.Printf("Selecting last message")
@@ -437,7 +436,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		}
 		resetKeyStack(state)
 
-	// `zz` will center the viewport on a message: 
+	// `zz` will center the viewport on a message:
 	case state.Mode == "chat" && len(keystackCommand) == 2 && string(keystackCommand) == "zz": // Center on a mezzage
 		// Center the selected message
 		if state.ActiveConnection() != nil {
@@ -501,10 +500,9 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 			state.Status.Errorf("No active connection, or message history too short!")
 		}
 		resetKeyStack(state)
-	case state.Mode == "chat" && (
-		string(keystackCommand) == "o" ||
+	case state.Mode == "chat" && (string(keystackCommand) == "o" ||
 		string(keystackCommand) == "c" ||
-		string(keystackCommand) == "l" ): // Message interaction
+		string(keystackCommand) == "l"): // Message interaction
 		// When a user presses a key to interact with a message, handle it.
 		OnMessageInteraction(state, keystackCommand[0], quantity)
 		resetKeyStack(state)
@@ -549,16 +547,16 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		if state.FuzzyPicker.Visible {
 			state.FuzzyPicker.OnSelected(state)
 
-		// If the command starts with a slash or colon, then run it.
-		} else if (state.Command[0] == '/' ||
-		// Make sure the command doesn't start with :emoji: - Fixes #18.
-		emoji.Sprint(state.Command)[0] == ':') {
+			// If the command starts with a slash or colon, then run it.
+		} else if state.Command[0] == '/' ||
+			// Make sure the command doesn't start with :emoji: - Fixes #18.
+			emoji.Sprint(state.Command)[0] == ':' {
 			err := OnCommandExecuted(state, term, quit)
 			if err != nil {
 				log.Fatalf(err.Error())
 			}
 
-		// Otherwise, send as a message.
+			// Otherwise, send as a message.
 		} else if state.Mode == "writ" && state.ActiveConnection() != nil {
 			// Just send a normal message!
 			message := gateway.Message{
@@ -657,7 +655,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 
 	// If the user has scrolled to the end of the list of messages in their active channel, then load more
 	if state.ActiveConnection() != nil &&
-		state.SelectedMessageIndex > len(state.ActiveConnection().MessageHistory()) - 1 - messageScrollPadding &&
+		state.SelectedMessageIndex > len(state.ActiveConnection().MessageHistory())-1-messageScrollPadding &&
 		len(state.ActiveConnection().MessageHistory()) > 0 {
 		go func(state *State) {
 			err := FetchMessageHistoryScrollback(state)

@@ -38,16 +38,16 @@ func render(state *State, term *frontend.TerminalDisplay) {
 			state.Configuration,
 		)
 	} else {
-		term.DrawBlankLines(0, -1 * frontend.BottomPadding)
+		term.DrawBlankLines(0, -1*frontend.BottomPadding)
 		term.DrawInfoPage()
 	}
 
 	if state.ActiveConnection() == nil {
 		term.DrawCommandBar(
-			string(state.Command),                      // The command that the user is typing
-			state.CommandCursorPosition,                // The cursor position
-			nil,                                        // The selected channel
-			"(no active connec)",                       // The selected team name
+			string(state.Command),       // The command that the user is typing
+			state.CommandCursorPosition, // The cursor position
+			nil,                  // The selected channel
+			"(no active connec)", // The selected team name
 			state.Configuration,
 		)
 	} else {
@@ -67,7 +67,6 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		state.Status,             // Status message to display
 		state.Configuration,
 	)
-
 
 	if state.FuzzyPicker.Visible {
 		// Sort items by the search command

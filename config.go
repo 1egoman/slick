@@ -1,15 +1,15 @@
 package main
 
 import (
+	"bytes"
+	"encoding/gob"
+	"errors"
+	"github.com/1egoman/slick/gateway"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
-	"errors"
 	"strings"
-	"bytes"
-	"io/ioutil"
-	"encoding/gob"
-	"github.com/1egoman/slick/gateway"
 )
 
 const CONFIG_FILE_NAME = ".slickrc"
@@ -54,8 +54,8 @@ func GetConfigFileContents() map[string]string {
 //
 
 type SerializedConnection struct {
-	MessageHistory []gateway.Message
-	Channels []gateway.Channel
+	MessageHistory  []gateway.Message
+	Channels        []gateway.Channel
 	SelectedChannel gateway.Channel
 }
 
@@ -71,8 +71,8 @@ func SaveConnection(conn gateway.Connection) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(SerializedConnection{
-		MessageHistory: conn.MessageHistory(),
-		Channels: conn.Channels(),
+		MessageHistory:  conn.MessageHistory(),
+		Channels:        conn.Channels(),
 		SelectedChannel: *conn.SelectedChannel(),
 	})
 
@@ -80,7 +80,7 @@ func SaveConnection(conn gateway.Connection) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(PathToSavedConnections() + conn.Name(), buf.Bytes(), 0777)
+	err = ioutil.WriteFile(PathToSavedConnections()+conn.Name(), buf.Bytes(), 0777)
 	if err != nil {
 		return err
 	}
