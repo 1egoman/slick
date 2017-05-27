@@ -7,6 +7,7 @@ import (
 	"github.com/1egoman/slick/gateway/slack"
 	"github.com/gdamore/tcell"
 	"github.com/jarcoal/httpmock"
+	"net/http"
 	"reflect"
 	"testing"
 )
@@ -222,6 +223,48 @@ func TestHandleKeyboardEvent(t *testing.T) {
 		}
 
 		httpmock.DeactivateAndReset()
+	}
+}
+
+// Sending commands
+func TestEmojiStartingMessageWontMeTreatedAsCommand(t *testing.T) {
+	// Mock slack
+	userSentMessage := false
+	httpmock.Activate()
+	httpmock.RegisterResponder(
+		"GET",
+		"https://slack.com/api/chat.postMessage?token=token&channel=channel-id&text=%3Asmile%3A&link_names=true&parse=full&unfurl_links=true&as_user=true",
+		func(req *http.Request) (*http.Response, error) {
+			userSentMessage = true
+			return httpmock.NewStringResponse(200, `{"ok": true}`), nil
+		},
+	)
+	defer httpmock.DeactivateAndReset()
+
+	quit := make(chan struct{}, 1)
+
+	// Create fresh state for the test.
+	state := NewInitialStateMode("writ")
+	state.Command = []rune(":smile:")
+	state.CommandCursorPosition = 0
+
+	state.Connections = append(state.Connections, gatewaySlack.New("token"))
+	state.SetActiveConnection(len(state.Connections) - 1)
+	state.ActiveConnection().SetSelectedChannel(&gateway.Channel{Id: "channel-id", Name: "general"}) // Set a channel
+
+	initialMessageHistoryLength := len(state.ActiveConnection().MessageHistory())
+
+	// Run the test.
+	HandleKeyboardEvent(
+		tcell.NewEventKey(tcell.KeyEnter, ' ', tcell.ModNone),
+		state,
+		nil,
+		quit,
+	)
+
+	// Verify it passed - a message should have been posted, not a command run.
+	if len(state.ActiveConnection().MessageHistory()) != initialMessageHistoryLength || !userSentMessage {
+		t.Errorf("Test failed.")
 	}
 }
 
