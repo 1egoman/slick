@@ -1,7 +1,7 @@
 package gateway
 
 import (
-	// "log"
+	"log"
 	"strings"
 )
 
@@ -92,11 +92,15 @@ func (p *PrintableMessage) Lines(width int) [][]PrintableMessagePart {
 			//                 "window width"
 			// (done, since the line length < window width)
 
-			wordsInLastMessagePart := strings.Split(part.Content, " ")
-			for len(strings.Join(wordsInLastMessagePart, " ")) > maximumLengthOfLastMessagePart {
-				// Remove one word from the last message part
-				extraWords = append([]string{wordsInLastMessagePart[len(wordsInLastMessagePart) - 1]}, extraWords...)
-				wordsInLastMessagePart = wordsInLastMessagePart[:len(wordsInLastMessagePart)-1]
+			if maximumLengthOfLastMessagePart > 0 { // Ensure that we should remove words. Fixes #9.
+				wordsInLastMessagePart := strings.Split(part.Content, " ")
+				for len(strings.Join(wordsInLastMessagePart, " ")) > maximumLengthOfLastMessagePart {
+					// Remove one word from the last message part
+					log.Printf("len(wordsInLastMessagePart) = %d", len(wordsInLastMessagePart))
+					log.Printf("wordsInLastMessagePart[-1] = %+v", wordsInLastMessagePart[len(wordsInLastMessagePart)-1])
+					extraWords = append([]string{wordsInLastMessagePart[len(wordsInLastMessagePart) - 1]}, extraWords...)
+					wordsInLastMessagePart = wordsInLastMessagePart[:len(wordsInLastMessagePart)-1]
+				}
 			}
 
 			// If the last message part in a line has content to append, then add it. However, if
