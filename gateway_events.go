@@ -166,6 +166,115 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 					}
 				}
 
+			// When a reaction is added to a message, update our local copy.
+			// {"type":"reaction_added","user":"U5F7KC0CQ","item":{"type":"message","channel":"C5FAJ078R","ts":"1495901274.063169"},"reaction":"grinning","item_user":"U5F7KC0CQ","event_ts":"1495912992.765337","ts":"1495912992.765337"}
+			case "reaction_added":
+				// First, fetch a reference to the user that is in the message.
+				if userId, ok := event.Data["user"].(string); ok {
+					user, err := conn.UserById(userId)
+					if err != nil {
+						log.Println(err.Error())
+					} else {
+						log.Println("No error!")
+
+						// Next, fetch the message hash and emoji that was reacted with.
+						if item, ok := event.Data["item"].(map[string]interface{}); ok {
+							hash := item["ts"]
+							if emoji, ok := event.Data["reaction"].(string); ok {
+								// Loop through all messages to find the one that this event
+								// references.
+								messages := conn.MessageHistory()
+								for messageIndex, message := range messages {
+									if message.Hash == hash {
+
+										// Loop through each reaction on the message. If someone
+										// else already reacted with the emoji we reacted with, then
+										// add our username to that reaction.
+										foundReaction := false
+										for reactionIndex, reaction := range message.Reactions {
+											if reaction.Name == emoji {
+												log.Printf("Reaction %s found for %s, so adding user %+v...", emoji, hash, user)
+												messages[messageIndex].Reactions[reactionIndex].Users = append(
+													reaction.Users,
+													user,
+												)
+												foundReaction = true
+												break
+											}
+										}
+
+										// Otherwise, create a new reaction.
+										if !foundReaction {
+											log.Printf("No reaction %s found for %s, so adding...", emoji, hash)
+											messages[messageIndex].Reactions = append(
+												message.Reactions,
+												gateway.Reaction{
+													Name: emoji,
+													Users: []*gateway.User{user},
+												},
+											)
+										}
+									}
+								}
+								conn.SetMessageHistory(messages)
+							}
+						}
+					}
+				}
+
+
+			// When a reactino is removed from a message, update our local copy.
+			// {"type":"reaction_removed","user":"U5F7KC0CQ","item":{"type":"message","channel":"C5FAJ078R","ts":"1495901274.063169"},"reaction":"slightly_smiling_face","item_user":"U5F7KC0CQ","event_ts":"1495927732.484253","ts":"1495927732.484253"}
+			case "reaction_removed":
+				// First, fetch a reference to the user that is in the message.
+				if userId, ok := event.Data["user"].(string); ok {
+					user, err := conn.UserById(userId)
+					if err != nil {
+						log.Printf(err.Error())
+					} else {
+						// Next, fetch the message hash and emoji that was reacted with.
+						if item, ok := event.Data["item"].(map[string]interface{}); ok {
+							hash := item["ts"]
+							if emoji, ok := event.Data["reaction"].(string); ok {
+								// Loop through all messages to find the one that this event
+								// references.
+								messages := conn.MessageHistory()
+								for messageIndex, message := range messages {
+									if message.Hash == hash {
+										// Loop through each reaction on the message. If someone
+										// else already reacted with the emoji we reacted with, then
+										// add our username to that reaction.
+										for reactionIndex, reaction := range message.Reactions {
+											if reaction.Name == emoji {
+												log.Printf("Reaction %s found for %s, so removing user %+v...", emoji, hash, user)
+
+												// Delete every instance of the user in the reaction
+												for userIndex, u := range reaction.Users {
+													if u.Id == user.Id {
+														messages[messageIndex].Reactions[reactionIndex].Users = append(reaction.Users[:userIndex], reaction.Users[userIndex+1:]...)
+													}
+												}
+
+												// If all users have been removed from a reaction,
+												// then remove the reaction.
+												if len(messages[messageIndex].Reactions[reactionIndex].Users) == 0 {
+													log.Printf("Reaction %+v empty, so removing...", messages[messageIndex].Reactions[reactionIndex])
+													messages[messageIndex].Reactions = append(
+														message.Reactions[:reactionIndex],
+														message.Reactions[reactionIndex+1:]...
+													)
+												}
+												break
+											}
+										}
+									}
+								}
+								conn.SetMessageHistory(messages)
+							}
+						}
+					}
+				}
+
 			case "":
 				log.Printf("Unknown event received: %+v", event)
 			}
