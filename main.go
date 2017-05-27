@@ -11,7 +11,7 @@ import (
 
 func main() {
 	// Configure logger to log to file
-	logFile, err := os.Create(path.Join(os.Getenv("HOME"), ".slimelog"))
+	logFile, err := os.Create(path.Join(os.Getenv("HOME"), ".slicklog"))
 	if err != nil {
 		log.Fatal(err)
 	}
