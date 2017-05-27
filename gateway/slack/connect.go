@@ -180,7 +180,6 @@ func (c *SlackConnection) Connect() error {
 
 func (c *SlackConnection) requestConnectionUrl() error {
 	// Make request to slack's api to get websocket credentials
-	// https://api.slack.com/methods/rtm.connect
 	resp, err := http.Get("https://slack.com/api/rtm.start?token=" + c.token)
 
 	if err != nil {

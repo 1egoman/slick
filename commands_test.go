@@ -80,7 +80,7 @@ func TestCommandConnectDisconnect(t *testing.T) {
 	// Listen for command response
 	// FIXME: we should spin up a local websocket server here and not use one on the internet.
 	httpmock.Activate()
-	httpmock.RegisterResponder("GET", "https://slack.com/api/rtm.connect?token=token",
+	httpmock.RegisterResponder("GET", "https://slack.com/api/rtm.start?token=token",
 		httpmock.NewStringResponder(200, `{"ok": true, "url": "wss://echo.websocket.org/?encoding=text"}`))
 
 	// Create initial state
@@ -114,7 +114,7 @@ func TestCommandConnectWithName(t *testing.T) {
 	// Listen for command response
 	// FIXME: we should spin up a local websocket server here and not use one on the internet.
 	httpmock.Activate()
-	httpmock.RegisterResponder("GET", "https://slack.com/api/rtm.connect?token=token",
+	httpmock.RegisterResponder("GET", "https://slack.com/api/rtm.start?token=token",
 		httpmock.NewStringResponder(200, `{"ok": true, "url": "wss://echo.websocket.org/?encoding=text"}`))
 
 	// Create initial state
