@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"log"
 	"strings"
 )
 
@@ -93,13 +92,14 @@ func (p *PrintableMessage) Lines(width int) [][]PrintableMessagePart {
 			// (done, since the line length < window width)
 
 			wordsInLastMessagePart := strings.Split(part.Content, " ")
-			log.Println(">", wordsInLastMessagePart)
-			if len(wordsInLastMessagePart) > 0 { // Ensure that we should remove words. Fixes #9.
-				for len(strings.Join(wordsInLastMessagePart, " ")) > maximumLengthOfLastMessagePart {
-					// Remove one word from the last message part
-					extraWords = append([]string{wordsInLastMessagePart[len(wordsInLastMessagePart) - 1]}, extraWords...)
-					wordsInLastMessagePart = wordsInLastMessagePart[:len(wordsInLastMessagePart)-1]
+			for len(strings.Join(wordsInLastMessagePart, " ")) > maximumLengthOfLastMessagePart {
+				if len(wordsInLastMessagePart) < 1 { // Make sure that there are words to split on. Fixes #9.
+					break
 				}
+
+				// Remove one word from the last message part
+				extraWords = append([]string{wordsInLastMessagePart[len(wordsInLastMessagePart) - 1]}, extraWords...)
+				wordsInLastMessagePart = wordsInLastMessagePart[:len(wordsInLastMessagePart)-1]
 			}
 
 			// If the last message part in a line has content to append, then add it. However, if
@@ -114,7 +114,9 @@ func (p *PrintableMessage) Lines(width int) [][]PrintableMessagePart {
 			// log.Printf("ACTUALLY DRAWING %+v", messageParts)
 
 			// Now that our line is below the max width, it can be drawn, so add it to the array.
-			lines = append(lines, messageParts)
+			if len(messageParts) > 0 {
+				lines = append(lines, messageParts)
+			}
 			// log.Printf("LINES %+v", lines)
 
 			// Then, clear out the message parts that have been used so far.

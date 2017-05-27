@@ -64,11 +64,13 @@ func TestPrintableMessageLines(t *testing.T) {
 				[]PrintableMessagePart{channel("hello world")},
 			},
 		},
+
+		// Test for issue #9
 		{
-			MessageParts: []PrintableMessagePart{plainText("hello world "), plainText("bla")},
-			Width: len("hello world quux"),
+			MessageParts: []PrintableMessagePart{plainText("foo")},
+			Width: -1, // This shouldn't ever happen, I just wanted to get `maximumLengthOfLastMessagePart` < 0
 			WrappedResult: [][]PrintableMessagePart{
-				[]PrintableMessagePart{plainText("hello world "), plainText("bla")},
+				[]PrintableMessagePart{plainText("foo")},
 			},
 		},
 	}{
