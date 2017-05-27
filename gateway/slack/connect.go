@@ -52,6 +52,7 @@ func (c *SlackConnection) Connect() error {
 		for {
 			// Listen for messages, and when some are received, write them to a channel.
 			if n, err = c.conn.Read(msgRaw); err != nil {
+				log.Println("Error reading from websocket:", err)
 				if c.Status() != gateway.DISCONNECTED {
 					log.Println("Error reading from slack socket", err.Error())
 					c.connectionStatus = gateway.FAILED
