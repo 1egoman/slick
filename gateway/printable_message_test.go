@@ -64,6 +64,13 @@ func TestPrintableMessageLines(t *testing.T) {
 				[]PrintableMessagePart{channel("hello world")},
 			},
 		},
+		{
+			MessageParts: []PrintableMessagePart{plainText("hello world "), plainText("bla")},
+			Width: len("hello world quux"),
+			WrappedResult: [][]PrintableMessagePart{
+				[]PrintableMessagePart{plainText("hello world "), plainText("bla")},
+			},
+		},
 	}{
 		pm := NewPrintableMessage(test.MessageParts)
 		lines := pm.Lines(test.Width)
