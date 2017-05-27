@@ -85,6 +85,12 @@ func NewInitialStateMode(mode string) *State {
 			// How many messages should Ctrl-U / Ctrl-D page by?
 			"Message.PageAmount": "12",
 
+			// User online status settings
+			"Message.Sender.OnlinePrefix": "*",
+			"Message.Sender.OnlinePrefixColor": "green::",
+			"Message.Sender.OfflinePrefix": "*",
+			"Message.Sender.OfflinePrefixColor": "silver::",
+
 			"Message.ReactionColor":              "::",
 			"Message.FileColor":                  "::",
 			"Message.SelectedColor":              ":teal:",

@@ -315,7 +315,7 @@ func (term *TerminalDisplay) DrawMessages(
 		// The number of characters from the left that messages should be offset by.
 		messageOffset := 0
 
-		// Draw a relative line number at the end of the line, if requested.
+		// Draw a relative line number at the start of the line, if requested.
 		if _, ok := config["Message.RelativeLine"]; ok {
 			relativeLineNumber := getRelativeLineNumber(selectedMessageIndex, index)
 
@@ -337,31 +337,35 @@ func (term *TerminalDisplay) DrawMessages(
 			messageOffset += relativeLineWidth + 1 // Each line number needs this many columns, +1 padding
 		}
 
-		// Draw the sender and timestamp on the first row of a message
+
+		// Draw the sender, the sender's online status, and the timestamp on the first row of a message
 		term.WriteTextStyle(messageOffset, row-messageRows+1, selectedStyle, timestamp)
 		messageOffset += len(timestamp)+1
+
 		if msg.Sender != nil && userOnline(msg.Sender) {
+			// Render online status for sender
 			term.WriteTextStyle(
 				messageOffset,
 				row-messageRows+1,
-				tcell.StyleDefault.Foreground(tcell.ColorGreen),
-				"*",
+				color.DeSerializeStyleTcell(config["Message.Sender.OnlinePrefixColor"]),
+				config["Message.Sender.OnlinePrefix"],
 			)
-			messageOffset += 1
+			messageOffset += len(config["Message.Sender.OnlinePrefix"])
 		} else if msg.Sender != nil {
+			// Render offline status for sender
 			term.WriteTextStyle(
 				messageOffset,
 				row-messageRows+1,
-				tcell.StyleDefault.Foreground(tcell.ColorSilver),
-				"*",
+				color.DeSerializeStyleTcell(config["Message.Sender.OfflinePrefixColor"]),
+				config["Message.Sender.OfflinePrefix"],
 			)
-			messageOffset += 1
+			messageOffset += len(config["Message.Sender.OfflinePrefix"])
 		}
+
 		term.WriteTextStyle(messageOffset, row-messageRows+1, senderStyle, sender)
 		messageOffset += len(sender)
 
-		// Render reactions and file attachment after message
-		// log.Printf("attach %+v", msg.Attachments)
+		// Render optional reactions, file, or attachment after message
 		if msg.File != nil {
 			accessoryRow += 1
 			renderFile(
