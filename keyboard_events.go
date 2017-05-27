@@ -599,9 +599,12 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		state.CommandCursorPosition += 1
 
 		// Send a message on the outgoing channel that the user is typing.
-		err := sendTypingIndicator(state)
-		if err != nil {
-			state.Status.Errorf(err.Error())
+		// (Only send events when the user is typing a message, not when they try to send a command)
+		if state.Mode == "writ" && !state.FuzzyPicker.Visible {
+			err := sendTypingIndicator(state)
+			if err != nil {
+				state.Status.Errorf(err.Error())
+			}
 		}
 
 	// Backspace removes a character.
