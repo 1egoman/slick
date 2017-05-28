@@ -29,10 +29,11 @@
 			"revisionTime": "2015-12-15T21:28:35Z"
 		},
 		{
-			"checksumSHA1": "nw10PFGUNxJ0YXzLr+zF/ToR7EE=",
+			"checksumSHA1": "QgBL6Hgvtog7bQ9ydHY85JjugdI=",
+			"origin": "github.com/1egoman/tcell",
 			"path": "github.com/gdamore/tcell",
-			"revision": "44772c121bb7838819d3ba4a7e84c0c2d617328e",
-			"revisionTime": "2016-12-05T23:37:37Z"
+			"revision": "5c29e8902cfb039a1248a197f2f57a351e5960b7",
+			"revisionTime": "2017-05-28T00:14:05Z"
 		},
 		{
 			"checksumSHA1": "yHSEfaBkSMHzZUwnKr7m8L3x4gA=",
@@ -53,10 +54,10 @@
 			"revisionTime": "2017-02-23T22:10:28Z"
 		},
 		{
-			"checksumSHA1": "MNkKJyk2TazKMJYbal5wFHybpyA=",
+			"checksumSHA1": "cJE7dphDlam/i7PhnsyosNWtbd4=",
 			"path": "github.com/mattn/go-runewidth",
-			"revision": "14207d285c6c197daabb5c9793d63e7af9ab2d50",
-			"revisionTime": "2017-02-01T02:35:40Z"
+			"revision": "97311d9f7767e3d6f422ea06661bc2c7a19e8a5d",
+			"revisionTime": "2017-05-10T07:48:58Z"
 		},
 		{
 			"checksumSHA1": "h/HMhokbQHTdLUbruoBBTee+NYw=",
@@ -103,20 +104,20 @@
 		{
 			"checksumSHA1": "Mr4ur60bgQJnQFfJY0dGtwWwMPE=",
 			"path": "golang.org/x/text/encoding",
-			"revision": "a9a820217f98f7c8a207ec1e45a874e1fe12c478",
-			"revisionTime": "2017-04-20T13:36:16Z"
+			"revision": "19e51611da83d6be54ddafce4a4af510cb3e9ea4",
+			"revisionTime": "2017-04-21T08:09:44Z"
 		},
 		{
 			"checksumSHA1": "7kYqxy64WhMjFIFZgN7tJ3lbKxM=",
 			"path": "golang.org/x/text/encoding/internal/identifier",
-			"revision": "a9a820217f98f7c8a207ec1e45a874e1fe12c478",
-			"revisionTime": "2017-04-20T13:36:16Z"
+			"revision": "19e51611da83d6be54ddafce4a4af510cb3e9ea4",
+			"revisionTime": "2017-04-21T08:09:44Z"
 		},
 		{
 			"checksumSHA1": "ziMb9+ANGRJSSIuxYdRbA+cDRBQ=",
 			"path": "golang.org/x/text/transform",
-			"revision": "a9a820217f98f7c8a207ec1e45a874e1fe12c478",
-			"revisionTime": "2017-04-20T13:36:16Z"
+			"revision": "19e51611da83d6be54ddafce4a4af510cb3e9ea4",
+			"revisionTime": "2017-04-21T08:09:44Z"
 		}
 	],
 	"rootPath": "github.com/1egoman/slick"

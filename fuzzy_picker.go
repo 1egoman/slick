@@ -35,9 +35,13 @@ type FuzzySorter struct {
 	StringItems []string
 	Needle      string
 	OnSelected  func(*State)
+	OnResort  func(*State)
 
 	SelectedItem int
 	BottomItem   int
+
+	// Number of characters at the start of the search string to disregard
+	ThrowAwayPrefix int
 }
 
 func (p FuzzySorter) Len() int {
@@ -56,7 +60,11 @@ func (p FuzzySorter) Swap(i, j int) {
 }
 
 func (p FuzzySorter) Rank(item string) int {
-	return strings.Index(item, p.Needle)
+	if len(p.Needle) < p.ThrowAwayPrefix {
+		return strings.Index(item, p.Needle)
+	} else {
+		return strings.Index(item, p.Needle[p.ThrowAwayPrefix:])
+	}
 }
 
 // Show the fuzzy picker
@@ -66,12 +74,18 @@ func (p *FuzzySorter) Show(callbackOnSelected func(*State)) {
 	p.SelectedItem = 0
 	p.BottomItem = 0
 }
+func (p *FuzzySorter) Resort(callbackOnResort func(*State)) {
+	p.OnResort = callbackOnResort
+}
 
 // Hide the fuzzy picker and reset to initial state
 func (p *FuzzySorter) Hide() {
 	p.Visible = false
 	p.Items = []interface{}{}
 	p.StringItems = []string{}
+	p.ThrowAwayPrefix = 0
+	p.OnSelected = nil
+	p.OnResort = nil
 }
 
 type FuzzyPickerConnectionChannelItem struct {

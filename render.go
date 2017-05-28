@@ -69,19 +69,26 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		state.Configuration,
 	)
 
+	log.Println("FUZZY PICKER", state.FuzzyPicker)
 	if state.FuzzyPicker.Visible {
 		// Sort items by the search command
 		state.FuzzyPicker.Needle = string(state.Command)
 		sort.Sort(state.FuzzyPicker)
+		if state.FuzzyPicker.OnResort != nil {
+			state.FuzzyPicker.OnResort(state)
+		}
 
 		// Render all connections and channels
-		term.DrawFuzzyPicker(
-			state.FuzzyPicker.StringItems,
-			state.FuzzyPicker.SelectedItem,
-			state.FuzzyPicker.BottomItem,
-			state.FuzzyPicker.Rank,
-			state.Configuration,
-		)
+		// Check visibility again, because `OnResort` may have hid the fuzzy picker.
+		if state.FuzzyPicker.Visible {
+			term.DrawFuzzyPicker(
+				state.FuzzyPicker.StringItems,
+				state.FuzzyPicker.SelectedItem,
+				state.FuzzyPicker.BottomItem,
+				state.FuzzyPicker.Rank,
+				state.Configuration,
+			)
+		}
 	}
 
 	term.Render()

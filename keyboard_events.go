@@ -43,6 +43,7 @@ func enableCommandAutocompletion(state *State, term *frontend.TerminalDisplay, q
 	// As the user types, show them above the command bar in a fuzzy picker.
 	if !state.FuzzyPicker.Visible {
 		// When the user presses enter, run the slash command the user typed.
+		state.FuzzyPicker.Hide()
 		state.FuzzyPicker.Show(func(state *State) {
 			err := OnCommandExecuted(state, term, quit)
 			if err != nil {
@@ -270,6 +271,66 @@ func resetKeyStack(state *State) {
 	state.KeyStack = []rune{}
 }
 
+// When fuzzy searching th build a path, find the next set of possiblities for the next path part.
+func calculateNextPathChoices(state *State) error {
+	pathCommand := string(state.Command)
+	for {
+		beginningOfPath := strings.LastIndex(pathCommand, " ")
+		// Make sure the space isn't at the end of the command
+		if beginningOfPath == len(pathCommand) {
+			continue
+		}
+		// Make sure that we didn't go through all spaces in the command
+		if beginningOfPath == -1 {
+			break
+		}
+		// After the space, is there a slash?
+		if pathCommand[beginningOfPath+1] != '/' {
+			pathCommand = pathCommand[:beginningOfPath] // If not, try again from before the indexed space
+			continue
+		}
+
+		// At this point, all tests have been passed. Get the path and use it for the rest of the calculations
+		if beginningOfPath == -1 {
+			// If no space, then the path is at the start of the phrase.
+			beginningOfPath = 0
+		} else {
+			// Otherwise, start on the slash after the space.
+			beginningOfPath += 1
+		}
+		path := pathCommand[beginningOfPath:]
+		state.FuzzyPicker.ThrowAwayPrefix = beginningOfPath + 1
+		log.Println("PATH =", path)
+		
+		// Construct a list of items to show in the fuzzy picker
+		files, err := ioutil.ReadDir(path)
+		if err != nil {
+			return err
+		}
+
+		for _, file := range files {
+			state.FuzzyPicker.Items = append(state.FuzzyPicker.Items, nil)
+
+			var displayName string
+			if file.IsDir() {
+				displayName = file.Name()+"/" // (directories end in a slash)
+			} else {
+				displayName = file.Name()
+			}
+			state.FuzzyPicker.StringItems = append(
+				state.FuzzyPicker.StringItems,
+				displayName,
+			)
+		}
+
+		log.Println("ITEMS =", state.FuzzyPicker.StringItems)
+
+		break
+	}
+
+	return nil
+}
+
 // Fetch more messages when the user has scrolled to the end of the previous message list.
 func FetchMessageHistoryScrollback(state *State) error {
 	msgHistory := state.ActiveConnection().MessageHistory()
@@ -327,6 +388,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == 'p':
 		if state.Mode != "pick" {
 			state.Mode = "pick"
+			state.FuzzyPicker.Hide()
 			state.FuzzyPicker.Show(OnPickConnectionChannel)
 
 			var items []interface{}
@@ -386,6 +448,58 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		state.CommandCursorPosition = 1
 		enableCommandAutocompletion(state, term, quit)
 		resetKeyStack(state)
+
+	//
+	// TAB-COMPLETE FOR FILE PATHS
+	//
+	case state.Mode == "writ" && ev.Key() == tcell.KeyTab && len(state.Command) > 0 && state.CommandCursorPosition > 0 && state.Command[state.CommandCursorPosition-1] == '/':
+		state.Mode = "pick"
+
+		// Open the fuzzy picker
+		state.FuzzyPicker.Hide()
+		state.FuzzyPicker.Show(func (state *State) {
+			render(state, term)
+		})
+		state.FuzzyPicker.Resort(func (state *State) {
+			// If the command moves before the starting point, hide the fuzzy picker.
+			if len(state.Command) <= state.FuzzyPicker.ThrowAwayPrefix - 1 {
+				log.Println("User moved into already chosen path, aborting...")
+				state.FuzzyPicker.Hide()
+				state.Mode = "writ"
+				return
+			}
+
+			// Once we get to a new path segment, update with new values.
+			if len(state.Command) - 1 > state.FuzzyPicker.ThrowAwayPrefix - 1 && state.Command[len(state.Command) - 1] == '/' {
+				// Clear items, and recalculate
+				state.FuzzyPicker.Items = []interface{}{}
+				state.FuzzyPicker.StringItems = []string{}
+				state.FuzzyPicker.SelectedItem = 0
+				err := calculateNextPathChoices(state)
+				if err != nil {
+					state.Status.Errorf("Error fetching path items: %s", err.Error())
+					state.FuzzyPicker.Hide()
+					state.Mode = "writ"
+					return
+				}
+
+				state.FuzzyPicker.ThrowAwayPrefix = state.CommandCursorPosition
+				log.Printf("Got contents of new directory %s", state.Command[state.FuzzyPicker.ThrowAwayPrefix:])
+			}
+
+			// User just typed a space? Then close the fuzzy picker.
+			if state.Command[len(state.Command) - 1] == ' ' {
+				state.FuzzyPicker.Hide()
+				state.Mode = "writ"
+			}
+		})
+
+		// Calculate initial items to populate fuzzy picker with.
+		err := calculateNextPathChoices(state)
+		if err != nil {
+			return err
+		}
+
 
 	//
 	// MOVEMENT UP AND DOWN THROUGH MESSAGES AND ACTIONS ON THE MESSAGES
@@ -585,6 +699,13 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		state.CommandCursorPosition = 0
 		state.Mode = "chat"
 		state.FuzzyPicker.Hide()
+
+	case state.Mode == "pick" && state.FuzzyPicker.Visible && len(state.FuzzyPicker.StringItems) > 0 && ev.Key() == tcell.KeyTab:
+		// Pressing tab when in the fuzzy picker takes the displayed item and updates the command
+		// bar with its contents
+		displayItem := state.FuzzyPicker.StringItems[state.FuzzyPicker.SelectedItem]
+		state.Command = append(state.Command[:state.FuzzyPicker.ThrowAwayPrefix], []rune(displayItem)...)
+		state.CommandCursorPosition = len(state.Command)
 
 	//
 	// EDITING OPERATIONS
