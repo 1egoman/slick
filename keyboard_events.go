@@ -311,7 +311,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 	}
 
 	quantity, keystackCommand, _ := KeystackQuantityParser(state.KeyStack)
-	log.Println(state.KeyStack)
+	log.Printf("Keystack: %v", state.KeyStack)
 	switch {
 	case ev.Key() == tcell.KeyCtrlC:
 		log.Println("CLOSE QUIT 1")
