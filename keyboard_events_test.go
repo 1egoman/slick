@@ -8,6 +8,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/jarcoal/httpmock"
 	"net/http"
+	"io/ioutil"
 	"reflect"
 	"testing"
 )
@@ -226,48 +227,6 @@ func TestHandleKeyboardEvent(t *testing.T) {
 	}
 }
 
-// Sending commands
-func TestEmojiStartingMessageWontMeTreatedAsCommand(t *testing.T) {
-	// Mock slack
-	userSentMessage := false
-	httpmock.Activate()
-	httpmock.RegisterResponder(
-		"GET",
-		"https://slack.com/api/chat.postMessage?token=token&channel=channel-id&text=%3Asmile%3A&link_names=true&parse=full&unfurl_links=true&as_user=true",
-		func(req *http.Request) (*http.Response, error) {
-			userSentMessage = true
-			return httpmock.NewStringResponse(200, `{"ok": true}`), nil
-		},
-	)
-	defer httpmock.DeactivateAndReset()
-
-	quit := make(chan struct{}, 1)
-
-	// Create fresh state for the test.
-	state := NewInitialStateMode("writ")
-	state.Command = []rune(":smile:")
-	state.CommandCursorPosition = 0
-
-	state.Connections = append(state.Connections, gatewaySlack.New("token"))
-	state.SetActiveConnection(len(state.Connections) - 1)
-	state.ActiveConnection().SetSelectedChannel(&gateway.Channel{Id: "channel-id", Name: "general"}) // Set a channel
-
-	initialMessageHistoryLength := len(state.ActiveConnection().MessageHistory())
-
-	// Run the test.
-	HandleKeyboardEvent(
-		tcell.NewEventKey(tcell.KeyEnter, ' ', tcell.ModNone),
-		state,
-		nil,
-		quit,
-	)
-
-	// Verify it passed - a message should have been posted, not a command run.
-	if len(state.ActiveConnection().MessageHistory()) != initialMessageHistoryLength || !userSentMessage {
-		t.Errorf("Test failed.")
-	}
-}
-
 //
 // MESSAGE HISTORY MOVEMENT (j, k, gg, G, ctrl-u, ctrl-d, etc...)
 //
@@ -475,5 +434,194 @@ func TestKeystackQuantityParser(t *testing.T) {
 		if string(stack) != output.Keystack {
 			t.Errorf("Error: keystack doesn't match up for %s, %s != %s", input, string(stack), output.Keystack)
 		}
+	}
+}
+
+// Sending commands
+func TestEmojiStartingMessageWontMeTreatedAsCommand(t *testing.T) {
+	// Mock slack
+	userSentMessage := false
+	httpmock.Activate()
+	httpmock.RegisterResponder(
+		"GET",
+		"https://slack.com/api/chat.postMessage?token=token&channel=channel-id&text=%3Asmile%3A&link_names=true&parse=full&unfurl_links=true&as_user=true",
+		func(req *http.Request) (*http.Response, error) {
+			userSentMessage = true
+			return httpmock.NewStringResponse(200, `{"ok": true}`), nil
+		},
+	)
+	defer httpmock.DeactivateAndReset()
+
+	quit := make(chan struct{}, 1)
+
+	// Create fresh state for the test.
+	state := NewInitialStateMode("writ")
+	state.Command = []rune(":smile:")
+	state.CommandCursorPosition = 0
+
+	state.Connections = append(state.Connections, gatewaySlack.New("token"))
+	state.SetActiveConnection(len(state.Connections) - 1)
+	state.ActiveConnection().SetSelectedChannel(&gateway.Channel{Id: "channel-id", Name: "general"}) // Set a channel
+
+	initialMessageHistoryLength := len(state.ActiveConnection().MessageHistory())
+
+	// Run the test.
+	HandleKeyboardEvent(
+		tcell.NewEventKey(tcell.KeyEnter, ' ', tcell.ModNone),
+		state,
+		nil,
+		quit,
+	)
+
+	// Verify it passed - a message should have been posted, not a command run.
+	if len(state.ActiveConnection().MessageHistory()) != initialMessageHistoryLength || !userSentMessage {
+		t.Errorf("Test failed.")
+	}
+}
+
+// Path auto complete:
+// This is the functionality that lets users hit tab after typing a slash and get auto complete for
+// those paths, ie I type / and hit tab, I'll see `etc`, `var`, `tmp`, etc...
+func TestPathAutoComplete(t *testing.T) {
+	quit := make(chan struct{}, 1)
+
+	// A directory in `/`
+	// TODO: look into fs mocking solutions
+	directory := "var"
+
+	// Create fresh state for the test.
+	state := NewInitialStateMode("writ")
+	state.Command = []rune("foo bar baz /") // Trying to autocomplete a file path
+	state.CommandCursorPosition = len(state.Command)
+
+	// Press tab, and verify that the fuzzy picker is filled with a bunch of items.
+	HandleKeyboardEvent(
+		tcell.NewEventKey(tcell.KeyTab, ' ', tcell.ModNone),
+		state,
+		nil,
+		quit,
+	)
+	state.FuzzyPicker.OnResort(state)
+
+	if state.Mode != "pick" {
+		t.Errorf("Not picking file path after presing / and tab")
+	}
+
+	// Get all files and folders in "/"
+	files, err := ioutil.ReadDir("/")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	var fileItems []interface{}
+	for _, file := range files {
+		fileItems = append(fileItems, file.Name())
+	}
+
+	// Verify that's what's in the fuzzy picker right now
+	if !reflect.DeepEqual(state.FuzzyPicker.Items, fileItems) {
+		t.Errorf("%+v != %+v", state.FuzzyPicker.Items, fileItems)
+	}
+
+	// Type out that directory name
+	for _, char := range directory {
+		HandleKeyboardEvent(
+			tcell.NewEventKey(tcell.KeyRune, char, tcell.ModNone),
+			state,
+			nil,
+			quit,
+		)
+		state.FuzzyPicker.OnResort(state)
+	}
+
+	// Then type a slash
+	HandleKeyboardEvent(
+		tcell.NewEventKey(tcell.KeyRune, '/', tcell.ModNone),
+		state,
+		nil,
+		quit,
+	)
+	state.FuzzyPicker.OnResort(state)
+
+	// Then verify that the fuzzy picker has everything in that directory
+	files, err = ioutil.ReadDir("/"+directory)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	fileItems = nil // Clear slice
+	for _, file := range files {
+		fileItems = append(fileItems, file.Name())
+	}
+	if !reflect.DeepEqual(state.FuzzyPicker.Items, fileItems) {
+		t.Errorf("%+v != %+v", state.FuzzyPicker.Items, fileItems)
+	}
+
+	// Press tab to autocomplete the selected item
+	commandLength := len(state.Command)
+	HandleKeyboardEvent(
+		tcell.NewEventKey(tcell.KeyTab, ' ', tcell.ModNone),
+		state,
+		nil,
+		quit,
+	)
+	state.FuzzyPicker.OnResort(state)
+
+	if commandLength >= len(state.Command) {
+		t.Errorf("Tab to autocomplete file path did nothing")
+	}
+
+	// Finally, press backspace until the most recent slash.
+	for state.Command[len(state.Command)-1] != '/' {
+		HandleKeyboardEvent(
+			tcell.NewEventKey(tcell.KeyBackspace, ' ', tcell.ModNone),
+			state,
+			nil,
+			quit,
+		)
+		state.FuzzyPicker.OnResort(state)
+	}
+
+	// And make sure that the fuzzy picker has gone away
+	if state.Mode != "writ" {
+		t.Errorf("Fuzzy picker didn't dissapear when previous slash was removed.")
+	}
+
+
+
+	// Reset the command. Trying another test
+	state.Command = []rune("foo bar baz /") // Trying to autocomplete a file path
+	state.CommandCursorPosition = len(state.Command)
+
+	// Press tab to start autocomplete
+	HandleKeyboardEvent(
+		tcell.NewEventKey(tcell.KeyTab, ' ', tcell.ModNone),
+		state,
+		nil,
+		quit,
+	)
+	state.FuzzyPicker.OnResort(state)
+
+	// Move back into `/etc`
+	for _, char := range directory {
+		HandleKeyboardEvent(
+			tcell.NewEventKey(tcell.KeyRune, char, tcell.ModNone),
+			state,
+			nil,
+			quit,
+		)
+		state.FuzzyPicker.OnResort(state)
+	}
+
+	// Press space
+	HandleKeyboardEvent(
+		tcell.NewEventKey(tcell.KeyRune, ' ', tcell.ModNone),
+		state,
+		nil,
+		quit,
+	)
+	state.FuzzyPicker.OnResort(state)
+
+	// Make sure fuzzy picker is gone
+	if state.Mode != "writ" {
+		t.Errorf("Didn't remove file path picker after pressing space")
 	}
 }

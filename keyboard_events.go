@@ -309,7 +309,7 @@ func calculateNextPathChoices(state *State) error {
 		}
 
 		for _, file := range files {
-			state.FuzzyPicker.Items = append(state.FuzzyPicker.Items, nil)
+			state.FuzzyPicker.Items = append(state.FuzzyPicker.Items, file.Name())
 
 			var displayName string
 			if file.IsDir() {

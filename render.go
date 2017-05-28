@@ -69,7 +69,6 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		state.Configuration,
 	)
 
-	log.Println("FUZZY PICKER", state.FuzzyPicker)
 	if state.FuzzyPicker.Visible {
 		// Sort items by the search command
 		state.FuzzyPicker.Needle = string(state.Command)
