@@ -7,6 +7,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"os"
 
 	"github.com/1egoman/slick/frontend" // The thing to draw to the screen
 	"github.com/1egoman/slick/gateway"  // The thing to interface with slack
@@ -271,66 +272,6 @@ func resetKeyStack(state *State) {
 	state.KeyStack = []rune{}
 }
 
-// When fuzzy searching th build a path, find the next set of possiblities for the next path part.
-func calculateNextPathChoices(state *State) error {
-	pathCommand := string(state.Command)
-	for {
-		beginningOfPath := strings.LastIndex(pathCommand, " ")
-		// Make sure the space isn't at the end of the command
-		if beginningOfPath == len(pathCommand) {
-			continue
-		}
-		// Make sure that we didn't go through all spaces in the command
-		if beginningOfPath == -1 {
-			break
-		}
-		// After the space, is there a slash?
-		if pathCommand[beginningOfPath+1] != '/' {
-			pathCommand = pathCommand[:beginningOfPath] // If not, try again from before the indexed space
-			continue
-		}
-
-		// At this point, all tests have been passed. Get the path and use it for the rest of the calculations
-		if beginningOfPath == -1 {
-			// If no space, then the path is at the start of the phrase.
-			beginningOfPath = 0
-		} else {
-			// Otherwise, start on the slash after the space.
-			beginningOfPath += 1
-		}
-		path := pathCommand[beginningOfPath:]
-		state.FuzzyPicker.ThrowAwayPrefix = beginningOfPath + 1
-		log.Println("PATH =", path)
-		
-		// Construct a list of items to show in the fuzzy picker
-		files, err := ioutil.ReadDir(path)
-		if err != nil {
-			return err
-		}
-
-		for _, file := range files {
-			state.FuzzyPicker.Items = append(state.FuzzyPicker.Items, file.Name())
-
-			var displayName string
-			if file.IsDir() {
-				displayName = file.Name()+"/" // (directories end in a slash)
-			} else {
-				displayName = file.Name()
-			}
-			state.FuzzyPicker.StringItems = append(
-				state.FuzzyPicker.StringItems,
-				displayName,
-			)
-		}
-
-		log.Println("ITEMS =", state.FuzzyPicker.StringItems)
-
-		break
-	}
-
-	return nil
-}
-
 // Fetch more messages when the user has scrolled to the end of the previous message list.
 func FetchMessageHistoryScrollback(state *State) error {
 	msgHistory := state.ActiveConnection().MessageHistory()
@@ -475,12 +416,67 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 				state.FuzzyPicker.Items = []interface{}{}
 				state.FuzzyPicker.StringItems = []string{}
 				state.FuzzyPicker.SelectedItem = 0
-				err := calculateNextPathChoices(state)
-				if err != nil {
-					state.Status.Errorf("Error fetching path items: %s", err.Error())
-					state.FuzzyPicker.Hide()
-					state.Mode = "writ"
-					return
+				state.FuzzyPicker.BottomItem = 0
+				pathCommand := string(state.Command)
+				for {
+					beginningOfPath := strings.LastIndex(pathCommand, " ")
+					// Make sure the space isn't at the end of the command
+					if beginningOfPath == len(pathCommand) {
+						continue
+					}
+					// Make sure that we didn't go through all spaces in the command
+					if beginningOfPath == -1 {
+						break
+					}
+					// After the space, is there a slash?
+					if index := strings.Index(pathCommand[beginningOfPath+1:], "/"); index > 1 {
+						pathCommand = pathCommand[:beginningOfPath] // If not, try again from before the indexed space
+						continue
+					}
+
+					// At this point, all tests have been passed. Get the path and use it for the rest of the calculations
+					if beginningOfPath == -1 {
+						// If no space, then the path is at the start of the phrase.
+						beginningOfPath = 0
+					} else {
+						// Otherwise, start on the slash after the space.
+						beginningOfPath += 1
+					}
+
+					path := pathCommand[beginningOfPath:]
+
+					// Does the path have a tilda before it? If so, replace with $HOME.
+					if len(path) > 0 && path[0] == '~' {
+						path = os.Getenv("HOME") + path[1:]
+					}
+
+					state.FuzzyPicker.ThrowAwayPrefix = beginningOfPath + 1
+					
+					// Construct a list of items to show in the fuzzy picker
+					files, err := ioutil.ReadDir(path)
+					if err != nil {
+						state.Status.Errorf("Error fetching path items: %s", err.Error())
+						state.FuzzyPicker.Hide()
+						state.Mode = "writ"
+						return
+					}
+
+					for _, file := range files {
+						state.FuzzyPicker.Items = append(state.FuzzyPicker.Items, file.Name())
+
+						var displayName string
+						if file.IsDir() {
+							displayName = file.Name()+"/" // (directories end in a slash)
+						} else {
+							displayName = file.Name()
+						}
+						state.FuzzyPicker.StringItems = append(
+							state.FuzzyPicker.StringItems,
+							displayName,
+						)
+					}
+
+					break
 				}
 
 				state.FuzzyPicker.ThrowAwayPrefix = state.CommandCursorPosition
@@ -493,12 +489,6 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 				state.Mode = "writ"
 			}
 		})
-
-		// Calculate initial items to populate fuzzy picker with.
-		err := calculateNextPathChoices(state)
-		if err != nil {
-			return err
-		}
 
 
 	//

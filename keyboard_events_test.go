@@ -588,7 +588,7 @@ func TestPathAutoComplete(t *testing.T) {
 
 
 	// Reset the command. Trying another test
-	state.Command = []rune("foo bar baz /") // Trying to autocomplete a file path
+	state.Command = []rune("foo bar baz ./") // Trying to autocomplete a file path in $HOME
 	state.CommandCursorPosition = len(state.Command)
 
 	// Press tab to start autocomplete
@@ -600,8 +600,8 @@ func TestPathAutoComplete(t *testing.T) {
 	)
 	state.FuzzyPicker.OnResort(state)
 
-	// Move back into `/etc`
-	for _, char := range directory {
+	// Move into `./color`
+	for _, char := range "color" {
 		HandleKeyboardEvent(
 			tcell.NewEventKey(tcell.KeyRune, char, tcell.ModNone),
 			state,
@@ -609,6 +609,19 @@ func TestPathAutoComplete(t *testing.T) {
 			quit,
 		)
 		state.FuzzyPicker.OnResort(state)
+	}
+
+	// Press slash
+	HandleKeyboardEvent(tcell.NewEventKey(tcell.KeyRune, '/', tcell.ModNone), state, nil, quit)
+	state.FuzzyPicker.OnResort(state)
+
+	// Press tab to autocomplete
+	HandleKeyboardEvent(tcell.NewEventKey(tcell.KeyTab, ' ', tcell.ModNone), state, nil, quit)
+	state.FuzzyPicker.OnResort(state)
+
+	// Verify that there are items in `./color`
+	if len(state.FuzzyPicker.Items) == 0 {
+		t.Errorf("Fuzzy picker items empty")
 	}
 
 	// Press space
