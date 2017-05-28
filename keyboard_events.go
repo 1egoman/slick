@@ -425,7 +425,10 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 						continue
 					}
 					// Make sure that we didn't go through all spaces in the command
+					// If we did, then the slash isn't in a good spot. Cancel the fuzzy picker.
 					if beginningOfPath == -1 {
+						state.FuzzyPicker.Hide()
+						state.Mode = "writ"
 						break
 					}
 					// After the space, is there a slash?
@@ -476,11 +479,10 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 						)
 					}
 
+					state.FuzzyPicker.ThrowAwayPrefix = state.CommandCursorPosition
+					log.Printf("Got contents of new directory %s", state.Command[state.FuzzyPicker.ThrowAwayPrefix:])
 					break
 				}
-
-				state.FuzzyPicker.ThrowAwayPrefix = state.CommandCursorPosition
-				log.Printf("Got contents of new directory %s", state.Command[state.FuzzyPicker.ThrowAwayPrefix:])
 			}
 
 			// User just typed a space? Then close the fuzzy picker.

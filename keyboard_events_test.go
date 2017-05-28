@@ -587,7 +587,9 @@ func TestPathAutoComplete(t *testing.T) {
 
 
 
+	//
 	// Reset the command. Trying another test
+	//
 	state.Command = []rune("foo bar baz ./") // Trying to autocomplete a file path in $HOME
 	state.CommandCursorPosition = len(state.Command)
 
@@ -636,5 +638,26 @@ func TestPathAutoComplete(t *testing.T) {
 	// Make sure fuzzy picker is gone
 	if state.Mode != "writ" {
 		t.Errorf("Didn't remove file path picker after pressing space")
+	}
+
+
+	//
+	// Reset the command. Trying another test
+	//
+	state.Command = []rune("badprefix/") // Trying to autocomplete a file path that is bad
+	state.CommandCursorPosition = len(state.Command)
+
+	// Press tab to start autocomplete
+	HandleKeyboardEvent(
+		tcell.NewEventKey(tcell.KeyTab, ' ', tcell.ModNone),
+		state,
+		nil,
+		quit,
+	)
+	state.FuzzyPicker.OnResort(state)
+
+	// Make sure fuzzy picker didn't pop up with bad prefix.
+	if state.Mode != "writ" {
+		t.Errorf("Autocompleted bad prefixed path")
 	}
 }
