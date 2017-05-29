@@ -112,7 +112,7 @@ func OnMessageInteraction(state *State, key rune, quantity int) {
 			}
 		case 'l': // Open link in attachment
 			err := GetCommand("OpenAttachmentLink").Handler(
-				[]string{fmt.Sprintf("%d", quantity)},
+				[]string{"__INTERNAL__", fmt.Sprintf("%d", quantity)},
 				state,
 			)
 			if err != nil {

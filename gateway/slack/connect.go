@@ -40,18 +40,11 @@ func (c *SlackConnection) Connect() error {
 	if err != nil {
 		return err // Panic when cannot talk to messaging servers
 	}
-
-	// When function exits, close the socket
-	defer func() {
-		c.conn.Close()
-		c.connectionStatus = gateway.DISCONNECTED
-	}()
 	log.Printf("Slack connection %s made!", c.Team().Name)
 
 	// When messages are received, add them to the incoming buffer.
 	go func(incoming chan gateway.Event) {
 		var msgRaw = make([]byte, 512)
-		var msg map[string]interface{}
 		var n int
 		var messageBuffer []byte
 
@@ -91,6 +84,7 @@ func (c *SlackConnection) Connect() error {
 			messageBuffer = append(messageBuffer, msgRaw[:n]...)
 
 			// Decode message buffer into a struct so that we can check message type later
+			var msg map[string]interface{}
 			err = json.Unmarshal(messageBuffer, &msg)
 			if err == nil {
 				// Clear the message buffer after unpacking

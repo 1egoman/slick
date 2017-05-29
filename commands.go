@@ -391,8 +391,8 @@ var COMMANDS = []Command{
 		Handler: func(args []string, state *State) error {
 			var attachmentIndex int
 			var err error
-			if len(args) == 1 {
-				attachmentIndex, err = strconv.Atoi(args[0])
+			if len(args) == 2 {
+				attachmentIndex, err = strconv.Atoi(args[1])
 				if err != nil {
 					return err
 				}
