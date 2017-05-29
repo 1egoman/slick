@@ -582,7 +582,7 @@ func TestPathAutoComplete(t *testing.T) {
 
 	// And make sure that the fuzzy picker has gone away
 	if state.Mode != "writ" {
-		t.Errorf("Fuzzy picker didn't dissapear when previous slash was removed.")
+		t.Errorf("Fuzzy picker didn't dissapear when previous slash was removed. command = "+string(state.Command))
 	}
 
 
