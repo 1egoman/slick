@@ -39,6 +39,9 @@ type Connection interface {
 	// Fetch user that is authenticated
 	Self() *User
 
+	// Call a user
+	Call(*Channel) (*Call, error)
+
 	// Given a channel, fetch the message history for that channel. Optionally, provide a timestamp
 	// to fetch all messages after.
 	FetchChannelMessages(Channel, *string) ([]Message, error)
@@ -165,3 +168,8 @@ const (
 	CONNECTED
 	FAILED      // When the gateway errors, then move to this state.
 )
+
+type Call struct {
+	Id string `json:"id"`
+	RedirectUrl string `json:"url"`
+}

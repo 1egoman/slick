@@ -590,3 +590,36 @@ func (c *SlackConnection) Status() gateway.ConnectionStatus {
 func (c *SlackConnection) TypingUsers() *gateway.TypingUsers {
 	return c.typingUsers;
 }
+
+func (c *SlackConnection) Call(channel *gateway.Channel) (*gateway.Call, error) {
+	if channel == nil {
+		return nil, errors.New("Channel is nil!")
+	}
+
+	team := c.Team()
+	if team == nil {
+		return nil, errors.New("Team is nil!")
+	}
+
+	url := "https://slack.com/api/screenhero.rooms.create"
+	url += "?token=" + c.token
+	url += "&channel=" + channel.Id
+	url += "&regions=east|west|eu|ap"
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	log.Println(string(body))
+	var slackCallBuffer struct {
+		Room string `json:"room_id"`
+	}
+	json.Unmarshal(body, &slackCallBuffer)
+
+	return &gateway.Call{
+		Id: slackCallBuffer.Room,
+		RedirectUrl: fmt.Sprintf("https://%s.slack.com/call/%s", team.Domain, slackCallBuffer.Room),
+	}, nil
+}

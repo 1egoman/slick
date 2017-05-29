@@ -1,15 +1,16 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"io/ioutil"
+	"errors"
 	"log"
-	"net/http"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
+
+	"io/ioutil"
+	"os/exec"
+	"net/http"
 
 	"github.com/1egoman/slick/frontend"
 	"github.com/1egoman/slick/gateway"
@@ -530,6 +531,29 @@ var COMMANDS = []Command{
 	},
 
 	//
+	// SLACK CALLS
+	//
+	{
+		Type:         NATIVE,
+		Name:         "Call",
+		Permutations: []string{"call"},
+		Arguments:    "[help]",
+		Description:  "Start a call",
+		Handler: func(args []string, state *State) error {
+			selectedChannel := state.ActiveConnection().SelectedChannel()
+			if selectedChannel == nil {
+				return errors.New("No channel is selected!")
+			}
+			call, err := state.ActiveConnection().Call(selectedChannel)
+			if err != nil {
+				return err
+			}
+			open.Run(call.RedirectUrl)
+			return nil
+		},
+	},
+
+	//
 	// BUILT INTO SLACK
 	//
 	{
@@ -544,13 +568,6 @@ var COMMANDS = []Command{
 		Name:         "Away",
 		Permutations: []string{"away"},
 		Arguments:    "Toggle your away status",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Call",
-		Permutations: []string{"call"},
-		Arguments:    "[help]",
-		Description:  "Start a call",
 	},
 	{
 		Type:         SLACK,
@@ -626,12 +643,6 @@ var COMMANDS = []Command{
 		Permutations: []string{"shrug"},
 		Arguments:    "[your message]",
 		Description:  "Appends ¯\\_(ツ)_/¯ to your message",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Star",
-		Permutations: []string{"star"},
-		Arguments:    "Stars the current channel or conversation",
 	},
 	{
 		Type:         SLACK,

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -273,6 +274,27 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 							}
 						}
 					}
+				}
+
+
+			// {"type":"screenhero_invite","caller":"U5F7KC0CQ","room":"R5JDPS9LG","cameras_on":0,"screenshares_on":0,"event_ts":"1495994686.437753"}
+			case "screenhero_invite":
+				if room, ok := event.Data["room"].(string); ok {
+					conn.AppendMessageHistory(gateway.Message{
+						Sender: nil,
+						Timestamp: int(time.Now().Unix()),
+						Text: "Started call.",
+						Attachments: &[]gateway.Attachment{
+							gateway.Attachment{
+								Title: "Join",
+								TitleLink: fmt.Sprintf("https://%s.slack.com/call/%s", conn.Team().Domain, room),
+								Color: "#FF0000",
+								Fields: []gateway.AttachmentField{},
+							},
+						},
+					})
+				} else {
+					log.Println("No notification for call because bad or missing `room` key in event.Data.")
 				}
 
 			case "":

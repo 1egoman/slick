@@ -1,13 +1,14 @@
 package gatewaySlack
 
 import (
+	"strings"
+	"log"
+	"errors"
+
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
-
-	"strings"
 
 	"github.com/1egoman/slick/gateway"
 )
@@ -25,6 +26,7 @@ func sendSlashCommand(c *SlackConnection, message gateway.Message, channel *gate
 
 	body, _ := ioutil.ReadAll(resp.Body)
 	var commandResponse struct {
+		Ok bool `json:"ok"`
 		Response string `json:"response"`
 	}
 	err = json.Unmarshal(body, &commandResponse)
@@ -33,13 +35,13 @@ func sendSlashCommand(c *SlackConnection, message gateway.Message, channel *gate
 	}
 
 	// Return a response message if the response
-	if len(commandResponse.Response) > 0 {
+	if commandResponse.Ok {
 		return &gateway.Message{
 			Text:   commandResponse.Response,
 			Sender: &gateway.User{Name: "slackbot"},
 		}, nil
 	} else {
-		return nil, nil
+		return nil, errors.New(string(body))
 	}
 }
 
