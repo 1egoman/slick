@@ -570,7 +570,7 @@ func TestPathAutoComplete(t *testing.T) {
 	}
 
 	// Finally, press backspace until the most recent slash.
-	for state.Command[len(state.Command)-1] != '/' {
+	for len(state.Command) > len("foo bar baz") {
 		HandleKeyboardEvent(
 			tcell.NewEventKey(tcell.KeyBackspace, ' ', tcell.ModNone),
 			state,
