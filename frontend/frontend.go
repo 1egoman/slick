@@ -16,7 +16,7 @@ const BottomPadding = 2 // The amount of lines at the bottom of the window to le
 
 // Given a string to be displayed in the ui, tokenize the message and return a *PrintableMessage
 // that contains each part as a token.
-func parseSlackMessage(text string, printableMessage *gateway.PrintableMessage, UserById func(string) (*gateway.User, error)) error {
+func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, UserById func(string) (*gateway.User, error)) error {
 	text = emoji.Sprintf(text)                         // Emojis
 	text = strings.Replace(text, "&amp;", "&", -1)
 	text = strings.Replace(text, "&gt;", ">", -1)
@@ -102,6 +102,7 @@ func parseSlackMessage(text string, printableMessage *gateway.PrintableMessage, 
 			parts = append(parts, gateway.PrintableMessagePart{
 				Type: tagType,
 				Content: content,
+				Metadata: metadata,
 			})
 
 			// Reset the start indicies

@@ -118,6 +118,14 @@ func OnMessageInteraction(state *State, key rune, quantity int) {
 			if err != nil {
 				state.Status.Errorf(err.Error())
 			}
+		case 'm': // Open link in message
+			err := GetCommand("OpenMessageLink").Handler(
+				[]string{"__INTERNAL__", fmt.Sprintf("%d", quantity)},
+				state,
+			)
+			if err != nil {
+				state.Status.Errorf(err.Error())
+			}
 		}
 	} else {
 		state.Status.Printf("No message selected.")
@@ -608,7 +616,8 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		resetKeyStack(state)
 	case state.Mode == "chat" && (string(keystackCommand) == "o" ||
 		string(keystackCommand) == "c" ||
-		string(keystackCommand) == "l"): // Message interaction
+		string(keystackCommand) == "l" ||
+		string(keystackCommand) == "m"): // Message interaction
 		// When a user presses a key to interact with a message, handle it.
 		OnMessageInteraction(state, keystackCommand[0], quantity)
 		resetKeyStack(state)

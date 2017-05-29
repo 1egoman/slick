@@ -278,7 +278,7 @@ func (term *TerminalDisplay) DrawMessages(
 		// Take our message text and convert it to message parts
 		// TODO: cache this somehow. It's slow as hell.
 		var parsedMessage gateway.PrintableMessage
-		err := parseSlackMessage(msg.Text, &parsedMessage, userById)
+		err := ParseSlackMessage(msg.Text, &parsedMessage, userById)
 		if err != nil {
 			// FIXME: Probably should return an error here? And not return 0?
 			log.Println("Error making message print-worthy (probably because fetching user id => user name failed):", err)

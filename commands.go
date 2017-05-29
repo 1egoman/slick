@@ -419,6 +419,58 @@ var COMMANDS = []Command{
 			return nil
 		},
 	},
+	{
+		Name:         "OpenMessageLink",
+		Type:         NATIVE,
+		Description: "Opens a link within a message.",
+		Permutations: []string{"openmessagelink", "openmsglk", "olk"},
+		Arguments: "<link index>",
+		Handler: func(args []string, state *State) error {
+			var err error
+			var linkIndex int
+
+			if len(args) == 2 {
+				linkIndex, err = strconv.Atoi(args[1])
+				if err != nil {
+					return err
+				}
+			} else {
+				return errors.New("Please use more arguments. /openmessagelink <link index>")
+			}
+
+			if state.ActiveConnection() == nil {
+				return errors.New("No active connection!")
+			}
+
+			log.Printf("Open link with index %d", linkIndex)
+
+			selectedMessageIndex := len(state.ActiveConnection().MessageHistory()) - 1 - state.SelectedMessageIndex
+			selectedMessage := state.ActiveConnection().MessageHistory()[selectedMessageIndex]
+
+			var parsedMessage gateway.PrintableMessage
+			err = frontend.ParseSlackMessage(selectedMessage.Text, &parsedMessage, state.ActiveConnection().UserById)
+			if err != nil {
+				return errors.New("Error making message print-worthy (probably because fetching user id => user name failed): "+err.Error())
+			}
+
+			// Find the link of the given index that we are looking for.
+			linkCount := 0
+			for _, part := range parsedMessage.Parts() {
+				if part.Type == gateway.PRINTABLE_MESSAGE_LINK {
+					linkCount += 1
+					if linkCount == linkIndex {
+						if href, ok := part.Metadata["Href"].(string); ok {
+							open.Run(href)
+						} else {
+							return errors.New("Link href (in metadata) isn't a string!")
+						}
+					}
+				}
+			}
+
+			return nil
+		},
+	},
 
 	//
 	// MOVE FORWARD / BACKWARD MESSAGES
@@ -547,13 +599,6 @@ var COMMANDS = []Command{
 	},
 	{
 		Type:         SLACK,
-		Name:         "Call",
-		Permutations: []string{"call"},
-		Arguments:    "[help]",
-		Description:  "Start a call",
-	},
-	{
-		Type:         SLACK,
 		Name:         "Dnd",
 		Permutations: []string{"dnd"},
 		Arguments:    "[some description of time]",
@@ -626,12 +671,6 @@ var COMMANDS = []Command{
 		Permutations: []string{"shrug"},
 		Arguments:    "[your message]",
 		Description:  "Appends ¯\\_(ツ)_/¯ to your message",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Star",
-		Permutations: []string{"star"},
-		Arguments:    "Stars the current channel or conversation",
 	},
 	{
 		Type:         SLACK,
