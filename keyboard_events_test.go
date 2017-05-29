@@ -569,22 +569,6 @@ func TestPathAutoComplete(t *testing.T) {
 		t.Errorf("Tab to autocomplete file path did nothing")
 	}
 
-	// Finally, press backspace until the most recent slash.
-	for len(state.Command) > len("foo bar baz") {
-		HandleKeyboardEvent(
-			tcell.NewEventKey(tcell.KeyBackspace, ' ', tcell.ModNone),
-			state,
-			nil,
-			quit,
-		)
-		state.FuzzyPicker.OnResort(state)
-	}
-
-	// And make sure that the fuzzy picker has gone away
-	if state.Mode != "writ" {
-		t.Errorf("Fuzzy picker didn't dissapear when previous slash was removed. command = "+string(state.Command))
-	}
-
 
 
 	//
