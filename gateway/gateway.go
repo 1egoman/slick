@@ -101,20 +101,21 @@ type Team struct {
 }
 
 type ChannelType int
+
 const (
-	TYPE_CHANNEL ChannelType = iota // A channel is a open conversation between a large number of people
-	TYPE_DIRECT_MESSAGE             // A DM is a message connection between two people
-	TYPE_GROUP_DIRECT_MESSAGE       // A Group DM is a DM between greater than two people
+	TYPE_CHANNEL              ChannelType = iota // A channel is a open conversation between a large number of people
+	TYPE_DIRECT_MESSAGE                          // A DM is a message connection between two people
+	TYPE_GROUP_DIRECT_MESSAGE                    // A Group DM is a DM between greater than two people
 )
 
 // A Channel is a independant stream of messages sent by users.
 type Channel struct {
-	Id         string `json:"id"`
-	Name       string `json:"name"`
-	Creator    *User  `json:"creator"`
-	Created    int    `json:"created"`
-	IsMember   bool   `json:"is_member"`
-	IsArchived bool   `json:"is_archived"`
+	Id         string      `json:"id"`
+	Name       string      `json:"name"`
+	Creator    *User       `json:"creator"`
+	Created    int         `json:"created"`
+	IsMember   bool        `json:"is_member"`
+	IsArchived bool        `json:"is_archived"`
 	SubType    ChannelType `json:"subtype"`
 }
 
@@ -136,20 +137,20 @@ type File struct {
 
 // A Message is a blob of text or media sent by a User within a Channel.
 type Message struct {
-	Sender    *User      `json:"sender"`
-	Text      string     `json:"text"`
-	Reactions []Reaction `json:"reactions"`
-	Hash      string     `json:"hash"`
-	Timestamp int        `json:"timestamp"` // This value is in seconds!
-	File      *File      `json:"file,omitempty"`
+	Sender      *User         `json:"sender"`
+	Text        string        `json:"text"`
+	Reactions   []Reaction    `json:"reactions"`
+	Hash        string        `json:"hash"`
+	Timestamp   int           `json:"timestamp"` // This value is in seconds!
+	File        *File         `json:"file,omitempty"`
 	Attachments *[]Attachment `json:"attachments,omitempty"`
 }
 
 type Attachment struct {
-	Title string
+	Title     string
 	TitleLink string
-	Color string
-	Fields []AttachmentField
+	Color     string
+	Fields    []AttachmentField
 }
 
 type AttachmentField struct {
@@ -159,9 +160,10 @@ type AttachmentField struct {
 }
 
 type ConnectionStatus int
+
 const (
 	DISCONNECTED ConnectionStatus = iota
 	CONNECTING
 	CONNECTED
-	FAILED      // When the gateway errors, then move to this state.
+	FAILED // When the gateway errors, then move to this state.
 )

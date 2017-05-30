@@ -18,8 +18,8 @@ const (
 )
 
 type PrintableMessagePart struct {
-	Type PrintableMessagePartType
-	Content string
+	Type     PrintableMessagePartType
+	Content  string
 	Metadata map[string]interface{}
 }
 
@@ -28,7 +28,7 @@ type PrintableMessage struct {
 
 	// Running `Lines(width)` takes a while, and it's pure. Memoize it for speed.
 	linesCacheWidth int
-	linesCache [][]PrintableMessagePart
+	linesCache      [][]PrintableMessagePart
 }
 
 func NewPrintableMessage(parts []PrintableMessagePart) PrintableMessage {
@@ -77,7 +77,7 @@ func (p *PrintableMessage) Lines(width int) [][]PrintableMessagePart {
 
 		pm := PrintableMessage{parts: messageParts}
 		if pm.Length() > width {
-			pm = PrintableMessage{parts: messageParts[:len(messageParts) - 1]}
+			pm = PrintableMessage{parts: messageParts[:len(messageParts)-1]}
 			maximumLengthOfLastMessagePart := width - pm.Length()
 
 			// log.Printf("WANTED TO DRAW %+v BUT INSTEAD ONLY DID %d", messageParts, maximumLengthOfLastMessagePart)
@@ -98,7 +98,7 @@ func (p *PrintableMessage) Lines(width int) [][]PrintableMessagePart {
 				}
 
 				// Remove one word from the last message part
-				extraWords = append([]string{wordsInLastMessagePart[len(wordsInLastMessagePart) - 1]}, extraWords...)
+				extraWords = append([]string{wordsInLastMessagePart[len(wordsInLastMessagePart)-1]}, extraWords...)
 				wordsInLastMessagePart = wordsInLastMessagePart[:len(wordsInLastMessagePart)-1]
 			}
 
@@ -126,7 +126,7 @@ func (p *PrintableMessage) Lines(width int) [][]PrintableMessagePart {
 			// make it fit.
 			if len(extraWords) > 0 {
 				messageParts = append(messageParts, PrintableMessagePart{
-					Type: part.Type,
+					Type:    part.Type,
 					Content: strings.Join(extraWords, " "),
 				})
 				extraWords = make([]string, 0)

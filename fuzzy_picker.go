@@ -35,7 +35,7 @@ type FuzzySorter struct {
 	StringItems []string
 	Needle      string
 	OnSelected  func(*State)
-	OnResort  func(*State)
+	OnResort    func(*State)
 
 	SelectedItem int
 	BottomItem   int

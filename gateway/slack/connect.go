@@ -2,11 +2,11 @@ package gatewaySlack
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
-	"errors"
 
 	"github.com/1egoman/slick/gateway"
 	"golang.org/x/net/websocket"
@@ -188,19 +188,19 @@ func (c *SlackConnection) requestConnectionUrl() error {
 	// Decode json body.
 	body, _ := ioutil.ReadAll(resp.Body)
 	var connectionBuffer struct {
-		Ok   bool         `json:"ok"`
-		Url  string       `json:"url"`
-		Team gateway.Team `json:"team"`
-		Self gateway.User `json:"self"`
+		Ok    bool         `json:"ok"`
+		Url   string       `json:"url"`
+		Team  gateway.Team `json:"team"`
+		Self  gateway.User `json:"self"`
 		Users []struct {
-			Id string `json:"id"`
+			Id       string `json:"id"`
 			Presence string `json:"presence"`
 		} `json:"users"`
 	}
 	err = json.Unmarshal(body, &connectionBuffer)
 	if err != nil {
 		log.Println("Slack response: " + string(body))
-		return errors.New("Slack connection error: "+string(body))
+		return errors.New("Slack connection error: " + string(body))
 	}
 
 	// Add response data to struct

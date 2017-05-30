@@ -2,15 +2,15 @@ package frontend
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"time"
-	"log"
 
 	"github.com/gdamore/tcell"
 	"github.com/kyokomi/emoji" // convert :smile: to unicode
 
-	"github.com/1egoman/slick/gateway" // The thing to interface with slack
 	"github.com/1egoman/slick/color"
+	"github.com/1egoman/slick/gateway" // The thing to interface with slack
 )
 
 // Given an array of reactions and a row to render them on, render them.
@@ -138,7 +138,7 @@ func renderAttachment(
 
 	// Draw the attachment title.
 	term.WriteTextStyle(
-		leftOffset + 2,
+		leftOffset+2,
 		row,
 		tcell.StyleDefault,
 		title,
@@ -161,16 +161,16 @@ func renderAttachment(
 
 	// Draw each attachment field.
 	for index, field := range attachment.Fields {
-		term.WriteTextStyle(leftOffset, row + index + 1, attachmentColor, "|")
+		term.WriteTextStyle(leftOffset, row+index+1, attachmentColor, "|")
 		term.WriteTextStyle(
-			leftOffset + 2,
-			row + index + 1,
+			leftOffset+2,
+			row+index+1,
 			color.DeSerializeStyleTcell(config["Message.Attachment.FieldTitleColor"]),
 			field.Title+":",
 		)
 		term.WriteTextStyle(
-			leftOffset + 2 + len(field.Title) + 2,
-			row + index + 1,
+			leftOffset+2+len(field.Title)+2,
+			row+index+1,
 			color.DeSerializeStyleTcell(config["Message.Attachment.FieldValueColor"]),
 			field.Value,
 		)
@@ -289,7 +289,7 @@ func (term *TerminalDisplay) DrawMessages(
 		messageColumnWidth := width - prefixWidth
 		parsedMessageLines := parsedMessage.Lines(messageColumnWidth)
 		messageRows := len(parsedMessageLines)
-		accessoryRow := row         // The row to start rendering "message accessories" on
+		accessoryRow := row // The row to start rendering "message accessories" on
 		if len(msg.Text) == 0 {
 			accessoryRow -= 1
 		}
@@ -337,10 +337,9 @@ func (term *TerminalDisplay) DrawMessages(
 			messageOffset += relativeLineWidth + 1 // Each line number needs this many columns, +1 padding
 		}
 
-
 		// Draw the sender, the sender's online status, and the timestamp on the first row of a message
 		term.WriteTextStyle(messageOffset, row-messageRows+1, selectedStyle, timestamp)
-		messageOffset += len(timestamp)+1
+		messageOffset += len(timestamp) + 1
 
 		if msg.Sender != nil && userOnline(msg.Sender) {
 			// Render online status for sender
@@ -403,7 +402,6 @@ func (term *TerminalDisplay) DrawMessages(
 			)
 		}
 
-
 		// Render the sender and the message
 		for lineIndex, line := range parsedMessageLines {
 			totalWidth := 0
@@ -424,7 +422,7 @@ func (term *TerminalDisplay) DrawMessages(
 
 				// Render the next message part
 				term.WriteTextStyle(
-					messageOffset + 1 + totalWidth,
+					messageOffset+1+totalWidth,
 					row-messageRows+lineIndex+1,
 					style,
 					part.Content,

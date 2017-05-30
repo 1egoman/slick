@@ -14,8 +14,8 @@ const (
 
 type Status struct {
 	Message string
-	Type StatusType
-	Show bool
+	Type    StatusType
+	Show    bool
 }
 
 func (s *Status) Printf(format string, args ...interface{}) {

@@ -1,16 +1,17 @@
 package color
 
 import (
-	"fmt"
-	"strings"
 	"errors"
+	"fmt"
 	"github.com/gdamore/tcell"
+	"strings"
 )
 
 type StyleFormattingMask int
+
 const (
 	STYLE_PLAIN StyleFormattingMask = 0
-	STYLE_BOLD = 1 << iota
+	STYLE_BOLD                      = 1 << iota
 	STYLE_UNDERLINE
 )
 
@@ -21,10 +22,10 @@ const (
 // SerializeStyle("red", "#FF00FF", STYLE_PLAIN) // => "red:#FF00FF:"
 func SerializeStyle(foreground string, background string, formatting StyleFormattingMask) string {
 	formattingString := ""
-	if formatting & STYLE_BOLD > 0 {
+	if formatting&STYLE_BOLD > 0 {
 		formattingString += "B"
 	}
-	if formatting & STYLE_UNDERLINE > 0 {
+	if formatting&STYLE_UNDERLINE > 0 {
 		formattingString += "U"
 	}
 
@@ -57,7 +58,7 @@ func DeSerializeStyle(styleString string) (string, string, StyleFormattingMask, 
 }
 
 // Deserialize a serialized style string into a tcell.Style.
-func DeSerializeStyleTcell(styleString string) (tcell.Style) {
+func DeSerializeStyleTcell(styleString string) tcell.Style {
 	foreground, background, mask, err := DeSerializeStyle(styleString)
 
 	// If we fail, use default style.
@@ -74,5 +75,5 @@ func DeSerializeStyleTcell(styleString string) (tcell.Style) {
 		style = style.Background(tcell.GetColor(background))
 	}
 
-	return style.Bold(mask & STYLE_BOLD > 0).Underline(mask & STYLE_UNDERLINE > 0)
+	return style.Bold(mask&STYLE_BOLD > 0).Underline(mask&STYLE_UNDERLINE > 0)
 }

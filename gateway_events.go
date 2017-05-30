@@ -209,7 +209,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 											messages[messageIndex].Reactions = append(
 												message.Reactions,
 												gateway.Reaction{
-													Name: emoji,
+													Name:  emoji,
 													Users: []*gateway.User{user},
 												},
 											)
@@ -221,7 +221,6 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 						}
 					}
 				}
-
 
 			// When a reactino is removed from a message, update our local copy.
 			// {"type":"reaction_removed","user":"U5F7KC0CQ","item":{"type":"message","channel":"C5FAJ078R","ts":"1495901274.063169"},"reaction":"slightly_smiling_face","item_user":"U5F7KC0CQ","event_ts":"1495927732.484253","ts":"1495927732.484253"}
@@ -261,7 +260,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 													log.Printf("Reaction %+v empty, so removing...", messages[messageIndex].Reactions[reactionIndex])
 													messages[messageIndex].Reactions = append(
 														message.Reactions[:reactionIndex],
-														message.Reactions[reactionIndex+1:]...
+														message.Reactions[reactionIndex+1:]...,
 													)
 												}
 												break

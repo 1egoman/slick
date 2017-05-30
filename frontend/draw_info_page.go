@@ -24,6 +24,6 @@ func (term *TerminalDisplay) DrawInfoPage() {
 
 	for index, row := range rows {
 		xPos := (width - len(row)) / 2
-		term.WriteText(xPos, firstRowPosition + index, row)
+		term.WriteText(xPos, firstRowPosition+index, row)
 	}
 }

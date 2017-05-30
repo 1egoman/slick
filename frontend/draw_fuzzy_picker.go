@@ -1,9 +1,9 @@
 package frontend
 
 import (
-	"strings"
-	"github.com/gdamore/tcell"
 	"github.com/1egoman/slick/color"
+	"github.com/gdamore/tcell"
+	"strings"
 )
 
 // The amount of rows at max that can be in the fuzzy picker.
@@ -13,7 +13,7 @@ func (term *TerminalDisplay) DrawFuzzyPicker(
 	preItems []string,
 	selectedIndex int,
 	bottomDisplayedItem int,
-	rank func(string)int,
+	rank func(string) int,
 	config map[string]string,
 ) {
 	width, height := term.screen.Size()
@@ -25,7 +25,6 @@ func (term *TerminalDisplay) DrawFuzzyPicker(
 			items = append(items, item)
 		}
 	}
-
 
 	// If there's more than one page of items, only show one page's worth.
 	if len(items) > FuzzyPickerMaxSize {
@@ -66,8 +65,8 @@ func (term *TerminalDisplay) DrawFuzzyPicker(
 		// If a tab is present, then the part after the tab should on on the right
 		tabIndex := strings.Index(item, "\t")
 		if tabIndex >= 0 {
-			term.WriteTextStyle(width - (len(item) - tabIndex) - 1, row, style, item[tabIndex:]) // right bit
-			term.WriteTextStyle(2, row, style, item[:tabIndex]) // left bit
+			term.WriteTextStyle(width-(len(item)-tabIndex)-1, row, style, item[tabIndex:]) // right bit
+			term.WriteTextStyle(2, row, style, item[:tabIndex])                            // left bit
 		} else {
 			term.WriteTextStyle(2, row, style, item)
 		}

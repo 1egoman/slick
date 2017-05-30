@@ -1,10 +1,10 @@
 package gatewaySlack
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
-	"errors"
 
 	"encoding/json"
 	"io/ioutil"
@@ -16,14 +16,14 @@ import (
 
 func New(token string) *SlackConnection {
 	return &SlackConnection{
-		token: token,
+		token:    token,
 		nickname: nil,
 	}
 }
 func NewWithName(nickname string, token string) *SlackConnection {
 	return &SlackConnection{
-		token: token,
-		nickname: &nickname,
+		token:     token,
+		nickname:  &nickname,
 		userCache: make(map[string]gateway.User),
 
 		// Which users are typing?
@@ -36,10 +36,10 @@ func NewWithName(nickname string, token string) *SlackConnection {
 
 // SlackConnection meets the connection interface.
 type SlackConnection struct {
-	url   string
-	token string
-	nickname *string
-	conn  *websocket.Conn
+	url              string
+	token            string
+	nickname         *string
+	conn             *websocket.Conn
 	connectionStatus gateway.ConnectionStatus
 
 	// Create two message channels, one for incoming messages and one for outgoing messages.
@@ -118,8 +118,6 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 		})
 	}
 
-
-
 	// FETCH IMs
 	log.Printf("Fetching list of ims for team %s", c.Team().Name)
 	resp, err = http.Get("https://slack.com/api/im.list?token=" + c.token)
@@ -130,9 +128,9 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 	body, _ = ioutil.ReadAll(resp.Body)
 	var slackImBuffer struct {
 		Ims []struct {
-			Id         string `json:"id"`
-			User       string `json:"user"`
-			Created    int    `json:"created"`
+			Id      string `json:"id"`
+			User    string `json:"user"`
+			Created int    `json:"created"`
 		} `json:"ims"`
 	}
 	json.Unmarshal(body, &slackImBuffer)
@@ -153,9 +151,6 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 			IsArchived: false,
 		})
 	}
-
-
-
 
 	// FETCH MPIMs
 	log.Printf("Fetching list of mp ims for team %s", c.Team().Name)
@@ -192,7 +187,6 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 			IsArchived: mpim.IsArchived,
 		})
 	}
-
 
 	// Set the internal state of the component.
 	// This is used by the `connect` step to prelaod a list of channels for the fuzzy picker
@@ -235,7 +229,7 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel, startTs 
 	}
 	var slackMessageBuffer struct {
 		Messages []map[string]interface{} `json:"messages"`
-		hasMore bool `json:"has_more"`
+		hasMore  bool                     `json:"has_more"`
 	}
 	if err = json.Unmarshal(body, &slackMessageBuffer); err != nil {
 		return nil, err
@@ -382,13 +376,13 @@ type RawSlackMessage struct {
 		} `json:"reactions"`
 	} `json:"file,omitempty"`
 	Attachments []struct {
-		Title string `json:"title"`
+		Title     string `json:"title"`
 		TitleLink string `json:"title_link"`
-		Color string `json:"color"`
-		Fields []struct {
+		Color     string `json:"color"`
+		Fields    []struct {
 			Title string `json:"title"`
 			Value string `json:"value"`
-			Short bool `json:"short"`
+			Short bool   `json:"short"`
 		} `json:"fields"`
 	} `json:"attachments"`
 }
@@ -482,9 +476,9 @@ func (c *SlackConnection) ParseMessage(
 		for _, attach := range slackMessageBuffer.Attachments {
 			// Create attachment
 			a := gateway.Attachment{
-				Title: attach.Title,
+				Title:     attach.Title,
 				TitleLink: attach.TitleLink,
-				Color: attach.Color,
+				Color:     attach.Color,
 			}
 
 			// Add fields to attachment
@@ -513,12 +507,12 @@ func (c *SlackConnection) ParseMessage(
 	}
 
 	return &gateway.Message{
-		Sender:    sender,
-		Text:      slackMessageBuffer.Text,
-		Reactions: reactions,
-		Timestamp: int(timestamp), // this value is in seconds!
-		Hash:      slackMessageBuffer.Ts,
-		File:      file,
+		Sender:      sender,
+		Text:        slackMessageBuffer.Text,
+		Reactions:   reactions,
+		Timestamp:   int(timestamp), // this value is in seconds!
+		Hash:        slackMessageBuffer.Ts,
+		File:        file,
 		Attachments: &attachments,
 	}, nil
 }
@@ -526,7 +520,7 @@ func (c *SlackConnection) ParseMessage(
 func (c *SlackConnection) ToggleMessageReaction(message gateway.Message, reaction string) error {
 	// Has the active user reacted to this message?
 	messageReactedTo := false
-	Outer:
+Outer:
 	for _, r := range message.Reactions {
 		if r.Name == reaction {
 			for _, user := range r.Users {
@@ -572,7 +566,7 @@ func (c *SlackConnection) ToggleMessageReaction(message gateway.Message, reactio
 
 	// Verify the response
 	var response struct {
-		Ok bool `json:"ok"`
+		Ok    bool   `json:"ok"`
 		Error string `json:"error"`
 	}
 	json.Unmarshal(body, &response)
@@ -588,5 +582,5 @@ func (c *SlackConnection) Status() gateway.ConnectionStatus {
 }
 
 func (c *SlackConnection) TypingUsers() *gateway.TypingUsers {
-	return c.typingUsers;
+	return c.typingUsers
 }

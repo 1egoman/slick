@@ -1,11 +1,11 @@
 package gatewaySlack
 
 import (
-	"log"
-	"errors"
 	"bytes"
-	"mime/multipart"
+	"errors"
 	"io"
+	"log"
+	"mime/multipart"
 
 	"encoding/json"
 	"io/ioutil"
@@ -36,14 +36,14 @@ func (c *SlackConnection) PostText(title string, content string) error {
 	body, err = ioutil.ReadAll(resp.Body)
 
 	var fileBuffer struct {
-		Ok bool `json:"ok"`
+		Ok    bool   `json:"ok"`
 		Error string `json:"error"`
-		File struct {
-			Id string `json:"id"`
+		File  struct {
+			Id       string `json:"id"`
 			Mimetype string `json:"mimetype"`
-			Mode string `json:"snippet"`
-			Public string `json:"is_public"`
-			Preview string `json:"preview"`
+			Mode     string `json:"snippet"`
+			Public   string `json:"is_public"`
+			Preview  string `json:"preview"`
 		} `json:"file"`
 	}
 
@@ -69,27 +69,27 @@ func (c *SlackConnection) PostBinary(title string, filename string, content []by
 		url += "&title=" + title
 	}
 
-    // Prepare a form that you will submit to that URL.
-    var b bytes.Buffer
-    w := multipart.NewWriter(&b)
-    // Add your image file
-    fw, err := w.CreateFormFile("file", filename)
-    if err != nil {
-        return err
-    }
-    if _, err = io.Copy(fw, bytes.NewBuffer(content)); err != nil {
-        return err
-    }
-    // Don't forget to close the multipart writer.
-    // If you don't close it, your request will be missing the terminating boundary.
-    w.Close()
+	// Prepare a form that you will submit to that URL.
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	// Add your image file
+	fw, err := w.CreateFormFile("file", filename)
+	if err != nil {
+		return err
+	}
+	if _, err = io.Copy(fw, bytes.NewBuffer(content)); err != nil {
+		return err
+	}
+	// Don't forget to close the multipart writer.
+	// If you don't close it, your request will be missing the terminating boundary.
+	w.Close()
 
-    req, err := http.NewRequest("POST", url, &b)
-    // Don't forget to set the content type, this will contain the boundary.
-    req.Header.Set("Content-Type", w.FormDataContentType())
+	req, err := http.NewRequest("POST", url, &b)
+	// Don't forget to set the content type, this will contain the boundary.
+	req.Header.Set("Content-Type", w.FormDataContentType())
 
-    client := &http.Client{}
-    _, err = client.Do(req)
+	client := &http.Client{}
+	_, err = client.Do(req)
 	if err != nil {
 		return err
 	}

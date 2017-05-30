@@ -7,8 +7,8 @@ import (
 	"github.com/1egoman/slick/gateway/slack"
 	"github.com/gdamore/tcell"
 	"github.com/jarcoal/httpmock"
-	"net/http"
 	"io/ioutil"
+	"net/http"
 	"reflect"
 	"testing"
 )
@@ -543,7 +543,7 @@ func TestPathAutoComplete(t *testing.T) {
 	state.FuzzyPicker.OnResort(state)
 
 	// Then verify that the fuzzy picker has everything in that directory
-	files, err = ioutil.ReadDir("/"+directory)
+	files, err = ioutil.ReadDir("/" + directory)
 	if err != nil {
 		t.Errorf(err.Error())
 	}

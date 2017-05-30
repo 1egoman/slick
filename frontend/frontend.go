@@ -7,9 +7,9 @@ import (
 	"github.com/kyokomi/emoji" // convert :smile: to unicode
 	"strings"
 
+	"github.com/1egoman/slick/color"
 	"github.com/1egoman/slick/gateway" // The thing to interface with slack
 	"github.com/1egoman/slick/status"
-	"github.com/1egoman/slick/color"
 )
 
 const BottomPadding = 2 // The amount of lines at the bottom of the window to leave available for status bars.
@@ -17,7 +17,7 @@ const BottomPadding = 2 // The amount of lines at the bottom of the window to le
 // Given a string to be displayed in the ui, tokenize the message and return a *PrintableMessage
 // that contains each part as a token.
 func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, UserById func(string) (*gateway.User, error)) error {
-	text = emoji.Sprintf(text)                         // Emojis
+	text = emoji.Sprintf(text) // Emojis
 	text = strings.Replace(text, "&amp;", "&", -1)
 	text = strings.Replace(text, "&gt;", ">", -1)
 	text = strings.Replace(text, "&gt;", "<", -1)
@@ -33,7 +33,7 @@ func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, 
 	for index, char := range text {
 		var nextChar rune
 
-		if index + 1 < len(text) - 1 {
+		if index+1 < len(text)-1 {
 			nextChar = rune(text[index+1])
 		} else {
 			nextChar = ' ' // Placeholder character.
@@ -44,7 +44,7 @@ func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, 
 			// previous plain text bit (before this tag) to the parts slice.
 			if index > 0 {
 				parts = append(parts, gateway.PrintableMessagePart{
-					Type: gateway.PRINTABLE_MESSAGE_PLAIN_TEXT,
+					Type:    gateway.PRINTABLE_MESSAGE_PLAIN_TEXT,
 					Content: text[startIndex:index],
 				})
 			}
@@ -100,8 +100,8 @@ func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, 
 			}
 
 			parts = append(parts, gateway.PrintableMessagePart{
-				Type: tagType,
-				Content: content,
+				Type:     tagType,
+				Content:  content,
 				Metadata: metadata,
 			})
 
@@ -116,7 +116,7 @@ func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, 
 	//                  ^^^^^^ = This bit
 	if len(text) > 0 {
 		parts = append(parts, gateway.PrintableMessagePart{
-			Type: gateway.PRINTABLE_MESSAGE_PLAIN_TEXT,
+			Type:    gateway.PRINTABLE_MESSAGE_PLAIN_TEXT,
 			Content: text[startIndex:],
 		})
 	}
@@ -193,7 +193,7 @@ func (term *TerminalDisplay) DrawStatusBar(
 	messages := strings.Split(stat.Message, "\n")
 	if stat.Show && len(messages) > 1 {
 		lastRow -= len(messages) - 1 // For each additional message line
-		lastRow -= 1 // For the "Press any key to continue" bit
+		lastRow -= 1                 // For the "Press any key to continue" bit
 	}
 
 	// Clear the row.
@@ -224,7 +224,7 @@ func (term *TerminalDisplay) DrawStatusBar(
 			// Rendering multiple rows is more involved.
 			// Above the top of the picker, draw a border.
 			for i := 0; i < width; i++ {
-				term.screen.SetCell(i, lastRow - 1, color.DeSerializeStyleTcell(config["StatusBar.TopBorderColor"]), ' ')
+				term.screen.SetCell(i, lastRow-1, color.DeSerializeStyleTcell(config["StatusBar.TopBorderColor"]), ' ')
 			}
 			for ct, line := range messages {
 				term.DrawBlankLine(lastRow + ct)

@@ -3,8 +3,8 @@ package gateway_test
 import (
 	// "fmt"
 	. "github.com/1egoman/slick/gateway"
-	"testing"
 	"reflect"
+	"testing"
 )
 
 func plainText(text string) PrintableMessagePart {
@@ -15,15 +15,15 @@ func channel(text string) PrintableMessagePart {
 }
 
 func TestPrintableMessageLines(t *testing.T) {
-	for _, test := range []struct{
-		MessageParts []PrintableMessagePart
-		Width int
+	for _, test := range []struct {
+		MessageParts  []PrintableMessagePart
+		Width         int
 		WrappedResult [][]PrintableMessagePart
 	}{
 		// The simple case: a one line message should come back unmodified.
 		{
 			MessageParts: []PrintableMessagePart{plainText("hello world"), plainText("foo")},
-			Width: 15,
+			Width:        15,
 			WrappedResult: [][]PrintableMessagePart{
 				[]PrintableMessagePart{plainText("hello world"), plainText("foo")},
 			},
@@ -31,7 +31,7 @@ func TestPrintableMessageLines(t *testing.T) {
 		// Evenly wrap a message at it's part boundry
 		{
 			MessageParts: []PrintableMessagePart{plainText("hello world"), plainText("foo")},
-			Width: len("hello world"),
+			Width:        len("hello world"),
 			WrappedResult: [][]PrintableMessagePart{
 				[]PrintableMessagePart{plainText("hello world")},
 				[]PrintableMessagePart{plainText("foo")},
@@ -41,7 +41,7 @@ func TestPrintableMessageLines(t *testing.T) {
 		// line.
 		{
 			MessageParts: []PrintableMessagePart{plainText("hello world"), plainText("foo bar")},
-			Width: 15,
+			Width:        15,
 			WrappedResult: [][]PrintableMessagePart{
 				[]PrintableMessagePart{plainText("hello world"), plainText("foo")},
 				[]PrintableMessagePart{plainText("bar")},
@@ -50,7 +50,7 @@ func TestPrintableMessageLines(t *testing.T) {
 		// Formatting should still work, ie, a channel should stay a channel.
 		{
 			MessageParts: []PrintableMessagePart{channel("general"), plainText("test")},
-			Width: 15,
+			Width:        15,
 			WrappedResult: [][]PrintableMessagePart{
 				[]PrintableMessagePart{channel("general"), plainText("test")},
 			},
@@ -58,7 +58,7 @@ func TestPrintableMessageLines(t *testing.T) {
 		// Wrapping at a part boundry of a non-plaintext part should make both "half parts"
 		{
 			MessageParts: []PrintableMessagePart{plainText("foo bar baz"), channel("quux hello world")},
-			Width: len("foo bar baz quux"),
+			Width:        len("foo bar baz quux"),
 			WrappedResult: [][]PrintableMessagePart{
 				[]PrintableMessagePart{plainText("foo bar baz"), channel("quux")},
 				[]PrintableMessagePart{channel("hello world")},
@@ -68,12 +68,12 @@ func TestPrintableMessageLines(t *testing.T) {
 		// Test for issue #9
 		{
 			MessageParts: []PrintableMessagePart{plainText("foo")},
-			Width: -1, // This shouldn't ever happen, I just wanted to get `maximumLengthOfLastMessagePart` < 0
+			Width:        -1, // This shouldn't ever happen, I just wanted to get `maximumLengthOfLastMessagePart` < 0
 			WrappedResult: [][]PrintableMessagePart{
 				[]PrintableMessagePart{plainText("foo")},
 			},
 		},
-	}{
+	} {
 		pm := NewPrintableMessage(test.MessageParts)
 		lines := pm.Lines(test.Width)
 

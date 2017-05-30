@@ -422,9 +422,9 @@ var COMMANDS = []Command{
 	{
 		Name:         "OpenMessageLink",
 		Type:         NATIVE,
-		Description: "Opens a link within a message.",
+		Description:  "Opens a link within a message.",
 		Permutations: []string{"openmessagelink", "openmsglk", "olk"},
-		Arguments: "<link index>",
+		Arguments:    "<link index>",
 		Handler: func(args []string, state *State) error {
 			var err error
 			var linkIndex int
@@ -450,7 +450,7 @@ var COMMANDS = []Command{
 			var parsedMessage gateway.PrintableMessage
 			err = frontend.ParseSlackMessage(selectedMessage.Text, &parsedMessage, state.ActiveConnection().UserById)
 			if err != nil {
-				return errors.New("Error making message print-worthy (probably because fetching user id => user name failed): "+err.Error())
+				return errors.New("Error making message print-worthy (probably because fetching user id => user name failed): " + err.Error())
 			}
 
 			// Find the link of the given index that we are looking for.

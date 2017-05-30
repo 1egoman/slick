@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"strconv"
 	"strings"
-	"os"
 
 	"github.com/1egoman/slick/frontend" // The thing to draw to the screen
 	"github.com/1egoman/slick/gateway"  // The thing to interface with slack
@@ -406,12 +406,12 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 
 		// Open the fuzzy picker
 		state.FuzzyPicker.Hide()
-		state.FuzzyPicker.Show(func (state *State) {
+		state.FuzzyPicker.Show(func(state *State) {
 			render(state, term)
 		})
-		state.FuzzyPicker.Resort(func (state *State) {
+		state.FuzzyPicker.Resort(func(state *State) {
 			// If the command moves before the starting point, hide the fuzzy picker.
-			if len(state.Command) <= state.FuzzyPicker.ThrowAwayPrefix - 1 {
+			if len(state.Command) <= state.FuzzyPicker.ThrowAwayPrefix-1 {
 				log.Println("User moved into already chosen path, aborting...")
 				state.FuzzyPicker.Hide()
 				state.Mode = "writ"
@@ -419,7 +419,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 			}
 
 			// Once we get to a new path segment, update with new values.
-			if len(state.Command) - 1 > state.FuzzyPicker.ThrowAwayPrefix - 1 && state.Command[len(state.Command) - 1] == '/' {
+			if len(state.Command)-1 > state.FuzzyPicker.ThrowAwayPrefix-1 && state.Command[len(state.Command)-1] == '/' {
 				// Clear items, and recalculate
 				state.FuzzyPicker.Items = []interface{}{}
 				state.FuzzyPicker.StringItems = []string{}
@@ -462,7 +462,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 					}
 
 					state.FuzzyPicker.ThrowAwayPrefix = beginningOfPath + 1
-					
+
 					// Construct a list of items to show in the fuzzy picker
 					files, err := ioutil.ReadDir(path)
 					if err != nil {
@@ -477,7 +477,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 
 						var displayName string
 						if file.IsDir() {
-							displayName = file.Name()+"/" // (directories end in a slash)
+							displayName = file.Name() + "/" // (directories end in a slash)
 						} else {
 							displayName = file.Name()
 						}
@@ -494,12 +494,11 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 			}
 
 			// User just typed a space? Then close the fuzzy picker.
-			if state.Command[len(state.Command) - 1] == ' ' {
+			if state.Command[len(state.Command)-1] == ' ' {
 				state.FuzzyPicker.Hide()
 				state.Mode = "writ"
 			}
 		})
-
 
 	//
 	// MOVEMENT UP AND DOWN THROUGH MESSAGES AND ACTIONS ON THE MESSAGES

@@ -86,9 +86,9 @@ func NewInitialStateMode(mode string) *State {
 			"Message.PageAmount": "12",
 
 			// User online status settings
-			"Message.Sender.OnlinePrefix": "*",
-			"Message.Sender.OnlinePrefixColor": "green::",
-			"Message.Sender.OfflinePrefix": "*",
+			"Message.Sender.OnlinePrefix":       "*",
+			"Message.Sender.OnlinePrefixColor":  "green::",
+			"Message.Sender.OfflinePrefix":      "*",
 			"Message.Sender.OfflinePrefixColor": "silver::",
 
 			"Message.ReactionColor":              "::",
