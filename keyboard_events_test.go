@@ -568,12 +568,13 @@ func TestPathAutoComplete(t *testing.T) {
 	if commandLength >= len(state.Command) {
 		t.Errorf("Tab to autocomplete file path did nothing")
 	}
+}
 
+func TestPathAutoCompleteWithDotSlash(t *testing.T) {
+	quit := make(chan struct{}, 1)
 
-
-	//
-	// Reset the command. Trying another test
-	//
+	// Create fresh state for the test.
+	state := NewInitialStateMode("writ")
 	state.Command = []rune("foo bar baz ./") // Trying to autocomplete a file path in $HOME
 	state.CommandCursorPosition = len(state.Command)
 
@@ -623,11 +624,13 @@ func TestPathAutoComplete(t *testing.T) {
 	if state.Mode != "writ" {
 		t.Errorf("Didn't remove file path picker after pressing space")
 	}
+}
 
+func TestPathAutoCompleteWithBadPrefix(t *testing.T) {
+	quit := make(chan struct{}, 1)
 
-	//
-	// Reset the command. Trying another test
-	//
+	// Create fresh state for the test.
+	state := NewInitialStateMode("writ")
 	state.Command = []rune("badprefix/") // Trying to autocomplete a file path that is bad
 	state.CommandCursorPosition = len(state.Command)
 
