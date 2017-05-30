@@ -484,7 +484,7 @@ var COMMANDS = []Command{
 		Handler: func(args []string, state *State) error {
 			if state.ActiveConnection() != nil && state.SelectedMessageIndex > 0 {
 				state.SelectedMessageIndex -= 1
-				if state.BottomDisplayedItem > 0 && state.SelectedMessageIndex < state.BottomDisplayedItem+messageScrollPadding {
+				if state.RenderedAllMessages && state.BottomDisplayedItem > 0 && state.SelectedMessageIndex < state.BottomDisplayedItem+messageScrollPadding {
 					state.BottomDisplayedItem -= 1
 				}
 				log.Printf("Selecting message %s", state.SelectedMessageIndex)
@@ -503,7 +503,7 @@ var COMMANDS = []Command{
 		Handler: func(args []string, state *State) error {
 			if state.ActiveConnection() != nil && state.SelectedMessageIndex < len(state.ActiveConnection().MessageHistory())-1 {
 				state.SelectedMessageIndex += 1
-				if state.SelectedMessageIndex >= state.RenderedMessageNumber-messageScrollPadding {
+				if state.RenderedAllMessages && state.SelectedMessageIndex >= state.RenderedMessageNumber-messageScrollPadding {
 					state.BottomDisplayedItem += 1
 				}
 				log.Printf("Selecting message %d, bottom index %d", state.SelectedMessageIndex, state.BottomDisplayedItem)

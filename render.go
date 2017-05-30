@@ -30,7 +30,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 
 	// Render messages provided by the active conenction
 	if state.ActiveConnection() != nil {
-		state.RenderedMessageNumber = term.DrawMessages(
+		state.RenderedMessageNumber, state.RenderedAllMessages = term.DrawMessages(
 			state.ActiveConnection().MessageHistory(),                                   // List of messages
 			len(state.ActiveConnection().MessageHistory())-1-state.SelectedMessageIndex, // Is a message selected?
 			state.BottomDisplayedItem,                                                   // Bottommost item

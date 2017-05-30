@@ -233,7 +233,7 @@ func (term *TerminalDisplay) DrawMessages(
 	userById func(string) (*gateway.User, error),
 	userOnline func(user *gateway.User) bool,
 	config map[string]string,
-) int { // Return how many messages were rendered.
+) (renderedMessageNumber int, renderedAllMessages bool) { // Return how many messages were rendered.
 	width, height := term.screen.Size()
 
 	for r := 0; r < height-BottomPadding; r++ {
@@ -282,7 +282,7 @@ func (term *TerminalDisplay) DrawMessages(
 		if err != nil {
 			// FIXME: Probably should return an error here? And not return 0?
 			log.Println("Error making message print-worthy (probably because fetching user id => user name failed):", err)
-			return 0
+			return 0, false
 		}
 
 		// Calculate how many rows the message requires to render.
@@ -438,5 +438,5 @@ func (term *TerminalDisplay) DrawMessages(
 	}
 
 	// Return how many messages were rendered to the screen
-	return (len(messages) - 1) - index
+	return (len(messages) - 1) - index, (index >= 0)
 }
