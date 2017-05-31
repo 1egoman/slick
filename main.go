@@ -43,7 +43,7 @@ func main() {
 		}
 	}
 
-	// On start, check for a new release and if found update to it.
+	// GOROUTINE: On start, check for a new release and if found update to it.
 	go func() {
 		if _, ok := state.Configuration["AutoUpdate"]; ok {
 			log.Println("Checking for update...")

@@ -104,4 +104,4 @@ We've added a few modules that can be loaded in by lua to run more powerful task
 - `http`: [Gluahttp](https://github.com/cjoudrey/gluahttp) is available with `require("http")`.
 
 # Examples
-A few examples of plugins are available [here](../examples).
+A few examples of plugins are available [here](https://github.com/1egoman/slick/tree/master/examples).
