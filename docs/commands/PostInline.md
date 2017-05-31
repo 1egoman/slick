@@ -1,9 +1,11 @@
 # PostInline
 
 Type: Native (built into slick)
+
 Arguments:
 - `<post content>` - The text to add inside of the post.
 - `[post name]` - An optional title for the file. If upspecified, uses slack's default of `-.txt`.
+
 Command aliases:
 - `postinline`
 - `pin`
