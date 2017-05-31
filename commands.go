@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/1egoman/slick/version"
 	"github.com/1egoman/slick/frontend"
 	"github.com/1egoman/slick/gateway"
 	"github.com/1egoman/slick/gateway/slack"
@@ -188,6 +189,17 @@ var COMMANDS = []Command{
 		Handler: func(args []string, state *State) error {
 			index := state.ActiveConnectionIndex()
 			state.Connections[index].Disconnect()
+			return nil
+		},
+	},
+	{
+		Name:         "Version",
+		Type:         NATIVE,
+		Description:  "Show the current version of slick",
+		Arguments:    "",
+		Permutations: []string{"version"},
+		Handler: func(args []string, state *State) error {
+			state.Status.Printf("Slick version %s", version.Version())
 			return nil
 		},
 	},

@@ -7,6 +7,7 @@ import (
 
 	"github.com/1egoman/slick/frontend" // The thing to draw to the screen
 	"github.com/gdamore/tcell"
+	"github.com/1egoman/slick/version"
 )
 
 func main() {
@@ -21,6 +22,8 @@ func main() {
 	log.Println("Starting Slick...")
 
 	state := NewInitialState()
+	quit := make(chan struct{})
+
 
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 	s, _ := tcell.NewScreen()
@@ -40,8 +43,21 @@ func main() {
 		}
 	}
 
+	// On start, check for a new release and if found update to it.
+	go func() {
+		if _, ok := state.Configuration["AutoUpdate"]; ok {
+			log.Println("Checking for update...")
+			if updatedVersion := version.DoUpdate(); updatedVersion != nil{
+				state.Status.Printf("Updated to slick %s! Restart to complete.", *updatedVersion)
+				render(state, term)
+				return
+			} else {
+				log.Println("No update, continuing...")
+			}
+		}
+	}()
+
 	// GOROUTINE: Handle events coming from the input device (ie, keyboard).
-	quit := make(chan struct{})
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
