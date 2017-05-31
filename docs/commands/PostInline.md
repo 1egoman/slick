@@ -12,7 +12,7 @@ Command aliases:
 
 ## Description
 
-Given the contents of a post an optional title, create a post in the current slack channel.
+Given the contents of a post and an optional title, create a post in the current slack channel.
 
 ## Example
 

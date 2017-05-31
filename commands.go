@@ -108,7 +108,7 @@ var COMMANDS = []Command{
 		Name:         "Disconnect",
 		Type:         NATIVE,
 		Description:  "Connect to a given team. If no index is specified, then use the active connection.",
-		Arguments:    "[team index]",
+		Arguments:    "[connection index]",
 		Permutations: []string{"disconnect", "dis"},
 		Handler: func(args []string, state *State) error {
 			var index int
@@ -143,13 +143,13 @@ var COMMANDS = []Command{
 		Name:         "Reconnect",
 		Type:         NATIVE,
 		Description:  "Given a team that has moved into a failure state, reconnect to the server.",
-		Arguments:    "[team name] <token>",
+		Arguments:    "[connection index]",
 		Permutations: []string{"reconnect", "recon"},
 		Handler: func(args []string, state *State) error {
 			var index int
-			if len(args) == 1 { // /disconnect
+			if len(args) == 1 { // /reconnect
 				index = state.ActiveConnectionIndex()
-			} else if len(args) == 2 { // /disconnect index
+			} else if len(args) == 2 { // /reconnect [index]
 				// Convert the index from strint to int
 				i, err := strconv.ParseInt(args[1], 10, 0)
 				if err != nil {
@@ -160,7 +160,7 @@ var COMMANDS = []Command{
 					return errors.New("No such connection at that index.")
 				}
 			} else {
-				return errors.New("Please use more arguments. /reconnect [team index]")
+				return errors.New("Please use more arguments. /reconnect [connection index]")
 			}
 
 			// try to reconnect
@@ -177,18 +177,6 @@ var COMMANDS = []Command{
 				return errors.New(fmt.Sprintf("Error in reconnecting (refresh): %s", err))
 			}
 
-			return nil
-		},
-	},
-	{
-		Name:         "Test Bug",
-		Type:         NATIVE,
-		Description:  "Connect to a given team. If no index is specified, then use the active connection.",
-		Arguments:    "[team index]",
-		Permutations: []string{"tb"},
-		Handler: func(args []string, state *State) error {
-			index := state.ActiveConnectionIndex()
-			state.Connections[index].Disconnect()
 			return nil
 		},
 	},
@@ -277,7 +265,7 @@ var COMMANDS = []Command{
 		Name:         "Upload",
 		Type:         NATIVE,
 		Description:  "Upload a file to a channel.",
-		Arguments:    "<uploaded file path> [uploaded file title]",
+		Arguments:    "<file path> [file name]",
 		Permutations: []string{"upload", "up"},
 		Handler: func(args []string, state *State) error {
 			var title string
