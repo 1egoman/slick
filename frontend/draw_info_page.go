@@ -1,19 +1,21 @@
 package frontend
 
 import (
+	"fmt"
 	"strings"
+	"github.com/1egoman/slick/version"
 )
 
-const INFO_PAGE = `
-Slick
+var INFO_PAGE = fmt.Sprintf(`
+Slick %s
 
 By Ryan Gaus and contributors.
 Open source and MIT licensed.
-type ':q' to exit
+type '/q' to exit
 type '/connect "slack token"' to connect to a slack team
-type ':help' to learn more
+type '/help' to learn more
 (no slack teams are currently connected.)
-`
+`, version.Version())
 
 // Render above launch info when the user isn't conencted to an active connection.
 func (term *TerminalDisplay) DrawInfoPage() {
