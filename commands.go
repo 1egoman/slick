@@ -376,7 +376,7 @@ var COMMANDS = []Command{
 			// Open the private image url in the browser
 			if selectedMessage.File != nil {
 				clipboard.WriteAll(selectedMessage.File.Permalink)
-				state.Status.Println("Copied %s to clipboard!", selectedMessage.File.Permalink)
+				state.Status.Printf("Copied %s to clipboard!", selectedMessage.File.Permalink)
 			} else {
 				return errors.New("Selected message has no file")
 			}
@@ -860,12 +860,20 @@ func ParseScript(script string, state *State, term *frontend.TerminalDisplay) er
 	}))
 
 	L.SetGlobal("getclip", L.NewFunction(func(L *lua.LState) int {
-		L.Push(lua.LString(clipboard.ReadAll()))
-		return 1
+		text, err := clipboard.ReadAll()
+		if err != nil {
+			L.Push(lua.LString(text))
+			L.Push(lua.LString(err.Error()))
+			return 2
+		} else {
+			L.Push(lua.LString(text))
+			L.Push(lua.LNil)
+			return 2
+		}
 	}))
 
 	L.SetGlobal("setclip", L.NewFunction(func(L *lua.LState) int {
-		clipboard.WriteAll(l.ToString(1))
+		clipboard.WriteAll(L.ToString(1))
 		return 0
 	}))
 
