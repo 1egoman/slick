@@ -6,8 +6,8 @@ import (
 	"path"
 
 	"github.com/1egoman/slick/frontend" // The thing to draw to the screen
-	"github.com/gdamore/tcell"
 	"github.com/1egoman/slick/version"
+	"github.com/gdamore/tcell"
 )
 
 func main() {
@@ -23,7 +23,6 @@ func main() {
 
 	state := NewInitialState()
 	quit := make(chan struct{})
-
 
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 	s, _ := tcell.NewScreen()
@@ -47,7 +46,7 @@ func main() {
 	go func() {
 		if _, ok := state.Configuration["AutoUpdate"]; ok {
 			log.Println("Checking for update...")
-			if updatedVersion := version.DoUpdate(); updatedVersion != nil{
+			if updatedVersion := version.DoUpdate(); updatedVersion != nil {
 				state.Status.Printf("Updated to slick %s! Restart to complete.", *updatedVersion)
 				render(state, term)
 				return

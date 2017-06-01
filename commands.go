@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/1egoman/slick/version"
 	"github.com/1egoman/slick/frontend"
 	"github.com/1egoman/slick/gateway"
 	"github.com/1egoman/slick/gateway/slack"
+	"github.com/1egoman/slick/version"
 
 	"github.com/cjoudrey/gluahttp" // gopher-lua http library
 	"github.com/skratchdot/open-golang/open"
