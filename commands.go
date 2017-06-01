@@ -19,6 +19,7 @@ import (
 	"github.com/cjoudrey/gluahttp" // gopher-lua http library
 	"github.com/skratchdot/open-golang/open"
 	"github.com/yuin/gopher-lua"
+	"github.com/atotto/clipboard"
 )
 
 type CommandType int
@@ -374,7 +375,8 @@ var COMMANDS = []Command{
 
 			// Open the private image url in the browser
 			if selectedMessage.File != nil {
-				state.Status.Printf("FIXME: will eventually copy to clipboard: %s", selectedMessage.File.Permalink)
+				clipboard.WriteAll(selectedMessage.File.Permalink)
+				state.Status.Println("Copied %s to clipboard!", selectedMessage.File.Permalink)
 			} else {
 				return errors.New("Selected message has no file")
 			}
@@ -855,6 +857,16 @@ func ParseScript(script string, state *State, term *frontend.TerminalDisplay) er
 		}
 
 		return 1
+	}))
+
+	L.SetGlobal("getclip", L.NewFunction(func(L *lua.LState) int {
+		L.Push(lua.LString(clipboard.ReadAll()))
+		return 1
+	}))
+
+	L.SetGlobal("setclip", L.NewFunction(func(L *lua.LState) int {
+		clipboard.WriteAll(l.ToString(1))
+		return 0
 	}))
 
 	// Load Gluahttp so the config can make http requests: https://github.com/cjoudrey/gluahttp

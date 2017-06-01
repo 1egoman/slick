@@ -15,6 +15,7 @@ Learn more [here](Installing.md). TL;DR: [Download the latest release](https://g
 - [Commands](Commands.md)
 - [Messages](Messages.md)
 - [Actions](Actions.md)
+- [Commands](commands/README.md)
 
 ## Configuring
 - [Scripting](Scripting.md)
