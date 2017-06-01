@@ -328,8 +328,8 @@ var COMMANDS = []Command{
 		Name:         "Reaction",
 		Type:         NATIVE,
 		Description:  "Post a reaction to the selected message",
-		Arguments:    "<raection name>",
-		Permutations: []string{"react"},
+		Arguments:    "<reaction name>",
+		Permutations: []string{"reaction", "react", "r"},
 		Handler: func(args []string, state *State) error {
 			selectedMessageIndex := len(state.ActiveConnection().MessageHistory()) - 1 - state.SelectedMessageIndex
 			selectedMessage := state.ActiveConnection().MessageHistory()[selectedMessageIndex]
@@ -424,12 +424,14 @@ var COMMANDS = []Command{
 		Type:         NATIVE,
 		Description:  "Opens a link within a message.",
 		Permutations: []string{"openmessagelink", "openmsglk", "olk"},
-		Arguments:    "<link index>",
+		Arguments:    "[link index]",
 		Handler: func(args []string, state *State) error {
 			var err error
 			var linkIndex int
 
-			if len(args) == 2 {
+			if len(args) == 1 {
+				linkIndex = 1
+			} else if len(args) == 2 {
 				linkIndex, err = strconv.Atoi(args[1])
 				if err != nil {
 					return err
@@ -480,7 +482,7 @@ var COMMANDS = []Command{
 		Type:         NATIVE,
 		Description:  "Move selected message back to the previous message in time.",
 		Arguments:    "",
-		Permutations: []string{},
+		Permutations: []string{"movebackmessage"},
 		Handler: func(args []string, state *State) error {
 			if state.ActiveConnection() != nil && state.SelectedMessageIndex > 0 {
 				state.SelectedMessageIndex -= 1
@@ -499,7 +501,7 @@ var COMMANDS = []Command{
 		Type:         NATIVE,
 		Description:  "Move selected message forward to the next message in time.",
 		Arguments:    "",
-		Permutations: []string{},
+		Permutations: []string{"moveforwardmessage"},
 		Handler: func(args []string, state *State) error {
 			if state.ActiveConnection() != nil && state.SelectedMessageIndex < len(state.ActiveConnection().MessageHistory())-1 {
 				state.SelectedMessageIndex += 1

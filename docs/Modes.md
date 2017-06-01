@@ -43,6 +43,6 @@ In `pick` mode, you're choosing a new connection and channel to jump to.
 
 ![Pick Mode](gifs/PickMode.png)
 
-- Typing fuzzy-searches through the list of conenctions and channels.
+- Typing fuzzy-searches through the list of connections and channels.
 - Arrow keys, or `Ctrl-j/Ctrl-k`: Change the selected item in the channel picker.
 - `Enter`: Pick a connection and channel, then switch to it.
