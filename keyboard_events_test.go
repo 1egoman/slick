@@ -34,6 +34,7 @@ func InitialMessageHistoryState(initialSelectedIndex int, initialBottomItemIndex
 	s.SelectedMessageIndex = initialSelectedIndex
 	s.BottomDisplayedItem = initialBottomItemIndex
 	s.RenderedMessageNumber = 10 // For our tests, assume that 10 messages will fit on the screen.
+	s.RenderedAllMessages = true
 
 	// Define an active connection
 	s.Connections = append(s.Connections, gatewaySlack.New("token"))
