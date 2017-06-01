@@ -84,11 +84,16 @@ func main() {
 
 	// Save each connection and close it in turn.
 	if _, ok := state.Configuration["Connection.Cache"]; ok {
-		os.MkdirAll(PathToSavedConnections(), 0755)
+		err := os.MkdirAll(PathToSavedConnections(), 0755)
+		if err != nil {
+			log.Printf("Error creating folder to store connection state: %s", err)
+			return
+		}
 		for _, connection := range state.Connections {
 			err := SaveConnection(connection)
 			if err != nil {
 				log.Printf("Error saving connection state: %s", err)
+				continue
 			}
 
 			connection.Disconnect()

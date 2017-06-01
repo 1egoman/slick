@@ -27,7 +27,7 @@ func (c *SlackConnection) Connect() error {
 	var err error
 	err = c.requestConnectionUrl()
 	if err != nil {
-		log.Println("Error getting conenction url", err)
+		log.Println("Error getting connection url", err)
 		return err
 	}
 	log.Printf("Got slack connection url for team %s: %s", c.Team().Name, c.url)

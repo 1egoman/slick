@@ -12,11 +12,20 @@ import (
 func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 	cachedUsers := make(map[string]*gateway.User)
 
-	for {
+	// Keep track of how many connections are disconnected. If all connections are disconnected,
+	// then exit the goroutine.
+	totalDisconnected := 0
+
+	for totalDisconnected < len(state.Connections) {
 		for _, conn := range state.Connections {
 			if conn == nil {
-				time.Sleep(100 * time.Millisecond) // Sleep to lower the speed of the loop for debugging reasons.
+				// Sleep to lower the speed of the loop for debugging reasons.
+				time.Sleep(100 * time.Millisecond)
 				continue
+			}
+
+			if conn.Status() == gateway.DISCONNECTED {
+				totalDisconnected += 1
 			}
 
 			// Before events can run, confirm that the a channel is selected.
@@ -27,7 +36,8 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 			// conn points to behind the scenes changes, the we won't be blocking
 			// listening for events on an old reference.
 			if len(conn.Incoming()) == 0 || !hasFetchedChannel {
-				time.Sleep(100 * time.Millisecond) // Sleep to lower the speed of the loop for debugging reasons.
+				// Sleep to lower the speed of the loop for debugging reasons.
+				time.Sleep(100 * time.Millisecond)
 				continue
 			}
 

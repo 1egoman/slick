@@ -263,6 +263,7 @@ func OnCommandExecuted(state *State, term *frontend.TerminalDisplay, quit chan s
 					err := RunCommand(command, args, state)
 					if err != nil {
 						state.Status.Errorf("Error in running command %s: %s", arg0, err.Error())
+						render(state, term)
 					}
 					return nil
 				}
