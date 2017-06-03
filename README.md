@@ -1,14 +1,30 @@
 # Slick
 
-Slick is an improved and more customizable slack client:
-
-- Slick is controlled with the keyboard, so anybody with fingers can work fast. Slick uses a
-  [modal](docs/Modes.md) workflow just like vi.
-- Slick is scriptable. Add new commands (ie, `/foo`) or keyboard bindings (ie, press `a`) and bind
-  them to custom functions written in [lua](//lua.org). [Learn More](docs/Scripting.md)
-- Slick is terminal based. Reduce the number of [chrome vms](https://josephg.com/blog/electron-is-flash-for-the-desktop/) that are running on your computer.
-- Slick is written in [go](//golang.org), which means the entirety of the app is in a single binary.
-  [Installation](docs/Installing.md) and [Auto updates](docs/AutoUpdate.md) are a breeze.
+Slick is a modular and extendable [slack](//slack.com) client, that's taken tools like vim, tmux,
+and i3 to heart. It's been designed to have an approachable default configuration but to be easily
+extended to add new functionality in [lua](//lua.org)
 
 # Installing
-[Install Slick](docs/Installing.md)
+[Here's the skinny](docs/Installing.md).
+
+## Features
+
+- **Modal** - Slick borrows a text based, [modal](docs/Modal.md) workflow from vi. Most
+  functionality requires one keypress, or [can be easily mapped to a key](docs/Scripting.md).
+- **Scriptable** - Add new commands (ie, `/foo`) or keyboard bindings (ie, press `a`) and bind
+  them to slick commands. Or, write your own functionality in [Lua](//lua.org) - for example,
+  [here's a plugin](examples/encrypt.lua) to encrypt a message to a user on keybase and send it to
+  them via slack. [Learn More](docs/Scripting.md)
+- **Not built on electron** - Slick is terminal based. Reduce the number of bloated [chrome
+  vms](https://josephg.com/blog/electron-is-flash-for-the-desktop/) running on your system.
+- **Elegant installation and updates** - Slick is distributed as a binary.
+  [Installation](docs/Installing.md) is simple. Slick is [updated automatically](docs/AutoUpdate.md)
+  on start.
+
+And a bunch of smaller things:
+- Quick jump to another team / channel with `p`
+- Multiple teams
+- Tab completion for file paths
+- A lua [standard library](https://github.com/1egoman/slick/blob/master/docs/Scripting.md#modules)
+- Emoji support
+- Extensive theming support - ie, [here](https://github.com/1egoman/slick/blob/master/docs/configuration/Message.Part.ChannelColor.md) [are](https://github.com/1egoman/slick/blob/master/docs/configuration/Message.Attachment.FieldValueColor.md) [a few](https://github.com/1egoman/slick/blob/master/docs/configuration/StatusBar.LogColor.md) (examples)[https://github.com/1egoman/slick/blob/master/docs/configuration/StatusBar.GatewayConnectingColor.md]
