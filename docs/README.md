@@ -12,10 +12,10 @@ Learn more [here](Installing.md). TL;DR: [Download the latest release](https://g
 ## Usage
 - [Connecting to Slack team](Connecting.md) - Do this first!
 - [Modes](Modes.md)
-- [Commands](Commands.md)
 - [Messages](Messages.md)
+- [Slash Commands](Commands.md)
+  - [Command List](commands/README.md)
 - [Actions](Actions.md)
-- [Commands](commands/README.md)
 
 ## Configuring
 - [Scripting](Scripting.md)

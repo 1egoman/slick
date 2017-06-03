@@ -18,7 +18,6 @@ Either run in the command bar like `/foo bar`, or run in lua like `Foo("bar")`. 
 - [Pick](Pick.md)
 - [Post](Post.md)
 - [PostInline](PostInline.md)
-- [README](README.md)
 - [Reaction](Reaction.md)
 - [Reconnect](Reconnect.md)
 - [Set](Set.md)
