@@ -1,4 +1,4 @@
-# StatusBar.DefaultColor
+# StatusBar.Color
 
 - Type: `color`
 - Default: `::` [(format explanation)](../Colors.md)
@@ -7,5 +7,5 @@ This option specifies the default color of the status bar - ie, the color of the
 bar that aren't colored by other configuration options.
 
 ## Usage
-`:set StatusBar.DefaultColor red:green:`
-![gifs/StatusBar.DefaultColor.png](gifs/StatusBar.DefaultColor.png)
+`:set StatusBar.Color red:green:`
+![gifs/StatusBar.Color.png](gifs/StatusBar.Color.png)

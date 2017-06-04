@@ -197,7 +197,7 @@ func (term *TerminalDisplay) DrawStatusBar(
 	}
 
 	// Clear the row.
-	defaultColor := color.DeSerializeStyleTcell(config["StatusBar.DefaultColor"])
+	defaultColor := color.DeSerializeStyleTcell(config["StatusBar.Color"])
 	for j := 0; j < width; j++ {
 		char, _, style, _ := term.screen.GetContent(j, lastRow)
 		if char != ' ' || style != defaultColor {
