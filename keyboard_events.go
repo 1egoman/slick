@@ -799,9 +799,6 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		state.CommandCursorPosition = 0
 	case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyCtrlE:
 		state.CommandCursorPosition = len(state.Command)
-
-	default:
-		state.Status.Clear()
 	}
 
 	// If the user has scrolled to the end of the list of messages in their active channel, then load more
