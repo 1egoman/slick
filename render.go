@@ -15,6 +15,11 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		state.SyncActiveConnection()
 		log.Printf("User switching to new active connection: %s", state.ActiveConnection().Name())
 
+		// Emit event to to be handled by lua scripts
+		EmitEvent(state, EVENT_CONNECTION_CHANGE, map[string]string{
+			"name": state.ActiveConnection().Name(),
+		})
+
 		go func() {
 			state.Status.Printf("Loading team %s...", state.ActiveConnection().Name())
 			render(state, term)

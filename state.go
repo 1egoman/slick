@@ -34,8 +34,9 @@ type State struct {
 	// Status message
 	Status status.Status
 
-	// Actions to perform when a user presses a key
-	KeyActions []KeyAction
+	// Handlers to bind to specific actions. For example, when the user presses some keys,  when we
+	// switch connections, etc...
+	EventActions []EventAction
 
 	// A map of configuration options for the editor.
 	Configuration map[string]string

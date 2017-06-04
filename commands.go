@@ -743,9 +743,35 @@ func RunCommand(command Command, args []string, state *State) error {
 	}
 }
 
-type KeyAction struct {
+type SlickEvent int
+
+const (
+	EVENT_KEYMAP SlickEvent = iota
+	EVENT_CONNECTION_CHANGE
+	EVENT_COMMAND_RUN
+	EVENT_MESSAGE_SENT
+	EVENT_MESSAGE_RECEIVED
+	EVENT_MODE_CHANGE
+)
+
+type EventAction struct {
+	Type   SlickEvent
 	Key     []rune
-	Handler func(*State) error
+	Handler func(*State, *map[string]string) error
+}
+
+// Send an event to all the stored listeners.
+func EmitEvent(state *State, event SlickEvent, metadata map[string]string) error {
+	log.Printf("Event emitted: %+v %+v", event, metadata)
+	for _, i := range state.EventActions {
+		if i.Type == event {
+			if err := i.Handler(state, &metadata); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func ParseScript(script string, state *State, term *frontend.TerminalDisplay) error {
@@ -774,9 +800,10 @@ func ParseScript(script string, state *State, term *frontend.TerminalDisplay) er
 		key := L.ToString(1)
 		function := L.ToFunction(2)
 
-		state.KeyActions = append(state.KeyActions, KeyAction{
+		state.EventActions = append(state.EventActions, EventAction{
+			Type: EVENT_KEYMAP,
 			Key: []rune(key),
-			Handler: func(state *State) error {
+			Handler: func(state *State, metadata *map[string]string) error {
 				return L.CallByParam(lua.P{Fn: function, NRet: 0})
 			},
 		})
@@ -888,6 +915,47 @@ func ParseScript(script string, state *State, term *frontend.TerminalDisplay) er
 
 	L.SetGlobal("setclip", L.NewFunction(func(L *lua.LState) int {
 		clipboard.WriteAll(L.ToString(1))
+		return 0
+	}))
+
+	// Allow lua to run things when a user presses a key.
+	L.SetGlobal("onevent", L.NewFunction(func(L *lua.LState) int {
+		eventString := L.ToString(1)
+		function := L.ToFunction(2)
+
+		// Convert the string typed by the user into an kj
+		var event SlickEvent
+		switch eventString {
+		/* no EVENT_KEYMAP */
+		case "connectionchange":
+			event = EVENT_CONNECTION_CHANGE
+		case "commandrun":
+			event = EVENT_COMMAND_RUN
+		case "messagesent":
+			event = EVENT_MESSAGE_SENT
+		case "messagereceived":
+			event = EVENT_MESSAGE_RECEIVED
+		case "modechange":
+			event = EVENT_MODE_CHANGE
+		}
+
+		state.EventActions = append(state.EventActions, EventAction{
+			Type: event,
+			Handler: func(state *State, metadata *map[string]string) error {
+				if metadata == nil {
+					return errors.New("Metadata passed to event handler for "+eventString+" was nil.")
+				}
+
+				// Convert metadata into a table
+				metadataTable := L.NewTable()
+				for key, value := range *metadata {
+					metadataTable.RawSet(lua.LString(key), lua.LString(value))
+				}
+
+				// Call into lua with with metadata
+				return L.CallByParam(lua.P{Fn: function, NRet: 0}, metadataTable)
+			},
+		})
 		return 0
 	}))
 

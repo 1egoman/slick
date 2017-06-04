@@ -114,6 +114,12 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 							// Add message to history
 							conn.AppendMessageHistory(*message)
 
+							// Emit event to to be handled by lua scripts
+							EmitEvent(state, EVENT_MESSAGE_RECEIVED, map[string]string{
+								"text": message.Text,
+								"sender": message.Sender.Name,
+							})
+
 							// If the user that sent the message was typing, they aren't anymore.
 							conn.TypingUsers().Remove(message.Sender.Name)
 						} else {

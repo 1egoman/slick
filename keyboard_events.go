@@ -174,6 +174,7 @@ func OnPickConnectionChannel(state *State) {
 		// channel.
 		state.SetActiveConnection(selectedConnectionIndex)
 		state.Connections[selectedConnectionIndex].SetSelectedChannel(selectedChannel)
+		EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "chat"})
 		state.Mode = "chat"
 		state.SelectedMessageIndex = 0
 		state.BottomDisplayedItem = 0
@@ -223,6 +224,12 @@ func OnCommandExecuted(state *State, term *frontend.TerminalDisplay, quit chan s
 
 	// Remove the first charater (slash or colon) from the command.
 	arg0 := args[0][1:]
+
+	// Emit event to to be handled by lua scripts
+	EmitEvent(state, EVENT_COMMAND_RUN, map[string]string{
+		"raw": string(state.Command),
+		"command": arg0,
+	})
 
 	// SPECIAL CASES
 	// Since these commands need access to "priviliged" things, they are harded here.
@@ -308,9 +315,9 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		state.KeyStack = append(state.KeyStack, ev.Rune())
 
 		// Did the user press the key combo?
-		for _, key := range state.KeyActions {
-			if string(key.Key) == string(state.KeyStack) {
-				err := key.Handler(state)
+		for _, action := range state.EventActions {
+			if action.Type == EVENT_KEYMAP && string(action.Key) == string(state.KeyStack) {
+				err := action.Handler(state, nil)
 				if err != nil {
 					state.Status.Errorf(err.Error())
 				}
@@ -329,6 +336,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 
 	// Escape reverts back to chat mode and clears the key stack.
 	case ev.Key() == tcell.KeyEscape:
+		EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "chat"})
 		state.Mode = "chat"
 		state.FuzzyPicker.Hide()
 		resetKeyStack(state)
@@ -337,6 +345,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 	// 'p' moves to a channel picker, which is a mode for switching teams and channels
 	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == 'p':
 		if state.Mode != "pick" {
+			EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "pick"})
 			state.Mode = "pick"
 			state.FuzzyPicker.Hide()
 			state.FuzzyPicker.Show(OnPickConnectionChannel)
@@ -377,6 +386,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 			state.FuzzyPicker.Items = items
 			state.FuzzyPicker.StringItems = stringItems
 		} else {
+			EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "chat"})
 			state.Mode = "chat"
 			state.FuzzyPicker.Hide()
 		}
@@ -384,15 +394,18 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 
 	// 'e' moves to write mode. So does ':' and '/'
 	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == 'w':
+		EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "writ"})
 		state.Mode = "writ"
 		resetKeyStack(state)
 	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == ':':
+		EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "writ"})
 		state.Mode = "writ"
 		state.Command = []rune{':'}
 		state.CommandCursorPosition = 1
 		enableCommandAutocompletion(state, term, quit)
 		resetKeyStack(state)
 	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == '/':
+		EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "writ"})
 		state.Mode = "writ"
 		state.Command = []rune{'/'}
 		state.CommandCursorPosition = 1
@@ -403,6 +416,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 	// TAB-COMPLETE FOR FILE PATHS
 	//
 	case state.Mode == "writ" && ev.Key() == tcell.KeyTab && len(state.Command) > 0 && state.CommandCursorPosition > 0 && state.Command[state.CommandCursorPosition-1] == '/':
+		EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "pick"})
 		state.Mode = "pick"
 
 		// Open the fuzzy picker
@@ -415,6 +429,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 			if len(state.Command) <= state.FuzzyPicker.ThrowAwayPrefix-1 {
 				log.Println("User moved into already chosen path, aborting...")
 				state.FuzzyPicker.Hide()
+				EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "writ"})
 				state.Mode = "writ"
 				return
 			}
@@ -437,6 +452,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 					// If we did, then the slash isn't in a good spot. Cancel the fuzzy picker.
 					if beginningOfPath == -1 {
 						state.FuzzyPicker.Hide()
+						EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "writ"})
 						state.Mode = "writ"
 						break
 					}
@@ -469,6 +485,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 					if err != nil {
 						state.Status.Errorf("Error fetching path items: %s", err.Error())
 						state.FuzzyPicker.Hide()
+						EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "writ"})
 						state.Mode = "writ"
 						return
 					}
@@ -497,6 +514,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 			// User just typed a space? Then close the fuzzy picker.
 			if state.Command[len(state.Command)-1] == ' ' {
 				state.FuzzyPicker.Hide()
+				EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "writ"})
 				state.Mode = "writ"
 			}
 		})
@@ -673,6 +691,12 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 
 			// Otherwise, send as a message.
 		} else if state.Mode == "writ" && state.ActiveConnection() != nil {
+			// Emit event to to be handled by lua scripts
+			EmitEvent(state, EVENT_MESSAGE_SENT, map[string]string{
+				"sender": state.ActiveConnection().Self().Name,
+				"text": string(state.Command),
+			})
+
 			// Just send a normal message!
 			message := gateway.Message{
 				Sender: state.ActiveConnection().Self(),
@@ -698,6 +722,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		// is its open.
 		state.Command = []rune{}
 		state.CommandCursorPosition = 0
+		EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "chat"})
 		state.Mode = "chat"
 		state.FuzzyPicker.Hide()
 
@@ -741,6 +766,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 			sendTypingIndicator(state)
 		} else {
 			// Backspacing in an empty command box brings the user back to chat mode
+			EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "chat"})
 			state.Mode = "chat"
 			state.FuzzyPicker.Hide()
 		}
