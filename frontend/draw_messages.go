@@ -316,24 +316,38 @@ func (term *TerminalDisplay) DrawMessages(
 		messageOffset := 0
 
 		// Draw a relative line number at the start of the line, if requested.
+		var lineNumberStyle tcell.Style
 		if _, ok := config["Message.RelativeLine"]; ok {
 			relativeLineNumber := getRelativeLineNumber(selectedMessageIndex, index)
 
 			// Color the active line number different than the rest
-			var style tcell.Style
 			if selectedMessageIndex == index {
-				style = color.DeSerializeStyleTcell(config["Message.LineNumber.ActiveColor"])
+				lineNumberStyle = color.DeSerializeStyleTcell(config["Message.LineNumber.ActiveColor"])
 			} else {
-				style = color.DeSerializeStyleTcell(config["Message.LineNumber.Color"])
+				lineNumberStyle = color.DeSerializeStyleTcell(config["Message.LineNumber.Color"])
 			}
 
+			// Convert width to a string.
 			w := fmt.Sprintf("%d", relativeLineWidth)
-			term.WriteTextStyle(
-				messageOffset,
-				row-messageRows+1,
-				style,
-				fmt.Sprintf("%"+w+"d ", relativeLineNumber),
-			)
+
+			// Fill in each cell that belongs to the message.
+			// The top cel has the line number in it.
+			for i := 0; i <= messageRows; i++ {
+				var content string
+				if i == 1 {
+					content = fmt.Sprintf("%"+w+"d ", relativeLineNumber)
+				} else {
+					content = fmt.Sprintf("%"+w+"s ", "") // a string that is `w` characters long.
+				}
+				term.WriteTextStyle(
+					messageOffset,
+					row-messageRows+i,
+					lineNumberStyle,
+					content,
+				)
+			}
+
+
 			messageOffset += relativeLineWidth + 1 // Each line number needs this many columns, +1 padding
 		}
 
