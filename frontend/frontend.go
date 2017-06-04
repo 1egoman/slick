@@ -197,13 +197,23 @@ func (term *TerminalDisplay) DrawStatusBar(
 	}
 
 	// Clear the row.
-	term.DrawBlankLine(lastRow)
+	defaultColor := color.DeSerializeStyleTcell(config["StatusBar.DefaultColor"])
+	for j := 0; j < width; j++ {
+		char, _, style, _ := term.screen.GetContent(j, lastRow)
+		if char != ' ' || style != defaultColor {
+			term.screen.SetCell(j, lastRow, defaultColor, ' ')
+		}
+	}
 
 	// First, draw the mode (ie, chat, channel-picker, etc...)
-	term.WriteText(0, lastRow, mode)
+	term.WriteTextStyle(
+		0, lastRow,
+		color.DeSerializeStyleTcell(config["StatusBar.ModeColor"]),
+		mode,
+	)
 
 	// Then, draw a seperator
-	term.WriteText(len(mode)+1, lastRow, "|")
+	term.WriteTextStyle(len(mode)+1, lastRow, defaultColor, "|")
 
 	position := len(mode) + 3
 
