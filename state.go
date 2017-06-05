@@ -115,7 +115,7 @@ func NewInitialStateMode(mode string) *State {
 			"CommandBar.PrefixColor": "::",
 			"CommandBar.TextColor":   "::",
 
-			"StatusBar.Color":           "::",
+			"StatusBar.Color":                  "::",
 			"StatusBar.ModeColor":              "::",
 			"StatusBar.ActiveConnectionColor":  "white:blue:",
 			"StatusBar.GatewayConnectedColor":  "white::",

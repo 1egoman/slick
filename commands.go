@@ -16,10 +16,10 @@ import (
 	"github.com/1egoman/slick/gateway/slack"
 	"github.com/1egoman/slick/version"
 
+	"github.com/atotto/clipboard"
 	"github.com/cjoudrey/gluahttp" // gopher-lua http library
 	"github.com/skratchdot/open-golang/open"
 	"github.com/yuin/gopher-lua"
-	"github.com/atotto/clipboard"
 )
 
 type CommandType int
@@ -755,7 +755,7 @@ const (
 )
 
 type EventAction struct {
-	Type   SlickEvent
+	Type    SlickEvent
 	Key     []rune
 	Handler func(*State, *map[string]string) error
 }
@@ -802,7 +802,7 @@ func ParseScript(script string, state *State, term *frontend.TerminalDisplay) er
 
 		state.EventActions = append(state.EventActions, EventAction{
 			Type: EVENT_KEYMAP,
-			Key: []rune(key),
+			Key:  []rune(key),
 			Handler: func(state *State, metadata *map[string]string) error {
 				return L.CallByParam(lua.P{Fn: function, NRet: 0})
 			},
@@ -943,7 +943,7 @@ func ParseScript(script string, state *State, term *frontend.TerminalDisplay) er
 			Type: event,
 			Handler: func(state *State, metadata *map[string]string) error {
 				if metadata == nil {
-					return errors.New("Metadata passed to event handler for "+eventString+" was nil.")
+					return errors.New("Metadata passed to event handler for " + eventString + " was nil.")
 				}
 
 				// Convert metadata into a table

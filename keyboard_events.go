@@ -227,7 +227,7 @@ func OnCommandExecuted(state *State, term *frontend.TerminalDisplay, quit chan s
 
 	// Emit event to to be handled by lua scripts
 	EmitEvent(state, EVENT_COMMAND_RUN, map[string]string{
-		"raw": string(state.Command),
+		"raw":     string(state.Command),
 		"command": arg0,
 	})
 
@@ -694,7 +694,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 			// Emit event to to be handled by lua scripts
 			EmitEvent(state, EVENT_MESSAGE_SENT, map[string]string{
 				"sender": state.ActiveConnection().Self().Name,
-				"text": string(state.Command),
+				"text":   string(state.Command),
 			})
 
 			// Just send a normal message!

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path"
@@ -10,9 +12,38 @@ import (
 	"github.com/gdamore/tcell"
 )
 
+//
+// COMMAND LINE FLAGS
+//
+
+// --log-file
+var logFileFlag = flag.String(
+	"log-file",
+	path.Join(os.TempDir(), fmt.Sprintf("slicklog.%d", os.Getpid())),
+	"Location to put a log file.",
+)
+
+// --no-config
+var noConfigFlag = flag.Bool("no-config", false, "Don't load configuration from slickrc.")
+
+// --version
+var versionFlag = flag.Bool("version", false, "Display installed version of slick.")
+
 func main() {
+	flag.Parse()
+	if *versionFlag {
+		fmt.Println(version.Version())
+		return
+	}
+
 	// Configure logger to log to file
-	logFile, err := os.Create(path.Join(os.Getenv("HOME"), ".slicklog"))
+	// 1. Create the folder for the log file.
+	// 2. Create the log file.
+	// 3. Pass the log file instance to the logger.
+	if err := os.MkdirAll(path.Dir(*logFileFlag), 0755); err != nil {
+		log.Fatal(err)
+	}
+	logFile, err := os.Create(*logFileFlag)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -33,12 +64,14 @@ func main() {
 	// Initial render.
 	render(state, term)
 
-	log.Println("Reading config files...")
-	for _, data := range GetConfigFileContents() {
-		err := ParseScript(data, state, term)
-		if err != nil {
-			state.Status.Errorf("lua error: %s", err.Error())
-			log.Printf("lua error: %s", err.Error())
+	if !*noConfigFlag {
+		log.Println("Reading config files...")
+		for _, data := range GetConfigFileContents() {
+			err := ParseScript(data, state, term)
+			if err != nil {
+				state.Status.Errorf("lua error: %s", err.Error())
+				log.Printf("lua error: %s", err.Error())
+			}
 		}
 	}
 

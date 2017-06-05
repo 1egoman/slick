@@ -116,7 +116,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 
 							// Emit event to to be handled by lua scripts
 							EmitEvent(state, EVENT_MESSAGE_RECEIVED, map[string]string{
-								"text": message.Text,
+								"text":   message.Text,
 								"sender": message.Sender.Name,
 							})
 
