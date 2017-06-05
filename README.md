@@ -4,6 +4,9 @@ Slick is a modular and extendable [slack](//slack.com) client with a terminal ba
 aiming to be simple and intuitive. It's been designed to have an approachable default configuration but to be easily
 extended to add new functionality in [lua](//lua.org)
 
+[![CircleCI](https://img.shields.io/circleci/project/github/1egoman/slick.svg)](https://circleci.com/gh/1egoman/slick)
+![license](https://img.shields.io/github/license/1egoman/slick.svg)
+
 # Installing
 1. Download a release from the releases page [here](https://github.com/1egoman/slick/releases).
 2. Make slick executable: `chmod 775 slick*`
