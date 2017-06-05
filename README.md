@@ -5,7 +5,12 @@ aiming to be simple and intuitive. It's been designed to have an approachable de
 extended to add new functionality in [lua](//lua.org)
 
 # Installing
-[Here's the skinny](docs/Installing.md).
+1. Download a release from the releases page [here](https://github.com/1egoman/slick/releases).
+2. Make slick executable: `chmod 775 slick*`
+3. Move slick into your path: `mv slick* /usr/local/bin/slick`
+4. Start slick: `slick`
+
+[Read more](docs/Installing.md).
 
 ## Features
 
