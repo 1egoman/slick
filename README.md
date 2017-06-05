@@ -7,6 +7,9 @@ extended to add new functionality in [lua](//lua.org)
 [![CircleCI](https://img.shields.io/circleci/project/github/1egoman/slick.svg)](https://circleci.com/gh/1egoman/slick)
 ![license](https://img.shields.io/github/license/1egoman/slick.svg)
 
+<!-- [<img src="docs/gifs/Monokai.png" height="300" />](https://github.com/1egoman/slick/raw/master/docs/gifs/Monokai.png) -->
+[<img src="docs/gifs/Monokai.png" />](https://github.com/1egoman/slick/raw/master/docs/gifs/Monokai.png)
+
 # Installing
 1. Download a release from the releases page [here](https://github.com/1egoman/slick/releases).
 2. Make slick executable: `chmod 775 slick*`
@@ -35,4 +38,4 @@ And a bunch of smaller things:
 - Tab completion for file paths
 - A lua [standard library](https://github.com/1egoman/slick/blob/master/docs/Scripting.md#modules)
 - Emoji support
-- Extensive theming support - ie, [here](https://github.com/1egoman/slick/blob/master/docs/configuration/Message.Part.ChannelColor.md) [are](https://github.com/1egoman/slick/blob/master/docs/configuration/Message.Attachment.FieldValueColor.md) [a few](https://github.com/1egoman/slick/blob/master/docs/configuration/StatusBar.LogColor.md) (examples)[https://github.com/1egoman/slick/blob/master/docs/configuration/StatusBar.GatewayConnectingColor.md]
+- Extensive theming support - ie, [here](https://github.com/1egoman/slick/blob/master/docs/configuration/Message.Part.ChannelColor.md) [are](https://github.com/1egoman/slick/blob/master/docs/configuration/Message.Attachment.FieldValueColor.md) [a few](https://github.com/1egoman/slick/blob/master/docs/configuration/StatusBar.LogColor.md) [examples](https://github.com/1egoman/slick/blob/master/docs/configuration/StatusBar.GatewayConnectingColor.md)
