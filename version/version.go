@@ -1,13 +1,13 @@
 package version
 
 import (
-	"os"
-	"fmt"
-	"log"
-	"runtime"
-	"net/http"
-	"io/ioutil"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
+	"runtime"
 )
 
 const VERSION_MAJOR = 0
@@ -18,16 +18,15 @@ func Version() string {
 	return fmt.Sprintf("v%d.%d.%d", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
 }
 
-
 //
 // AUTO-UPDATE
 //
 
 type Release struct {
-	Name string `json:"name"`
-	Author string
+	Name    string `json:"name"`
+	Author  string
 	Version string `json:"tag_name"`
-	Binary string
+	Binary  string
 }
 
 func ReleaseBinary(data map[string]interface{}) string {
@@ -59,10 +58,10 @@ func ReleaseDetails() (*Release, error) {
 	var data map[string]interface{}
 	json.Unmarshal(body, &data)
 	return &Release{
-		Name: data["name"].(string),
-		Author: data["author"].(map[string]interface{})["login"].(string),
+		Name:    data["name"].(string),
+		Author:  data["author"].(map[string]interface{})["login"].(string),
 		Version: data["tag_name"].(string),
-		Binary: ReleaseBinary(data),
+		Binary:  ReleaseBinary(data),
 	}, nil
 }
 

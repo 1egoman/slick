@@ -347,7 +347,6 @@ func (term *TerminalDisplay) DrawMessages(
 				)
 			}
 
-
 			messageOffset += relativeLineWidth + 1 // Each line number needs this many columns, +1 padding
 		}
 

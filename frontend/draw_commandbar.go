@@ -32,4 +32,3 @@ func (term *TerminalDisplay) DrawCommandBar(
 	// Show the cursor at the cursor position
 	term.screen.ShowCursor(len(prefix)+1+cursorPosition, row)
 }
-

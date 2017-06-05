@@ -2,8 +2,8 @@ package frontend
 
 import (
 	"fmt"
-	"strings"
 	"github.com/1egoman/slick/version"
+	"strings"
 )
 
 var INFO_PAGE = fmt.Sprintf(`
