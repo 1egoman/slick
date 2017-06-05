@@ -20,6 +20,7 @@ This is the default mode that slick starts in.
 - `G`: Move to the bottommost message (the most recent).
 - `zz`: Attempt to center the screen on the given message.
 - `Ctrl-z/Ctrl-x`: Move to the next or previous connection in the list in the status bar.
+- `1-9`: Select the connection with the respective index.
 
 - `w` or `/` or `:`: Move to `write` mode. `/` and `:` will move into `write` mode with the
   respective character as the start of the command.

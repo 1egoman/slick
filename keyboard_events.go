@@ -647,6 +647,14 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		state.SetPrevActiveConnection()
 	case ev.Key() == tcell.KeyCtrlX:
 		state.SetNextActiveConnection()
+	case state.Mode == "chat" && ev.Key() == tcell.KeyRune && ev.Rune() > '0' && ev.Rune() <= '9':
+		index := int(ev.Rune() - '1')
+		log.Printf("Switch to connection index %d", index)
+		if index < len(state.Connections) {
+			state.SetActiveConnection(index)
+		} else {
+			state.Status.Errorf("No such connection with index %d", index)
+		}
 
 	//
 	// MOVEMENT BETWEEN ITEMS IN THE FUZZY PICKER

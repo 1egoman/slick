@@ -6,7 +6,7 @@ Here are a few good looking color schemes to start with, if looking for a place 
 
 ![Monokai](gifs/Monokai.png)
 
-```
+```lua
 Set("Message.SelectedColor", "white:#272822:")
 
 Set("Message.Part.AtMentionUserColor", "#A6E22E::B") -- Green
