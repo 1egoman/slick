@@ -1,13 +1,12 @@
 # Slick
 
 Slick is a modular and extendable [slack](//slack.com) client with a terminal based ui, while also
-aiming to be simple and intuitive. It's been designed to have an approachable default configuration but to be easily
-extended to add new functionality in [lua](//lua.org)
+aiming to be simple and intuitive. It has been designed to have an approachable default
+configuration but to be easily extended with [lua](//lua.org).
 
 [![CircleCI](https://img.shields.io/circleci/project/github/1egoman/slick.svg)](https://circleci.com/gh/1egoman/slick)
 ![license](https://img.shields.io/github/license/1egoman/slick.svg)
 
-<!-- [<img src="docs/gifs/Monokai.png" height="300" />](https://github.com/1egoman/slick/raw/master/docs/gifs/Monokai.png) -->
 [<img src="docs/gifs/Monokai.png" />](https://github.com/1egoman/slick/raw/master/docs/gifs/Monokai.png)
 
 # Installing
