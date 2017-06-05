@@ -39,7 +39,7 @@ var (
 	// --log-file
 	logFileFlag *string = flag.String(
 		"log-file",
-		path.Join(os.TempDir(), fmt.Sprintf("slicklog.%d", os.Getpid())),
+		path.Join(os.TempDir(), "slick.log"),
 		"Location to put a log file.",
 	)
 
