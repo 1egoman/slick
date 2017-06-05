@@ -28,7 +28,7 @@ func TestPrintableMessageLines(t *testing.T) {
 				[]PrintableMessagePart{plainText("hello world"), plainText("foo")},
 			},
 		},
-		// Evenly wrap a message at it's part boundry
+		// Evenly wrap a message at it's part boundary
 		{
 			MessageParts: []PrintableMessagePart{plainText("hello world"), plainText("foo")},
 			Width:        len("hello world"),
@@ -37,7 +37,7 @@ func TestPrintableMessageLines(t *testing.T) {
 				[]PrintableMessagePart{plainText("foo")},
 			},
 		},
-		// Ensure that a `PrintableMessagePart` can be broken at a line boundry to wrap to the next
+		// Ensure that a `PrintableMessagePart` can be broken at a line boundary to wrap to the next
 		// line.
 		{
 			MessageParts: []PrintableMessagePart{plainText("hello world"), plainText("foo bar")},
@@ -55,7 +55,7 @@ func TestPrintableMessageLines(t *testing.T) {
 				[]PrintableMessagePart{channel("general"), plainText("test")},
 			},
 		},
-		// Wrapping at a part boundry of a non-plaintext part should make both "half parts"
+		// Wrapping at a part boundary of a non-plaintext part should make both "half parts"
 		{
 			MessageParts: []PrintableMessagePart{plainText("foo bar baz"), channel("quux hello world")},
 			Width:        len("foo bar baz quux"),

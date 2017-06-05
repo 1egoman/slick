@@ -45,7 +45,7 @@ func (term *TerminalDisplay) DrawStatusBar(
 		mode,
 	)
 
-	// Then, draw a seperator
+	// Then, draw a separator
 	term.WriteTextStyle(len(mode)+1, lastRow, defaultColor, "|")
 
 	position := len(mode) + 3
@@ -76,7 +76,7 @@ func (term *TerminalDisplay) DrawStatusBar(
 			term.WriteTextStyle(position, lastRow+len(messages), style, "Press any key to continue...")
 		}
 	} else {
-		// Otherwise, render each conenction
+		// Otherwise, render each connection
 		for index, item := range connections {
 			// How should the connection look?
 			var style tcell.Style

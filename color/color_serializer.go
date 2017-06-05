@@ -35,7 +35,8 @@ func SerializeStyle(foreground string, background string, formatting StyleFormat
 // Given a serialized style string, deserialize into a forgeground color, background color, and
 // formatting mask. Also returns an error parsing if there was one.
 // DeSerializeStyle("red:green:B") // => "red", "green", STYLE_BOLD, nil
-// DeSerializeStyle(":") // => "", "", STYLE_PLAIN, error("Less than or greater than three colon-seperated parts in style formatting string.")
+// DeSerializeStyle(":") // => "", "", STYLE_PLAIN, error("Less than or greater than three
+// colon-separated parts in style formatting string.")
 func DeSerializeStyle(styleString string) (string, string, StyleFormattingMask, error) {
 	parts := strings.Split(styleString, ":")
 

@@ -43,7 +43,7 @@ var COMMANDS = []Command{
 	// SPECIAL CASES
 	// `Quit` needs access to the `quit` channel to close the app and `Require` needs access to a
 	// reference to `term` to pass to `ParseScript`. Since these are "special cases", they don't
-	// have handlers and are taken care of seperately in `OnCommandExecuted` in keyboard_events.go.
+	// have handlers and are taken care of separately in `OnCommandExecuted` in keyboard_events.go.
 	//
 	{
 		Name:         "Quit",

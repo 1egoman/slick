@@ -56,7 +56,7 @@ func (c *SlackConnection) Connect() error {
 					c.connectionStatus = gateway.FAILED
 
 					// Try to recover!
-					// If we were disconencted from the slack socket, then attempt to reconnect.
+					// If we were disconnected from the slack socket, then attempt to reconnect.
 					// This can happen beacause of rate limiting, timeouts, etc...
 					err = c.requestConnectionUrl()
 					if err != nil {
@@ -127,7 +127,7 @@ func (c *SlackConnection) Connect() error {
 					c.connectionStatus = gateway.FAILED
 
 					// Try to recover!
-					// If we were disconencted from the slack socket, then attempt to reconnect.
+					// If we were disconnected from the slack socket, then attempt to reconnect.
 					// This can happen beacause of rate limiting, timeouts, etc...
 					err = c.requestConnectionUrl()
 					if err != nil {

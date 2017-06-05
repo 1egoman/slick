@@ -33,7 +33,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		}()
 	}
 
-	// Render messages provided by the active conenction
+	// Render messages provided by the active connection
 	if state.ActiveConnection() != nil {
 		state.RenderedMessageNumber, state.RenderedAllMessages = term.DrawMessages(
 			state.ActiveConnection().MessageHistory(),                                   // List of messages
@@ -69,7 +69,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 	term.DrawStatusBar(
 		state.Mode,               // Which mode we're currently in
 		state.Connections,        // A list of all connections
-		state.ActiveConnection(), // Which conenction is active (to highlight the active one differently)
+		state.ActiveConnection(), // Which connection is active (to highlight the active one differently)
 		state.Status,             // Status message to display
 		state.Configuration,
 	)

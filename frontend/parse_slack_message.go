@@ -33,7 +33,7 @@ func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, 
 		}
 
 		if char == '<' {
-			// Since we just discovered the boundry of the next bit of interest, then add the
+			// Since we just discovered the boundary of the next bit of interest, then add the
 			// previous plain text bit (before this tag) to the parts slice.
 			if index > 0 {
 				parts = append(parts, gateway.PrintableMessagePart{

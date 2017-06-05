@@ -72,11 +72,11 @@ func enableCommandAutocompletion(state *State, term *frontend.TerminalDisplay, q
 	}
 }
 
-// Given a keystack, extract the preceeding quantity.
+// Given a keystack, extract the preceding quantity.
 func KeystackQuantityParser(keystack []rune) (int, []rune, error) {
 	quantityRunes := []rune{}
 
-	// Fetch the preceeding int before the command
+	// Fetch the preceding int before the command
 	for _, key := range keystack {
 		if key >= '0' && key <= '9' {
 			quantityRunes = append(quantityRunes, key)
@@ -162,7 +162,7 @@ func OnPickConnectionChannel(state *State) {
 		}
 		if selectedChannel == nil {
 			log.Fatalf(
-				"Tried to select channel %s that isn't in the slice of channels for conenction %s",
+				"Tried to select channel %s that isn't in the slice of channels for connection %s",
 				selectedChannelName,
 				selectedConnectionName,
 			)
@@ -232,7 +232,7 @@ func OnCommandExecuted(state *State, term *frontend.TerminalDisplay, quit chan s
 	})
 
 	// SPECIAL CASES
-	// Since these commands need access to "priviliged" things, they are harded here.
+	// Since these commands need access to "privileged" things, they are harded here.
 	// `quit` - needs to be able to close the `quit` channel
 	// `require` - needs `term` to pass to `ParseScript`.
 	if arg0 == "quit" || arg0 == "q" {

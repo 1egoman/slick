@@ -108,7 +108,7 @@ const (
 	TYPE_GROUP_DIRECT_MESSAGE                    // A Group DM is a DM between greater than two people
 )
 
-// A Channel is a independant stream of messages sent by users.
+// A Channel is a independent stream of messages sent by users.
 type Channel struct {
 	Id         string      `json:"id"`
 	Name       string      `json:"name"`
