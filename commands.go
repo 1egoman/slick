@@ -166,14 +166,14 @@ var COMMANDS = []Command{
 
 			// try to reconnect
 			err := state.Connections[index].Connect()
-			log.Println("Reconnection response: %s", err)
+			log.Printf("Reconnection response: %s", err)
 			if err != nil {
 				return errors.New(fmt.Sprintf("Error in reconnecting (connect): %s", err))
 			}
 
 			// then, refresh the connection
 			err = state.Connections[index].Refresh(true)
-			log.Println("Refresh response: %s", err)
+			log.Printf("Refresh response: %s", err)
 			if err != nil {
 				return errors.New(fmt.Sprintf("Error in reconnecting (refresh): %s", err))
 			}
@@ -498,7 +498,7 @@ var COMMANDS = []Command{
 				if state.BottomDisplayedItem > 0 && state.SelectedMessageIndex < state.BottomDisplayedItem+messageScrollPadding {
 					state.BottomDisplayedItem -= 1
 				}
-				log.Printf("Selecting message %s", state.SelectedMessageIndex)
+				log.Printf("Selecting message %d", state.SelectedMessageIndex)
 				return nil
 			} else {
 				return errors.New("Can't move back a message, no such message!")

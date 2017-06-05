@@ -79,25 +79,25 @@ func DoUpdate() *string {
 		log.Printf("Downloading release %s...", release.Version)
 		resp, err := http.Get(release.Binary)
 		if err != nil {
-			log.Printf("Error downloading binary: %s", err)
+			log.Printf("Error downloading binary: %s", err.Error())
 			return nil
 		}
 
 		ex, err := os.Executable()
 		if err != nil {
-			log.Printf("Error getting executable:", err)
+			log.Printf("Error getting executable: %s", err.Error())
 			return nil
 		}
 
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Printf("Error decoding body:", err)
+			log.Printf("Error decoding body: %s", err.Error())
 			return nil
 		}
 
 		err = ioutil.WriteFile(ex, body, 0644)
 		if err != nil {
-			log.Printf("Error creating temporary file: %s", err)
+			log.Printf("Error creating temporary file: %s", err.Error())
 			return nil
 		}
 

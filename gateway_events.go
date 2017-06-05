@@ -127,7 +127,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 						}
 					}
 				} else {
-					log.Printf("Channel value", channel)
+					log.Println("Channel value", channel)
 				}
 
 				// case "reaction_added":

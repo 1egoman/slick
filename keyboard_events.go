@@ -506,7 +506,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 					}
 
 					state.FuzzyPicker.ThrowAwayPrefix = state.CommandCursorPosition
-					log.Printf("Got contents of new directory %s", state.Command[state.FuzzyPicker.ThrowAwayPrefix:])
+					log.Printf("Got contents of new directory %s", string(state.Command[state.FuzzyPicker.ThrowAwayPrefix:]))
 					break
 				}
 			}
@@ -562,7 +562,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 
 			// Now that we're at the top, fetch more messages.
 			msgHistory := state.ActiveConnection().MessageHistory()
-			log.Println("Last message loaded: %s", msgHistory[0].Hash)
+			log.Printf("Last message loaded: %s", msgHistory[0].Hash)
 		} else {
 			state.Status.Errorf("No active connection or message history!")
 		}

@@ -85,9 +85,7 @@ func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, 
 				// Links have meta
 				contentParts := strings.Split(content, "|")
 				metadata["Href"] = contentParts[0]
-				if len(contentParts) == 1 { // content = http://example.com
-					content = content // No change
-				} else if len(contentParts) == 2 { // content = http://example.com|label
+				if len(contentParts) == 2 { // content = http://example.com|label
 					content = contentParts[1]
 				}
 			}
