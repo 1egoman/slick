@@ -12,22 +12,43 @@ import (
 	"github.com/gdamore/tcell"
 )
 
+var (
+	// Main screen to draw to
+	screen tcell.Screen
+
+	// A central place to store state.
+	// This struct is passed around to basically everything,
+	// and used to set and reference state in a predictable way.
+	state *State = NewInitialState()
+
+	// A channel to prop the app open. When the app is to be
+	// closed, this channel is closed, which causes everything
+	// to come to a halt.
+	quit chan struct{} = make(chan struct{})
+
+	// An abstraction on top of the display that handles
+	// drawing the status bar, command bar, messages, etc
+	term *frontend.TerminalDisplay
+)
+
 //
 // COMMAND LINE FLAGS
 //
 
-// --log-file
-var logFileFlag = flag.String(
-	"log-file",
-	path.Join(os.TempDir(), fmt.Sprintf("slicklog.%d", os.Getpid())),
-	"Location to put a log file.",
+var (
+	// --log-file
+	logFileFlag *string = flag.String(
+		"log-file",
+		path.Join(os.TempDir(), fmt.Sprintf("slicklog.%d", os.Getpid())),
+		"Location to put a log file.",
+	)
+
+	// --no-config
+	noConfigFlag *bool = flag.Bool("no-config", false, "Don't load configuration from slickrc.")
+
+	// --version
+	versionFlag *bool = flag.Bool("version", false, "Display installed version of slick.")
 )
-
-// --no-config
-var noConfigFlag = flag.Bool("no-config", false, "Don't load configuration from slickrc.")
-
-// --version
-var versionFlag = flag.Bool("version", false, "Display installed version of slick.")
 
 func main() {
 	flag.Parse()
@@ -52,14 +73,12 @@ func main() {
 	log.SetFlags(log.Lshortfile)
 	log.Println("Starting Slick...")
 
-	state := NewInitialState()
-	quit := make(chan struct{})
-
+	// Instantiate the screen and terminal display
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
-	s, _ := tcell.NewScreen()
-	term := frontend.NewTerminalDisplay(s)
-	s.Init()
-	defer s.Fini() // Make sure we clean up after tcell!
+	screen, _ = tcell.NewScreen()
+	screen.Init()
+	defer screen.Fini()
+	term = frontend.NewTerminalDisplay(screen)
 
 	// Initial render.
 	render(state, term)
@@ -93,18 +112,18 @@ func main() {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				s.Fini()
+				screen.Fini()
 				panic(r)
 			}
 		}()
-		keyboardEvents(state, term, s, quit)
+		keyboardEvents(state, term, screen, quit)
 	}()
 
 	// GOROUTINE: Handle events coming from slack.
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				s.Fini()
+				screen.Fini()
 				panic(r)
 			}
 		}()
