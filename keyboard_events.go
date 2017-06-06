@@ -745,6 +745,14 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 	// EDITING OPERATIONS
 	//
 
+	// Backslash adds a newline to a message.
+	case state.Mode == "writ" && ev.Key() == tcell.KeyRune && ev.Rune() == '\\':
+		state.Command = append(
+			append(state.Command[:state.CommandCursorPosition], '\n'),
+			state.Command[state.CommandCursorPosition:]...,
+		)
+		state.CommandCursorPosition += 1
+
 	// As characters are typed, add to the message.
 	case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyRune:
 		state.Command = append(
@@ -761,14 +769,6 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 				state.Status.Errorf(err.Error())
 			}
 		}
-
-	// Backslash adds a newline to a message.
-	case state.Mode == "writ" && ev.Key() == tcell.KeyRune && ev.Rune() == '\\':
-		state.Command = append(
-			append(state.Command[:state.CommandCursorPosition], '\n'),
-			state.Command[state.CommandCursorPosition:]...,
-		)
-		state.CommandCursorPosition += 1
 
 	// Backspace removes a character.
 	case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyDEL:
