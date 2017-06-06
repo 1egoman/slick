@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"sort"
+	"strings"
 
 	"github.com/1egoman/slick/frontend"
 )
@@ -32,6 +33,11 @@ func render(state *State, term *frontend.TerminalDisplay) {
 			render(state, term)
 		}()
 	}
+
+	// Before rendering any controls, make sure that we take into account multiline commandS:
+	// Status bar: 1 high
+	// Sommand Bar: the hight is the nmber of lines in the command.
+	frontend.BottomPadding = 1 + len(strings.Split(string(state.Command), "\n"))
 
 	// Render messages provided by the active connection
 	if state.ActiveConnection() != nil {

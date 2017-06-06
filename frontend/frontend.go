@@ -7,7 +7,7 @@ import (
 // The amount of lines at the bottom of the window to leave available for status bars.
 // One line for the status bar
 // One line for the command bar
-const BottomPadding = 2
+var BottomPadding = 2
 
 func NewTerminalDisplay(screen tcell.Screen) *TerminalDisplay {
 	return &TerminalDisplay{screen: screen}
@@ -58,7 +58,7 @@ func (term *TerminalDisplay) DrawBlankLines(start int, end int) {
 		end = height - end
 	}
 
-	for i := start; i < end; i++ {
+	for i := start; i <= end; i++ {
 		term.DrawBlankLine(i)
 	}
 }

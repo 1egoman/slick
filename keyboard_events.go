@@ -762,6 +762,14 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 			}
 		}
 
+	// Backslash adds a newline to a message.
+	case state.Mode == "writ" && ev.Key() == tcell.KeyRune && ev.Rune() == '\\':
+		state.Command = append(
+			append(state.Command[:state.CommandCursorPosition], '\n'),
+			state.Command[state.CommandCursorPosition:]...,
+		)
+		state.CommandCursorPosition += 1
+
 	// Backspace removes a character.
 	case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyDEL:
 		if state.CommandCursorPosition > 0 {
