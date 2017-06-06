@@ -269,7 +269,9 @@ func (term *TerminalDisplay) DrawMessages(
 
 		// Is the message selected?
 		var selectedStyle tcell.Style
-		if index == selectedMessageIndex {
+		if msg.Confirmed == false {
+			selectedStyle = color.DeSerializeStyleTcell(config["Message.UnconfirmedColor"])
+		} else if index == selectedMessageIndex {
 			selectedStyle = color.DeSerializeStyleTcell(config["Message.SelectedColor"])
 		} else {
 			selectedStyle = tcell.StyleDefault
@@ -421,7 +423,9 @@ func (term *TerminalDisplay) DrawMessages(
 			for _, part := range line {
 				// How should this part be styled?
 				var style tcell.Style
-				if part.Type == gateway.PRINTABLE_MESSAGE_PLAIN_TEXT {
+				if msg.Confirmed == false {
+					style = color.DeSerializeStyleTcell(config["Message.UnconfirmedColor"])
+				} else if part.Type == gateway.PRINTABLE_MESSAGE_PLAIN_TEXT {
 					style = tcell.StyleDefault
 				} else if part.Type == gateway.PRINTABLE_MESSAGE_AT_MENTION_USER {
 					style = color.DeSerializeStyleTcell(config["Message.Part.AtMentionUserColor"])

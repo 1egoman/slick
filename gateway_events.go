@@ -91,12 +91,15 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 
 						// See if the message is already in the history
 						alreadyInHistory := false
-						for _, msg := range conn.MessageHistory() {
+						lastUnconfirmedMessageIndex := -1
+						for index, msg := range conn.MessageHistory() {
 							if msg.Hash == messageHash {
 								// Message with that hash is already in the history, no need to add
 								// again...
 								alreadyInHistory = true
 								break
+							} else if userId, ok := event.Data["user"].(string); ok && msg.Confirmed == false && msg.Sender != nil && msg.Sender.Id == userId {
+								lastUnconfirmedMessageIndex = index
 							}
 						}
 						if alreadyInHistory {
@@ -105,14 +108,26 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 
 						message, err := conn.ParseMessage(event.Data, cachedUsers)
 						if err == nil {
-							// Add message to history
-							conn.AppendMessageHistory(*message)
-
 							// Emit event to to be handled by lua scripts
 							EmitEvent(state, EVENT_MESSAGE_RECEIVED, map[string]string{
 								"text":   message.Text,
 								"sender": message.Sender.Name,
+								"confirmed": message.Confirmed,
 							})
+
+							// If an unconfirmed message was found that is thought to be the same
+							// message, then copy over this message into that spot and be done with
+							// it.
+							if lastUnconfirmedMessageIndex >= 0 {
+								log.Printf("Message received is a confirmed version of message %+v. Replacing with confirmed version...", history[lastUnconfirmedMessageIndex])
+								history := conn.MessageHistory()
+								history[lastUnconfirmedMessageIndex] = *message
+								conn.SetMessageHistory(history)
+								break
+							}
+
+							// Add message to history
+							conn.AppendMessageHistory(*message)
 
 							// If the user that sent the message was typing, they aren't anymore.
 							conn.TypingUsers().Remove(message.Sender.Name)

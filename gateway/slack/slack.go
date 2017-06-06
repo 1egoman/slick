@@ -514,6 +514,7 @@ func (c *SlackConnection) ParseMessage(
 		Hash:        slackMessageBuffer.Ts,
 		File:        file,
 		Attachments: &attachments,
+		Confirmed: true,
 	}, nil
 }
 

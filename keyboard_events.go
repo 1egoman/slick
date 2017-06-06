@@ -705,11 +705,13 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 				"text":   string(state.Command),
 			})
 
-			// Just send a normal message!
+			// Append the message the the history, but make it disabled.
 			message := gateway.Message{
 				Sender: state.ActiveConnection().Self(),
 				Text:   string(state.Command),
+				Confirmed: false,
 			}
+			state.ActiveConnection().AppendMessageHistory(message)
 
 			// Sometimes, a message could have a response. This is for example true in the
 			// case of slash commands, sometimes.

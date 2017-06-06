@@ -111,6 +111,7 @@ func NewInitialStateMode(mode string) *State {
 			"Message.Part.LinkColor":             "cyan::BU",
 			"Message.LineNumber.Color":           "white::",
 			"Message.LineNumber.ActiveColor":     "teal::",
+			"Message.UnconfirmedColor":           "gray::",
 
 			"CommandBar.PrefixColor": "::",
 			"CommandBar.TextColor":   "::",
