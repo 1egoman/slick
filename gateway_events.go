@@ -47,18 +47,12 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 
 			switch event.Type {
 			case "hello":
-				conn.AppendMessageHistory(gateway.Message{
-					Sender:    nil,
-					Text:      "Got Hello...",
-					Hash:      "hello",
-					Timestamp: int(time.Now().Unix()),
-				})
-
 				// Send an outgoing message
 				conn.Outgoing() <- gateway.Event{
 					Type: "ping",
 					Data: map[string]interface{}{
-						"foo": "bar",
+						"type": "slick",
+						"when": int(time.Now().Unix()),
 					},
 				}
 
