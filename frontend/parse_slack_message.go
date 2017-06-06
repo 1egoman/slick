@@ -32,7 +32,19 @@ func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, 
 			nextChar = ' ' // Placeholder character.
 		}
 
-		if char == '<' {
+		if char == '\n' {
+			// Enforce newlines.
+
+			// Add any text before the newline to the printable message slice.
+			parts = append(parts, gateway.PrintableMessagePart{
+				Type:    gateway.PRINTABLE_MESSAGE_PLAIN_TEXT,
+				Content: text[startIndex:index],
+			})
+			startIndex = index + 1
+
+			// Add the newline.
+			parts = append(parts, gateway.PrintableMessagePart{Type: gateway.PRINTABLE_MESSAGE_NEWLINE})
+		} else if char == '<' {
 			// Since we just discovered the boundary of the next bit of interest, then add the
 			// previous plain text bit (before this tag) to the parts slice.
 			if index > 0 {

@@ -197,7 +197,7 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 
 // Given a channel, return all messages within that channel.
 func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel, startTs *string) ([]gateway.Message, error) {
-	log.Printf("Fetching channel messages for team %s starting at %s", c.Team().Name, *startTs)
+	log.Printf("Fetching channel messages for team %s starting at %s", c.Team().Name, startTs)
 
 	// Contruct the request url
 	var url string

@@ -15,6 +15,7 @@ const (
 	PRINTABLE_MESSAGE_CHANNEL          // (like #general)
 	PRINTABLE_MESSAGE_CONNECTION       // (like "my custom slack team")
 	PRINTABLE_MESSAGE_LINK             // (like http://example.com)
+	PRINTABLE_MESSAGE_NEWLINE
 )
 
 type PrintableMessagePart struct {
@@ -73,7 +74,13 @@ func (p *PrintableMessage) Lines(width int) [][]PrintableMessagePart {
 
 	for _, part := range p.parts {
 		messageParts = append(messageParts, part)
-		// log.Printf("MESSAGE PARTS %+v", messageParts)
+
+		// If a newline was found, then force a line break, and clear the parts on the current line.
+		if part.Type == PRINTABLE_MESSAGE_NEWLINE {
+			lines = append(lines, messageParts)
+			messageParts = make([]PrintableMessagePart, 0)
+		}
+
 
 		pm := PrintableMessage{parts: messageParts}
 		if pm.Length() > width {
