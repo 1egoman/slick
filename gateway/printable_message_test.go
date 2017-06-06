@@ -13,6 +13,7 @@ func plainText(text string) PrintableMessagePart {
 func channel(text string) PrintableMessagePart {
 	return PrintableMessagePart{Type: PRINTABLE_MESSAGE_AT_MENTION_GROUP, Content: text}
 }
+var newline PrintableMessagePart = PrintableMessagePart{Type: PRINTABLE_MESSAGE_NEWLINE}
 
 func TestPrintableMessageLines(t *testing.T) {
 	for _, test := range []struct {
@@ -62,6 +63,15 @@ func TestPrintableMessageLines(t *testing.T) {
 			WrappedResult: [][]PrintableMessagePart{
 				[]PrintableMessagePart{plainText("foo bar baz"), channel("quux")},
 				[]PrintableMessagePart{channel("hello world")},
+			},
+		},
+		// Forced newlines should force a move to a newline, even if not needed due to length
+		{
+			MessageParts: []PrintableMessagePart{plainText("foo bar baz"), newline, channel("quux hello world")},
+			Width:        len("foo bar baz quux"),
+			WrappedResult: [][]PrintableMessagePart{
+				[]PrintableMessagePart{plainText("foo bar baz"), newline},
+				[]PrintableMessagePart{channel("quux hello world")},
 			},
 		},
 
