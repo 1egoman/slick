@@ -475,7 +475,8 @@ func TestEmojiStartingMessageWontMeTreatedAsCommand(t *testing.T) {
 	)
 
 	// Verify it passed - a message should have been posted, not a command run.
-	if len(state.ActiveConnection().MessageHistory()) != initialMessageHistoryLength || !userSentMessage {
+	messagePosted := len(state.ActiveConnection().MessageHistory()) != initialMessageHistoryLength
+	if !messagePosted || !userSentMessage {
 		t.Errorf("Test failed.")
 	}
 }
