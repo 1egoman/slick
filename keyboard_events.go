@@ -699,8 +699,8 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 
 			// Append the message the the history, but make it disabled.
 			message := gateway.Message{
-				Sender: state.ActiveConnection().Self(),
-				Text:   string(state.Command),
+				Sender:    state.ActiveConnection().Self(),
+				Text:      string(state.Command),
 				Confirmed: false,
 			}
 			state.ActiveConnection().AppendMessageHistory(message)

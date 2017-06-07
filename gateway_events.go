@@ -2,8 +2,8 @@ package main
 
 import (
 	"log"
-	"time"
 	"strconv"
+	"time"
 
 	"github.com/1egoman/slick/frontend" // The thing to draw to the screen
 	"github.com/1egoman/slick/gateway"  // The thing to interface with slack
@@ -111,8 +111,8 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 						if err == nil {
 							// Emit event to to be handled by lua scripts
 							EmitEvent(state, EVENT_MESSAGE_RECEIVED, map[string]string{
-								"text":   message.Text,
-								"sender": message.Sender.Name,
+								"text":      message.Text,
+								"sender":    message.Sender.Name,
 								"confirmed": strconv.FormatBool(message.Confirmed),
 							})
 
