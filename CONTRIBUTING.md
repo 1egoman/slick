@@ -1,80 +1,44 @@
-# General Design Pattern
-
-```
-            Frontend (`frontend` package)
-               ||
-               ||
-           Application Logic (`main` package)
-              //   \\
-             //     \\
-         Gateway   Gateway
-```
-
-
-- The `frontend` package is the interface to the terminal. It contains all the drawing code and the is
-  (currently) tightly coupled to tcell, the terminal drawing library this project uses.
-- The `main` package contains the application logic. This switching modes, typing commands, and
-  handling keyboard input are all handled by this code.
-- Gateways are connections to slack. One websocket conenction is made per team, and all "pushed"
-  events flow over that connection. In addition, gateways also abstract away deatils such as how to
-  get channels, teams details, and more.
-
-By abstracting each of these three "layers" into their own packages, the hope is to minimize the
-amount of coupling of layers to each other.
-
-## Frontend
-The frontend is available as `frontend.TerminalDisplay`. This struct handles drawing ui components
-such at the status bar, the command bar, messages, and the fuzzy picker.
-
-## Gateway
-Gateways have a main interface, `gateway.Connection`. Anything that wants to be a gateway needs to
-implement this interface. There's a single gateway at the moment, `gatewaySlack.SlackConnection`. It has
-a constructor called `gatewaySlack.New` that takes a single parameter - the auth token for slack.
-
-# Project structure
-
-```
-.
-├── Biomefile                // Holds environment variables needed to run the app
-├── CONTRIBUTING.md          // (this doc!)
-├── README.md
-├── SHORTCUTS.md
-├── commands.go              // Handles slash and colon command execution, processing, and definition.
-├── commands_test.go
-├── connect.go               // When the app starts, this kicks off each connection (calls `connection.Connect`)
-├── fuzzy_picker.go          // Fuzzy picker struct and logic. See file for a usage example.
-│
-├── frontend
-│   ├── draw_fuzzy_picker.go // Renders the fuzzy picker, the thing used to pick channels and provide autocomplete
-│   ├── draw_messages.go     // Renders a list of messages
-│   └── frontend.go          // Miscellaneous drawing and initialization logic.
-│
-├── gateway
-│   ├── gateway.go           // Defines the gateway interface that slack implements.
-│   └── slack
-│       ├── connect.go       // Connect to slack message server via websocket. Called by ../connect.go.
-│       ├── post_text.go     // Make a post / snipper to a given channel.
-│       ├── refresh.go       // When a slack connection becomes active again, call this to "refresh" channel list / active user / etc
-│       ├── send_message.go  // Send a message to a channel
-│       └── slack.go         // Miscellaneous slack constants and initialization logic.
-│
-├── status
-│   └── status.go            // Struct for managing the storage and usage of the status message.
-│
-├── gateway_events.go        // Handle incoming events from gateways.
-├── keyboard_events.go       // Handle incoming events from the keyboard.
-├── keyboard_events_test.go
-├── main.go                  // Program starts here! :)
-├── render.go                // Contains main render loop.
-└── state.go                 // Contains app state struct definitions.
-```
-
-
-
 # Contributing
 
 Source files are relatively well documented, but here's a quick rundown:
+
+- `slick.go` is the main file, which contains initialization logic.
+
 - `gateway` contains all the code that relates to talking to a message gateway:
 	- All the structs (`Channel`, `Message`, `User`, etc...)
 	- An implementation of the `gateway.Connection` interface for slack, called `SlackConnection`
-- ``
+- `frontend` contains all the code to draw the app to the screen
+	- Each `draw_*.go` handles a ui element.
+- `version` handles keeping track of the version and auto-updates.
+- `color` takes care of conversion between the `red:green:B` color format and tcell's color format.
+- `status` contains the core state management code for the status bar's status line.
+
+- `state` stores the entire application's state in a data-structure.
+- `gateway_events` contains code to handle incoming events from the message gateway. Updates the state.
+	- `notifications` displays any notifications that the message gateway requests.
+- `keyboard_events` contains keyboard event handling logic. Updates the state.
+	- `commands` is sent any commands from `keyboard_events` and runs them.
+- `render` kicks off a screen rerender using a modified state. 
+
+## Commit messages
+This project strives to use [semantic commit messages](https://seesparkbox.com/foundry/semantic_commit_messages). In particular, we make use of the prefixes:
+- `code`
+- `chore`
+- `docs` - indicates a non-code update to documentation, such as a README change.
+- `test` - indicates updates to test code.
+- `slug` - indicates a useless commit, such as causing a ci rebuild. These should be rebased together prior
+  to merging if at all possible.
+- `design` - indicates stylesheet changes or other visual updates
+
+In addition, an optional second tier of description can be added if helpful with parenthesis. This
+is usually used to provide context on a code update, a chore, or a slug.
+
+### Examples
+```
+code: quit goroutine when all connections are disconnected.
+code(test): tests for newline in messages
+docs: add ci readme badge
+slug: ci update
+code(design): Fill all lines along the left with a background color, even if there's no line number in a cell.
+docs(chore): add image
+```
