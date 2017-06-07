@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"time"
+	"strconv"
 
 	"github.com/1egoman/slick/frontend" // The thing to draw to the screen
 	"github.com/1egoman/slick/gateway"  // The thing to interface with slack
@@ -112,15 +113,15 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 							EmitEvent(state, EVENT_MESSAGE_RECEIVED, map[string]string{
 								"text":   message.Text,
 								"sender": message.Sender.Name,
-								"confirmed": message.Confirmed,
+								"confirmed": strconv.FormatBool(message.Confirmed),
 							})
 
 							// If an unconfirmed message was found that is thought to be the same
 							// message, then copy over this message into that spot and be done with
 							// it.
 							if lastUnconfirmedMessageIndex >= 0 {
-								log.Printf("Message received is a confirmed version of message %+v. Replacing with confirmed version...", history[lastUnconfirmedMessageIndex])
 								history := conn.MessageHistory()
+								log.Printf("Message received is a confirmed version of message %+v. Replacing with confirmed version...", history[lastUnconfirmedMessageIndex])
 								history[lastUnconfirmedMessageIndex] = *message
 								conn.SetMessageHistory(history)
 								break
