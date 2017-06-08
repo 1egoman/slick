@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"log"
 	"strings"
 )
 
@@ -69,16 +68,20 @@ func (p *PrintableMessage) Lines(width int) [][]PrintableMessagePart {
 	var lineBeingAssembled []PrintableMessagePart
 	lineWidth := 0
 	for _, part := range p.parts {
+
+    // Handle newlines. If we come across a newline, add the "working" line to the lines array and
+    // create a new working line.
+    if part.Type == PRINTABLE_MESSAGE_NEWLINE {
+      lines = append(lines, lineBeingAssembled)
+      lineBeingAssembled = make([]PrintableMessagePart, 0)
+    }
+
+    // Is the current part have to wrap to fit on the current width
 		if lineWidth + len(part.Content) > width {
 			widthRemainingInLine := width - lineWidth
 
-			if part.Type == PRINTABLE_MESSAGE_NEWLINE {
-				lines = append(lines, lineBeingAssembled)
-				lineBeingAssembled = make([]PrintableMessagePart, 0)
-			}
-			
 			content := part.Content
-			for len(content) > width {
+			for len(content) > widthRemainingInLine {
 				// The goal is to split the part in two - the first bit goes on the current line, the second bit is saved for the next iteration.
 				
 				// Attempt to split the part at a space, if possible. If not, just split in the middle of a word.
@@ -124,12 +127,14 @@ func (p *PrintableMessage) Lines(width int) [][]PrintableMessagePart {
 	return lines
 }
 
-func (p *PrintableMessage) Print(width int) {
+func (p *PrintableMessage) Sprint(width int) string {
+	total := ""
 	for _, line := range p.Lines(width) {
 		lineContent := ""
 		for _, part := range line {
 			lineContent += part.Content
 		}
-		fmt.Println(lineContent)
+		total += lineContent + "\n"
 	}
+	return total
 }

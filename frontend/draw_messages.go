@@ -246,6 +246,10 @@ func (term *TerminalDisplay) DrawMessages(
 		}
 	}
 
+	// The relative line gutter width should be the same length as the height. If we've got
+	// over one hundred lines then we're going to have three digit relative line numbers.
+	relativeLineWidth := len(fmt.Sprintf("%d", height / 2)) + 1
+
 	// Loop from the bottom of the window to the top.
 	// Start at the `bottomDisplayedItem`th item and loop until no more items can be rendered.
 	index := len(messages) - 1 - bottomDisplayedItem
@@ -258,14 +262,17 @@ func (term *TerminalDisplay) DrawMessages(
 
 		// Calculate the width of the message prefix.
 		timestamp := time.Unix(int64(msg.Timestamp), 0).Format(config["Message.TimestampFormat"])
-		prefixWidth := len(timestamp) + 1 + len(sender) + 1
-		var relativeLineWidth int
+		prefixWidth := 0
 		if _, ok := config["Message.RelativeLine"]; ok {
-			// The relative line gutter width should be the same length as the height. If we've got
-			// over one hundred lines then we're going to have three digit relative line numbers.
-			relativeLineWidth = len(fmt.Sprintf("%d", height)) + 1
 			prefixWidth += relativeLineWidth
 		}
+		prefixWidth += len(timestamp) + 1
+		if msg.Sender != nil && userOnline(msg.Sender) {
+			prefixWidth += len(config["Message.Sender.OnlinePrefix"])
+		} else if msg.Sender != nil {
+			prefixWidth += len(config["Message.Sender.OfflinePrefix"])
+		}
+		prefixWidth += len(sender) + 1
 
 		// Is the message selected?
 		var selectedStyle tcell.Style
@@ -288,7 +295,7 @@ func (term *TerminalDisplay) DrawMessages(
 		}
 
 		// Calculate how many rows the message requires to render.
-		messageColumnWidth := width - prefixWidth
+		messageColumnWidth := width - prefixWidth - 1
 		parsedMessageLines := parsedMessage.Lines(messageColumnWidth)
 		messageRows := len(parsedMessageLines)
 		accessoryRow := row // The row to start rendering "message accessories" on
