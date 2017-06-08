@@ -28,7 +28,7 @@ This project strives to use [semantic commit messages](https://seesparkbox.com/f
 - `test` - indicates updates to test code.
 - `slug` - indicates a useless commit, such as causing a ci rebuild. These should be rebased together prior
   to merging if at all possible.
-- `design` - indicates stylesheet changes or other visual updates
+- `design` - indicates style changes or other visual updates
 
 In addition, an optional second tier of description can be added if helpful with parenthesis. This
 is usually used to provide context on a code update, a chore, or a slug.
