@@ -287,35 +287,61 @@ func (term *TerminalDisplay) DrawMessages(
 			return 0, false
 		}
 
-		// Calculate how many rows the message requires to render.
-		messageColumnWidth := width - prefixWidth
-		parsedMessageLines := parsedMessage.Lines(messageColumnWidth)
-		messageRows := len(parsedMessageLines)
-		accessoryRow := row // The row to start rendering "message accessories" on
-		if len(msg.Text) == 0 {
-			accessoryRow -= 1
-		}
-		if len(msg.Reactions) > 0 { // Reactions need one row
-			messageRows += 1
-			accessoryRow -= 1
-		}
-		if msg.File != nil { // Files need one row
-			messageRows += 1
-			accessoryRow -= 1
-		}
-		if msg.Attachments != nil { // Attachments need a lot of rows. :(
-			// Collect the total attachment height
-			var attachmentSize int
-			for _, attach := range *msg.Attachments {
-				attachmentSize += getAttachmentHeight(attach)
-			}
-
-			messageRows += attachmentSize
-			accessoryRow -= attachmentSize
-		}
-
 		// The number of characters from the left that messages should be offset by.
 		messageOffset := 0
+
+		// Draw a relative line number at the start of the line, if requested.
+		if _, ok := config["Message.RelativeLine"]; ok {
+			messageOffset += relativeLineWidth + 1 // Each line number needs this many columns, +1 padding
+		}
+
+		messageOffset += len(timestamp) + 1
+
+		if msg.Sender != nil && userOnline(msg.Sender) {
+			messageOffset += len(config["Message.Sender.OnlinePrefix"])
+		} else if msg.Sender != nil {
+			messageOffset += len(config["Message.Sender.OfflinePrefix"])
+		}
+
+		messageOffset += len(sender)
+
+
+
+		// Calculate how many rows the message requires to render.
+		messageColumnWidth := width - prefixWidth - messageOffset
+		parsedMessageLines := parsedMessage.Lines(messageColumnWidth)
+		messageRows := len(parsedMessageLines)
+
+		messageOffset = 0
+
+		// Draw the sender, the sender's online status, and the timestamp on the first row of a message
+		term.WriteTextStyle(messageOffset, row-messageRows+1, selectedStyle, timestamp)
+		messageOffset += len(timestamp) + 1
+
+		if msg.Sender != nil && userOnline(msg.Sender) {
+			// Render online status for sender
+			term.WriteTextStyle(
+				messageOffset,
+				row-messageRows+1,
+				color.DeSerializeStyleTcell(config["Message.Sender.OnlinePrefixColor"]),
+				config["Message.Sender.OnlinePrefix"],
+			)
+			messageOffset += len(config["Message.Sender.OnlinePrefix"])
+		} else if msg.Sender != nil {
+			// Render offline status for sender
+			term.WriteTextStyle(
+				messageOffset,
+				row-messageRows+1,
+				color.DeSerializeStyleTcell(config["Message.Sender.OfflinePrefixColor"]),
+				config["Message.Sender.OfflinePrefix"],
+			)
+			messageOffset += len(config["Message.Sender.OfflinePrefix"])
+		}
+
+		term.WriteTextStyle(messageOffset, row-messageRows+1, senderStyle, sender)
+		messageOffset += len(sender)
+
+
 
 		// Draw a relative line number at the start of the line, if requested.
 		var lineNumberStyle tcell.Style
@@ -348,36 +374,31 @@ func (term *TerminalDisplay) DrawMessages(
 					content,
 				)
 			}
-
-			messageOffset += relativeLineWidth + 1 // Each line number needs this many columns, +1 padding
 		}
 
-		// Draw the sender, the sender's online status, and the timestamp on the first row of a message
-		term.WriteTextStyle(messageOffset, row-messageRows+1, selectedStyle, timestamp)
-		messageOffset += len(timestamp) + 1
 
-		if msg.Sender != nil && userOnline(msg.Sender) {
-			// Render online status for sender
-			term.WriteTextStyle(
-				messageOffset,
-				row-messageRows+1,
-				color.DeSerializeStyleTcell(config["Message.Sender.OnlinePrefixColor"]),
-				config["Message.Sender.OnlinePrefix"],
-			)
-			messageOffset += len(config["Message.Sender.OnlinePrefix"])
-		} else if msg.Sender != nil {
-			// Render offline status for sender
-			term.WriteTextStyle(
-				messageOffset,
-				row-messageRows+1,
-				color.DeSerializeStyleTcell(config["Message.Sender.OfflinePrefixColor"]),
-				config["Message.Sender.OfflinePrefix"],
-			)
-			messageOffset += len(config["Message.Sender.OfflinePrefix"])
+		accessoryRow := row // The row to start rendering "message accessories" on
+		if len(msg.Text) == 0 {
+			accessoryRow -= 1
 		}
+		if len(msg.Reactions) > 0 { // Reactions need one row
+			messageRows += 1
+			accessoryRow -= 1
+		}
+		if msg.File != nil { // Files need one row
+			messageRows += 1
+			accessoryRow -= 1
+		}
+		if msg.Attachments != nil { // Attachments need a lot of rows. :(
+			// Collect the total attachment height
+			var attachmentSize int
+			for _, attach := range *msg.Attachments {
+				attachmentSize += getAttachmentHeight(attach)
+			}
 
-		term.WriteTextStyle(messageOffset, row-messageRows+1, senderStyle, sender)
-		messageOffset += len(sender)
+			messageRows += attachmentSize
+			accessoryRow -= attachmentSize
+		}
 
 		// Render optional reactions, file, or attachment after message
 		if msg.File != nil {
