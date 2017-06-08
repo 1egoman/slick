@@ -1,7 +1,7 @@
 package gateway_test
 
 import (
-	// "fmt"
+	"fmt"
 	. "github.com/1egoman/slick/gateway"
 	"reflect"
 	"testing"
@@ -65,6 +65,16 @@ func TestPrintableMessageLines(t *testing.T) {
 				[]PrintableMessagePart{channel("hello world")},
 			},
 		},
+		// More than two lines.
+		{
+			MessageParts: []PrintableMessagePart{plainText("I have an official test build happening right now that will be ready for you tomorrow morning. I want to get a head start here just to make sure that nothing undexpected pops up.")},
+			Width:        65,
+			WrappedResult: [][]PrintableMessagePart{
+				[]PrintableMessagePart{plainText("I have an official test build happening right now that will be")},
+				[]PrintableMessagePart{plainText("ready for you tomorrow morning. I want to get a head start here")},
+				[]PrintableMessagePart{plainText("just to make sure that nothing undexpected pops up.")},
+			},
+		},
 		// Forced newlines should force a move to a newline, even if not needed due to length
 		{
 			MessageParts: []PrintableMessagePart{plainText("foo bar baz"), newline, channel("quux hello world")},
@@ -84,6 +94,7 @@ func TestPrintableMessageLines(t *testing.T) {
 			},
 		},
 	} {
+		fmt.Println("")
 		pm := NewPrintableMessage(test.MessageParts)
 		lines := pm.Lines(test.Width)
 
