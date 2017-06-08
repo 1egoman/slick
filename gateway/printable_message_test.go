@@ -1,7 +1,7 @@
 package gateway_test
 
 import (
-	"fmt"
+	// "fmt"
 	. "github.com/1egoman/slick/gateway"
 	"reflect"
 	"testing"
@@ -31,11 +31,11 @@ func TestPrintableMessageLines(t *testing.T) {
 		},
 		// Evenly wrap a message at it's part boundary
 		{
-			MessageParts: []PrintableMessagePart{plainText("hello world"), plainText("foo")},
+			MessageParts: []PrintableMessagePart{plainText("hello world"), plainText("bar")},
 			Width:        len("hello world"),
 			WrappedResult: [][]PrintableMessagePart{
 				[]PrintableMessagePart{plainText("hello world")},
-				[]PrintableMessagePart{plainText("foo")},
+				[]PrintableMessagePart{plainText("bar")},
 			},
 		},
 		// Ensure that a `PrintableMessagePart` can be broken at a line boundary to wrap to the next
@@ -44,7 +44,7 @@ func TestPrintableMessageLines(t *testing.T) {
 			MessageParts: []PrintableMessagePart{plainText("hello world"), plainText("foo bar")},
 			Width:        15,
 			WrappedResult: [][]PrintableMessagePart{
-				[]PrintableMessagePart{plainText("hello world"), plainText("foo")},
+				[]PrintableMessagePart{plainText("hello world"), plainText("foo ")},
 				[]PrintableMessagePart{plainText("bar")},
 			},
 		},
@@ -61,7 +61,7 @@ func TestPrintableMessageLines(t *testing.T) {
 			MessageParts: []PrintableMessagePart{plainText("foo bar baz"), channel("quux hello world")},
 			Width:        len("foo bar baz quux"),
 			WrappedResult: [][]PrintableMessagePart{
-				[]PrintableMessagePart{plainText("foo bar baz"), channel("quux")},
+				[]PrintableMessagePart{plainText("foo bar baz"), channel("quux ")},
 				[]PrintableMessagePart{channel("hello world")},
 			},
 		},
@@ -70,8 +70,8 @@ func TestPrintableMessageLines(t *testing.T) {
 			MessageParts: []PrintableMessagePart{plainText("I have an official test build happening right now that will be ready for you tomorrow morning. I want to get a head start here just to make sure that nothing undexpected pops up.")},
 			Width:        65,
 			WrappedResult: [][]PrintableMessagePart{
-				[]PrintableMessagePart{plainText("I have an official test build happening right now that will be")},
-				[]PrintableMessagePart{plainText("ready for you tomorrow morning. I want to get a head start here")},
+				[]PrintableMessagePart{plainText("I have an official test build happening right now that will be ")},
+				[]PrintableMessagePart{plainText("ready for you tomorrow morning. I want to get a head start here ")},
 				[]PrintableMessagePart{plainText("just to make sure that nothing undexpected pops up.")},
 			},
 		},
@@ -80,26 +80,16 @@ func TestPrintableMessageLines(t *testing.T) {
 			MessageParts: []PrintableMessagePart{plainText("foo bar baz"), newline, channel("quux hello world")},
 			Width:        len("foo bar baz quux"),
 			WrappedResult: [][]PrintableMessagePart{
-				[]PrintableMessagePart{plainText("foo bar baz"), newline},
-				[]PrintableMessagePart{channel("quux hello world")},
-			},
-		},
-
-		// Test for issue #9
-		{
-			MessageParts: []PrintableMessagePart{plainText("foo")},
-			Width:        -1, // This shouldn't ever happen, I just wanted to get `maximumLengthOfLastMessagePart` < 0
-			WrappedResult: [][]PrintableMessagePart{
-				[]PrintableMessagePart{plainText("foo")},
+				[]PrintableMessagePart{plainText("foo bar baz")},
+				[]PrintableMessagePart{newline, channel("quux hello world")},
 			},
 		},
 	} {
-		fmt.Println("")
 		pm := NewPrintableMessage(test.MessageParts)
 		lines := pm.Lines(test.Width)
 
 		if !reflect.DeepEqual(lines, test.WrappedResult) {
-			t.Errorf("%+v != %+v\n", lines, test.WrappedResult)
+			t.Errorf("\n%+v\n != \n%+v\n", SprintLines(test.Width, lines), SprintLines(test.Width, test.WrappedResult))
 		}
 	}
 }

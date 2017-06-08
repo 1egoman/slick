@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -68,15 +69,16 @@ func (p *PrintableMessage) Lines(width int) [][]PrintableMessagePart {
 	var lineBeingAssembled []PrintableMessagePart
 	lineWidth := 0
 	for _, part := range p.parts {
+		// Handle newlines. If we come across a newline, add the "working" line to the lines array and
+		// create a new working line.
+		if part.Type == PRINTABLE_MESSAGE_NEWLINE {
+		  lines = append(lines, lineBeingAssembled)
+		  // Reset the current line.
+		  lineBeingAssembled = make([]PrintableMessagePart, 0)
+		  lineWidth = 0
+		}
 
-    // Handle newlines. If we come across a newline, add the "working" line to the lines array and
-    // create a new working line.
-    if part.Type == PRINTABLE_MESSAGE_NEWLINE {
-      lines = append(lines, lineBeingAssembled)
-      lineBeingAssembled = make([]PrintableMessagePart, 0)
-    }
-
-    // Is the current part have to wrap to fit on the current width
+		// Is the current part have to wrap to fit on the current width
 		if lineWidth + len(part.Content) > width {
 			widthRemainingInLine := width - lineWidth
 
@@ -93,7 +95,9 @@ func (p *PrintableMessage) Lines(width int) [][]PrintableMessagePart {
 				
 				// Append the first bit to the current line
 				firstBit := PrintableMessagePart{Type: part.Type, Content: content[:amountOfLineUsed], Metadata: part.Metadata}
-				lineBeingAssembled = append(lineBeingAssembled, firstBit)
+				if len(firstBit.Content) > 0 {
+					lineBeingAssembled = append(lineBeingAssembled, firstBit)
+				}
 			
 				// Append the current line to the lines collection.
 				lines = append(lines, lineBeingAssembled)
@@ -127,12 +131,19 @@ func (p *PrintableMessage) Lines(width int) [][]PrintableMessagePart {
 	return lines
 }
 
-func (p *PrintableMessage) Sprint(width int) string {
+func SprintLines(width int, lines [][]PrintableMessagePart) string {
 	total := ""
-	for _, line := range p.Lines(width) {
+
+	for i := 0; i < width; i++ {
+		total += "-"
+	}
+	total += "\n"
+
+	for _, line := range lines {
 		lineContent := ""
 		for _, part := range line {
-			lineContent += part.Content
+			lineContent += fmt.Sprintf("%d{%s}", part.Type, part.Content)
+			// lineContent += part.Content
 		}
 		total += lineContent + "\n"
 	}
