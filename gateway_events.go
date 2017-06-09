@@ -4,6 +4,7 @@ import (
 	"log"
 	"strconv"
 	"time"
+	"strings"
 
 	"github.com/1egoman/slick/frontend" // The thing to draw to the screen
 	"github.com/1egoman/slick/gateway"  // The thing to interface with slack
@@ -60,9 +61,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 			case "desktop_notification":
 				if title, ok := event.Data["title"].(string); ok {
 					if content, ok := event.Data["content"].(string); ok {
-						if image, ok := event.Data["avatarImage"].(string); ok {
-							Notification(title, content, image)
-						}
+						Notification(title, content)
 					}
 				}
 
@@ -115,6 +114,25 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 								"sender":    message.Sender.Name,
 								"confirmed": strconv.FormatBool(message.Confirmed),
 							})
+
+							// Get the name of the channel the message was sent through
+							var messageChannel *gateway.Channel
+							if channelId, ok := event.Data["channel"].(string); ok {
+								for _, channel := range conn.Channels() {
+									if channel.Id == channelId {
+										messageChannel = &channel
+										break
+									}
+								}
+							}
+
+							// Send a notification, if applicable.
+							if self := conn.Self(); (message.Sender != nil && message.Sender.Id != self.Id) &&
+								ShouldMessageNotifyUser(message.Text, messageChannel, self) {
+								text := strings.Replace(message.Text, "<", "", -1)
+								text = strings.Replace(text, ">", "", -1)
+								Notification(messageChannel.Name, text)
+							}
 
 							// If an unconfirmed message was found that is thought to be the same
 							// message, then copy over this message into that spot and be done with
