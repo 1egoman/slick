@@ -145,8 +145,11 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 								break
 							}
 
-							// Add message to history
-							conn.AppendMessageHistory(*message)
+							// Add message to history, if message was posted to the active channel.
+							if selectedChannel := conn.SelectedChannel(); selectedChannel != nil &&
+							messageChannel.Id == selectedChannel.Id {
+								conn.AppendMessageHistory(*message)
+							}
 
 							// If the user that sent the message was typing, they aren't anymore.
 							conn.TypingUsers().Remove(message.Sender.Name)

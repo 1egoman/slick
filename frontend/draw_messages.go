@@ -296,8 +296,13 @@ func (term *TerminalDisplay) DrawMessages(
 
 		// Calculate how many rows the message requires to render.
 		messageColumnWidth := width - prefixWidth - 1
-		parsedMessageLines := parsedMessage.Lines(messageColumnWidth)
-		messageRows := len(parsedMessageLines)
+
+		// Fetch message lines. If they weren't previously cached on the message, cache them.
+		if msg.Tokens == nil {
+			parsedMessageLines := parsedMessage.Lines(messageColumnWidth)
+			msg.Tokens = &parsedMessageLines
+		}
+		messageRows := len(*msg.Tokens)
 		accessoryRow := row // The row to start rendering "message accessories" on
 		if len(msg.Text) == 0 {
 			accessoryRow -= 1
@@ -425,7 +430,8 @@ func (term *TerminalDisplay) DrawMessages(
 		}
 
 		// Render the sender and the message
-		for lineIndex, line := range parsedMessageLines {
+		// NOTE: The msg.Tokens dereference is guarded above, so should never be nil
+		for lineIndex, line := range *msg.Tokens {
 			totalWidth := 0
 			for _, part := range line {
 				// How should this part be styled?

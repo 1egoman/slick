@@ -144,7 +144,10 @@ type Message struct {
 	Timestamp   int           `json:"timestamp"` // This value is in seconds!
 	File        *File         `json:"file,omitempty"`
 	Attachments *[]Attachment `json:"attachments,omitempty"`
-	Confirmed   bool          `json:"confirmed"` // Has a message been confirmed as existing from the server, or is it preemptive?
+	// Has a message been confirmed as existing from the server, or is it preemptive?
+	Confirmed   bool          `json:"confirmed"`
+	// Cache message tokens on the message.
+	Tokens      *[][]PrintableMessagePart `json:"tokens"`
 }
 
 type Attachment struct {
