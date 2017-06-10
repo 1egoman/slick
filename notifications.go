@@ -1,8 +1,8 @@
 package main
 
 import (
-	"log"
 	"fmt"
+	"log"
 	"regexp"
 
 	"github.com/0xAX/notificator"

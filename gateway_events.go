@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 	"strconv"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/1egoman/slick/frontend" // The thing to draw to the screen
 	"github.com/1egoman/slick/gateway"  // The thing to interface with slack
@@ -147,7 +147,7 @@ func gatewayEvents(state *State, term *frontend.TerminalDisplay) {
 
 							// Add message to history, if message was posted to the active channel.
 							if selectedChannel := conn.SelectedChannel(); selectedChannel != nil &&
-							messageChannel.Id == selectedChannel.Id {
+								messageChannel.Id == selectedChannel.Id {
 								conn.AppendMessageHistory(*message)
 							}
 
