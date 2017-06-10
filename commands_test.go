@@ -9,6 +9,61 @@ import (
 	"testing"
 )
 
+func TestRunCommand(t *testing.T) {
+	var command Command
+	var err error
+	state := NewInitialStateMode("writ")
+
+	// Test a native command
+	wasCalled := false
+	command = Command{
+		Name: "My Command",
+		Description: "Command Description",
+		Type: NATIVE,
+		Permutations: []string{"foo", "bar"},
+		Arguments: "<required> [optional]",
+		Handler: func(args []string, state *State) error {
+			wasCalled = true
+			return nil
+		},
+	}
+	err = RunCommand(command, []string{"foo"}, state)
+	if wasCalled && err != nil {
+		t.Errorf("Error in running valid command: %s (wascalled = %v)", err, wasCalled)
+	}
+
+	// Test a native command without a handler
+	command = Command{
+		Name: "My Command",
+		Description: "Command Description",
+		Type: NATIVE,
+		Permutations: []string{"foo", "bar"},
+		Arguments: "<required> [optional]",
+		Handler: nil,
+	}
+	err = RunCommand(command, []string{"foo"}, state)
+	if err.Error() != "The command My Command doesn't have an associated handler function." {
+		t.Errorf("Wrong error in running nil handler command: %s", err)
+	}
+}
+
+func TestGetCommand(t *testing.T) {
+	var command *Command
+
+	// Test a native command
+	command = GetCommand("Connect")
+	if command.Name != "Connect" {
+		t.Errorf("Invalid command found with GetCommand: %+v", command)
+	}
+
+	// Test a native command
+	command = GetCommand("CommandThatDoesntExist")
+	if command != nil {
+		t.Errorf("Unexpected command found by GetCommand: %+v", command)
+	}
+}
+
+
 func TestHttpBasedCommands(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
@@ -135,5 +190,49 @@ func TestCommandConnectWithName(t *testing.T) {
 
 	if name := state.ActiveConnection().Name(); name != "team name" {
 		t.Errorf("Invalid name for slack team: %s", name)
+	}
+}
+
+func TestCommandPick(t *testing.T) {
+	// Create initial state
+	state := NewInitialStateMode("writ")
+	state.Connections = []gateway.Connection{
+		gatewaySlack.NewWithName("team name", "token"),
+	}
+
+	channels := []gateway.Channel{
+		gateway.Channel{Name: "channel name", Id: "channel-id"},
+		gateway.Channel{Name: "other channel", Id: "other-channel-id"},
+	}
+	state.ActiveConnection().SetChannels(channels)
+	state.ActiveConnection().SetSelectedChannel(&channels[1])
+
+	// Execute the command
+	command := *GetCommand("Pick")
+	err := RunCommand(command, []string{"pick", "team name", "channel name"}, state)
+
+	// Verify the output
+	if err != nil {
+		t.Errorf("Couldn't pick another team:", err)
+	}
+
+	if name := state.ActiveConnection().Name(); name != "team name" {
+		t.Errorf("Didn't choose slack team 'team name', used %s instead.", name)
+	}
+	if channel := state.ActiveConnection().SelectedChannel().Name; channel != "channel name" {
+		t.Errorf("Didn't choose slack channel 'channel name', used %s instead.", channel)
+	}
+}
+func TestCommandPickBadArgs(t *testing.T) {
+	// Create initial state
+	state := NewInitialStateMode("writ")
+
+	// Execute the command, with 
+	command := *GetCommand("Pick")
+	err := RunCommand(command, []string{"pick" /* team name, channel name */}, state)
+
+	// Verify the output
+	if err.Error() != "Please specify more args. /pick <connection name> <channel name>" {
+		t.Errorf("Bad pick command args didn't emit right error: %s", err)
 	}
 }

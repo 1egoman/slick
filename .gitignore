@@ -3,3 +3,4 @@ slick
 log
 .DS_Store
 vendor/*/
+coverage/
