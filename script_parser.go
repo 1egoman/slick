@@ -46,10 +46,7 @@ func EmitEvent(state *State, event SlickEvent, metadata map[string]string) error
 	return nil
 }
 
-func ParseScript(script string, state *State, term *frontend.TerminalDisplay) error {
-	L := lua.NewState()
-	defer L.Close()
-
+func AddSlickStandardLib(L *lua.LState, state *State, term *frontend.TerminalDisplay) {
 	// Add some logging utilities
 	L.SetGlobal("print", L.NewFunction(func(L *lua.LState) int {
 		state.Status.Printf(L.ToString(1))
@@ -270,6 +267,12 @@ func ParseScript(script string, state *State, term *frontend.TerminalDisplay) er
 			}))
 		}(command)
 	}
+}
 
+func ParseScript(script string, state *State, term *frontend.TerminalDisplay) error {
+	L := lua.NewState()
+	defer L.Close()
+
+	AddSlickStandardLib(L, state, term)
 	return L.DoString(script)
 }
