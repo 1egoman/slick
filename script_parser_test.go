@@ -5,8 +5,6 @@ import (
 	"testing"
 	. "github.com/1egoman/slick"
 	"github.com/1egoman/slick/frontend"
-	"github.com/1egoman/slick/gateway"
-	"github.com/1egoman/slick/gateway/slack"
 	"github.com/yuin/gopher-lua"
 )
 
