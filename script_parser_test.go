@@ -2,10 +2,10 @@ package main_test
 
 import (
 	"errors"
-	"testing"
 	. "github.com/1egoman/slick"
 	"github.com/1egoman/slick/frontend"
 	"github.com/yuin/gopher-lua"
+	"testing"
 )
 
 func TestEmitEventNoError(t *testing.T) {
@@ -39,17 +39,17 @@ func TestEmitEventError(t *testing.T) {
 var noopFunction lua.LFunction = lua.LFunction{}
 
 var scriptGlobals map[string][]interface{} = map[string][]interface{}{
-	"print": []interface{}{"foo"},
-	"error": []interface{}{"bar"},
-	"clear": []interface{}{},
-	"keymap": []interface{}{"k", noopFunction},
-	"command": []interface{}{"CmdName", "desc", "[one] <two>", noopFunction},
-	"getenv": []interface{}{"FOO"},
-	"shell": []interface{}{"date"},
+	"print":       []interface{}{"foo"},
+	"error":       []interface{}{"bar"},
+	"clear":       []interface{}{},
+	"keymap":      []interface{}{"k", noopFunction},
+	"command":     []interface{}{"CmdName", "desc", "[one] <two>", noopFunction},
+	"getenv":      []interface{}{"FOO"},
+	"shell":       []interface{}{"date"},
 	"sendmessage": []interface{}{"foo"},
-	"getclip": []interface{}{},
-	"setclip": []interface{}{},
-	"onevent": []interface{}{"connectionchange", noopFunction},
+	"getclip":     []interface{}{},
+	"setclip":     []interface{}{},
+	"onevent":     []interface{}{"connectionchange", noopFunction},
 }
 
 func TestScriptEnvironmentConstruction(t *testing.T) {

@@ -17,11 +17,11 @@ func TestRunCommand(t *testing.T) {
 	// Test a native command
 	wasCalled := false
 	command = Command{
-		Name: "My Command",
-		Description: "Command Description",
-		Type: NATIVE,
+		Name:         "My Command",
+		Description:  "Command Description",
+		Type:         NATIVE,
 		Permutations: []string{"foo", "bar"},
-		Arguments: "<required> [optional]",
+		Arguments:    "<required> [optional]",
 		Handler: func(args []string, state *State) error {
 			wasCalled = true
 			return nil
@@ -34,12 +34,12 @@ func TestRunCommand(t *testing.T) {
 
 	// Test a native command without a handler
 	command = Command{
-		Name: "My Command",
-		Description: "Command Description",
-		Type: NATIVE,
+		Name:         "My Command",
+		Description:  "Command Description",
+		Type:         NATIVE,
 		Permutations: []string{"foo", "bar"},
-		Arguments: "<required> [optional]",
-		Handler: nil,
+		Arguments:    "<required> [optional]",
+		Handler:      nil,
 	}
 	err = RunCommand(command, []string{"foo"}, state)
 	if err.Error() != "The command My Command doesn't have an associated handler function." {
@@ -62,7 +62,6 @@ func TestGetCommand(t *testing.T) {
 		t.Errorf("Unexpected command found by GetCommand: %+v", command)
 	}
 }
-
 
 func TestHttpBasedCommands(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
@@ -227,7 +226,7 @@ func TestCommandPickBadArgs(t *testing.T) {
 	// Create initial state
 	state := NewInitialStateMode("writ")
 
-	// Execute the command, with 
+	// Execute the command, with
 	command := *GetCommand("Pick")
 	err := RunCommand(command, []string{"pick" /* team name, channel name */}, state)
 
