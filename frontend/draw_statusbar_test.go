@@ -2,6 +2,7 @@ package frontend_test
 
 import (
 	"testing"
+	"time"
 	"github.com/1egoman/slick/status"
 	"github.com/1egoman/slick/gateway"
 	"github.com/1egoman/slick/frontend"
@@ -52,6 +53,26 @@ func TestStatusbarMultilineStatus(t *testing.T) {
 	}, nil, str, map[string]string{})
 
 	result, ok := screen.Compare("./tests/draw_statusbar_test/statusbar_multiline_status.txt")
+	if !ok {
+		t.Errorf("Error:\n%s", result)
+	}
+}
+
+func TestStatusbarTypingUsers(t *testing.T) {
+	screen := frontend.NewAsciiScreen()
+	term := frontend.NewTerminalDisplay(screen)
+	str := status.Status{Type: status.STATUS_LOG, Message: "", Show: false}
+
+	activeConnection := gatewaySlack.NewWithName("helloworld", "token")
+	activeConnection.TypingUsers().Add("foo", time.Now())
+	activeConnection.TypingUsers().Add("bar", time.Now())
+
+	term.DrawStatusBar("chat", []gateway.Connection{
+		activeConnection,
+		gatewaySlack.NewWithName("example", "token"),
+	}, activeConnection, str, map[string]string{})
+
+	result, ok := screen.Compare("./tests/draw_statusbar_test/statusbar_typing_users.txt")
 	if !ok {
 		t.Errorf("Error:\n%s", result)
 	}
