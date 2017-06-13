@@ -40,13 +40,13 @@ func (term *TerminalDisplay) DrawStatusBar(
 
 	// First, draw the mode (ie, chat, channel-picker, etc...)
 	term.WriteTextStyle(
-		0, lastRow,
+		0, (height - 1),
 		color.DeSerializeStyleTcell(config["StatusBar.ModeColor"]),
 		mode,
 	)
 
 	// Then, draw a separator
-	term.WriteTextStyle(len(mode)+1, lastRow, defaultColor, "|")
+	term.WriteTextStyle(len(mode)+1, (height - 1), defaultColor, "|")
 
 	position := len(mode) + 3
 

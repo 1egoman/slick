@@ -105,15 +105,16 @@ func (screen AsciiScreen) Compare(filename string) (string, bool) {
 	for i := 0; i < screen.Height; i++ {
 		var line string
 		for j := 0; j < screen.Width; j++ {
-			if screen.Content[i][j] == ' ' {
-				line += " "
-			} else if i < len(lines) && j < len(lines[i]) {
+			if i < len(lines) && j < len(lines[i]) {
 				actual := rune(lines[i][j])
 				test := rune(screen.Content[i][j])
 				if actual == test {
 					line += color.GreenString(string(actual))
+				} else if actual == ' ' {
+					line += color.CyanString(string(test))
+					ok = false
 				} else {
-					line += color.RedString("X")
+					line += color.RedString(string(actual))
 					ok = false
 				}
 			} else {
@@ -122,5 +123,24 @@ func (screen AsciiScreen) Compare(filename string) (string, bool) {
 		}
 		total += fmt.Sprintf("%s\n", line)
 	}
+
+	total += "\n"
+	total += "Legend:\n"
+	total += color.GreenString("In both outputs\n")
+	total += color.RedString("In file, but not outputed by the code\n")
+	total += color.CyanString("Outputted by the code, but not in the file\n")
 	return total, ok
+}
+
+func (screen AsciiScreen) Print() {
+	var total string
+	for i := 0; i < screen.Height; i++ {
+		var line string
+		for j := 0; j < screen.Width; j++ {
+			line += string(screen.Content[i][j])
+		}
+		total += fmt.Sprintf("%s\n", line)
+	}
+
+	fmt.Println(total)
 }
