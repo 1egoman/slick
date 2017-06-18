@@ -152,9 +152,9 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 		})
 	}
 
-	// FETCH MPIMs
+	// FETCH GROUPS
 	log.Printf("Fetching list of mp ims for team %s", c.Team().Name)
-	resp, err = http.Get("https://slack.com/api/mpim.list?token=" + c.token)
+	resp, err = http.Get("https://slack.com/api/groups.list?token=" + c.token)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +166,7 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 			Name       string `json:"name"`
 			CreatorId  string `json:"creator"`
 			Created    int    `json:"created"`
-			IsMember   bool   `json:"is_member"`
+			Members    []string   `json:"members"`
 			IsArchived bool   `json:"is_archived"`
 		} `json:"groups"`
 	}
@@ -177,13 +177,23 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		// Is the surrent user a member of the group?
+		isMember := false
+		for _, member := range mpim.Members {
+			if self := c.Self(); self != nil && member == self.Id {
+				isMember = true
+				break
+			}
+		}
+
 		channelBuffer = append(channelBuffer, gateway.Channel{
 			Id:         mpim.Id,
 			SubType:    gateway.TYPE_GROUP_DIRECT_MESSAGE,
 			Name:       mpim.Name,
 			Creator:    creator,
 			Created:    mpim.Created,
-			IsMember:   mpim.IsMember,
+			IsMember:   isMember,
 			IsArchived: mpim.IsArchived,
 		})
 	}
@@ -206,7 +216,7 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel, startTs 
 	} else if channel.SubType == gateway.TYPE_DIRECT_MESSAGE {
 		url = "https://slack.com/api/im.history?token=" + c.token
 	} else if channel.SubType == gateway.TYPE_GROUP_DIRECT_MESSAGE {
-		url = "https://slack.com/api/mpim.history?token=" + c.token
+		url = "https://slack.com/api/groups.history?token=" + c.token
 	}
 	url += "&channel=" + channel.Id
 	url += "&count=100"

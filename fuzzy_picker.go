@@ -60,10 +60,15 @@ func (p FuzzySorter) Swap(i, j int) {
 }
 
 func (p FuzzySorter) Rank(item string) int {
+	var delta int = 0
+	if len(item) > 0 && item[0] == '.' {
+		delta -= 20
+	}
+
 	if len(p.Needle) < p.ThrowAwayPrefix {
-		return strings.Index(item, p.Needle)
+		return strings.Index(item, p.Needle) + delta
 	} else {
-		return strings.Index(item, p.Needle[p.ThrowAwayPrefix:])
+		return strings.Index(item, p.Needle[p.ThrowAwayPrefix:]) + delta
 	}
 }
 

@@ -91,10 +91,12 @@ func (c *SlackConnection) Connect() error {
 				messageBuffer = []byte{}
 
 				log.Printf("INCOMING %s: %s", c.Team().Name, msgRaw[:n])
-				incoming <- gateway.Event{
-					Direction: "incoming",
-					Type:      msg["type"].(string),
-					Data:      msg,
+				if typ, ok := msg["type"].(string); ok {
+					incoming <- gateway.Event{
+						Direction: "incoming",
+						Type:      typ,
+						Data:      msg,
+					}
 				}
 			}
 		}

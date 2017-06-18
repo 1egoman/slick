@@ -400,7 +400,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == ':':
 		EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "writ"})
 		state.Mode = "writ"
-		state.Command = []rune{':'}
+		state.Command = []rune{'/'}
 		state.CommandCursorPosition = 1
 		enableCommandAutocompletion(state, term, quit)
 		resetKeyStack(state)
