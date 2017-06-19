@@ -6,7 +6,6 @@ import (
 
 	"github.com/1egoman/slick/color"
 	"github.com/1egoman/slick/gateway" // The thing to interface with slack
-	"github.com/gdamore/tcell"
 )
 
 func (term *TerminalDisplay) DrawCommandBar(
@@ -63,8 +62,7 @@ func (term *TerminalDisplay) DrawCommandBar(
 			term.WriteTextStyle(
 				len(prefix)+1+len(line)-1,
 				row+index,
-				// color.DeSerializeStyleTcell(config["CommandBar.TextColor"]),
-				tcell.StyleDefault,
+				color.DeSerializeStyleTcell(config["CommandBar.NewLineColor"]),
 				"\\",
 			)
 		}
