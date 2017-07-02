@@ -26,33 +26,31 @@ func (c *SlackConnection) Refresh(force bool) error {
 		c.self = *user
 	}
 
-	if len(c.channels) > 0 {
-		// If no channel is selected, select a default.
-		if c.selectedChannel == nil {
-			// Try to find the general channel
-			for _, channel := range c.channels {
-				if channel.Name == "general" {
-					c.selectedChannel = &channel
-					break
-				}
-			}
-			// or, if that can't be found, select the first one.
-			if c.selectedChannel == nil {
-				c.selectedChannel = &c.channels[0]
+	// Fetch Message history, if the message history is empty.
+	if force || len(c.messageHistory) == 0 {
+		log.Printf(
+			"Fetching message history for team %s and channel %s",
+			c.Team().Name,
+			c.SelectedChannel().Name,
+		)
+		c.messageHistory, err = c.FetchChannelMessages(*c.selectedChannel, nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	// If no channel is selected, select a default.
+	if len(c.channels) > 0 && c.selectedChannel == nil {
+		// Try to find the general channel
+		for _, channel := range c.channels {
+			if channel.Name == "general" {
+				c.selectedChannel = &channel
+				break
 			}
 		}
-
-		// Fetch Message history, if the message history is empty.
-		if len(c.messageHistory) == 0 {
-			log.Printf(
-				"Fetching message history for team %s and channel %s",
-				c.Team().Name,
-				c.SelectedChannel().Name,
-			)
-			c.messageHistory, err = c.FetchChannelMessages(*c.selectedChannel, nil)
-			if err != nil {
-				return err
-			}
+		// or, if that can't be found, select the first one.
+		if c.selectedChannel == nil {
+			c.selectedChannel = &c.channels[0]
 		}
 	}
 

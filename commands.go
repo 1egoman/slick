@@ -94,6 +94,14 @@ var COMMANDS = []Command{
 				return errors.New(fmt.Sprintf("Error in connecting: %s", err))
 			}
 
+			// Force-refresh to pull in latest data from the gateway
+			go func() {
+				err := connection.Refresh(true)
+				if err != nil {
+					state.Status.Errorf("Error refreshing connection: %s", err)
+				}
+			}()
+
 			// Store the connection
 			state.Connections = append(state.Connections, connection)
 			state.SetActiveConnection(len(state.Connections) - 1)
