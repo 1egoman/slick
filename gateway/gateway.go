@@ -153,6 +153,7 @@ type Message struct {
 type Attachment struct {
 	Title     string
 	TitleLink string
+	Body string
 	Color     string
 	Fields    []AttachmentField
 }

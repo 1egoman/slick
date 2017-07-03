@@ -13,6 +13,8 @@ import (
 	"github.com/1egoman/slick/gateway" // The thing to interface with slack
 )
 
+const ATTACHMENT_BODY_PREVIEW_LINES = 4;
+
 // Given an array of reactions and a row to render them on, render them.
 func renderReactions(
 	term *TerminalDisplay,
@@ -74,6 +76,11 @@ func getAttachmentHeight(attachment gateway.Attachment) int {
 	// One line for each field
 	lines += len(attachment.Fields)
 
+	// If there's a body, show a couple lines of preview
+	if len(attachment.Body) > 0 {
+		lines += ATTACHMENT_BODY_PREVIEW_LINES
+	}
+
 	return lines
 }
 
@@ -117,7 +124,7 @@ func renderAttachment(
 	windowWidth int,
 	index int,
 ) {
-	selectedActions := []string{"Link"}
+	selectedActions := []string{"Link", "eXpand"}
 	selectedActionsWidth := len(strings.Join(selectedActions, " "))
 
 	maxAttachmentWidth := windowWidth - leftOffset - 1
@@ -157,6 +164,24 @@ func renderAttachment(
 		}
 
 		renderActions(term, config, selectedActions, actionPosition, row)
+	}
+
+	// Render a preview of the body
+	if len(attachment.Body) > 0 {
+		bodyLines := strings.Split(attachment.Body, "\n")
+		for i := 0; i < ATTACHMENT_BODY_PREVIEW_LINES; i++ {
+			if len(bodyLines) > i {
+				row += 1
+				term.WriteTextStyle(
+					leftOffset+2,
+					row,
+					tcell.StyleDefault,
+					bodyLines[i],
+				)
+			} else {
+				break
+			}
+		}
 	}
 
 	// Draw each attachment field.

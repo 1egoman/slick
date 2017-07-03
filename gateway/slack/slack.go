@@ -389,6 +389,7 @@ type RawSlackMessage struct {
 		Title     string `json:"title"`
 		TitleLink string `json:"title_link"`
 		Color     string `json:"color"`
+		Text      string `json:"text"`
 		Fields    []struct {
 			Title string `json:"title"`
 			Value string `json:"value"`
@@ -489,6 +490,7 @@ func (c *SlackConnection) ParseMessage(
 				Title:     attach.Title,
 				TitleLink: attach.TitleLink,
 				Color:     attach.Color,
+				Body:     attach.Text,
 			}
 
 			// Add fields to attachment
