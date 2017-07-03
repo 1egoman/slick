@@ -37,6 +37,23 @@ func (term *TerminalDisplay) WriteTextStyle(x int, y int, style tcell.Style, tex
 		term.screen.SetCell(x+ct, y, style, char)
 	}
 }
+func (term *TerminalDisplay) WriteParagraphStyle(x int, y int, width int, style tcell.Style, text string) {
+	yOffset := 0
+	xOffset := 0
+	for _, char := range text {
+		xOffset += 1
+		if char == '\n' { // If we hit a newline, then wrap the the next line.
+			yOffset += 1
+			xOffset = 0
+		} else if xOffset > width { // If we go over the window width, then wrap to the next line.
+			yOffset += 1
+			xOffset = 0
+		} else {
+			// Otherwise, print the character.
+			term.screen.SetCell(x+xOffset, y+xOffset, style, char)
+		}
+	}
+}
 
 // Given a line number, reset it to the default style and erase it.
 func (term *TerminalDisplay) DrawBlankLine(line int) {

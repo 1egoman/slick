@@ -101,5 +101,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 		}
 	}
 
+	term.DrawModal("foo", "bar")
+
 	term.Render()
 }
