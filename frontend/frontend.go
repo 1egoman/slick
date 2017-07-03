@@ -38,8 +38,8 @@ func (term *TerminalDisplay) WriteTextStyle(x int, y int, style tcell.Style, tex
 	}
 }
 func (term *TerminalDisplay) WriteParagraphStyle(x int, y int, width int, style tcell.Style, text string) {
-	yOffset := 0
 	xOffset := 0
+	yOffset := 0
 	for _, char := range text {
 		xOffset += 1
 		if char == '\n' { // If we hit a newline, then wrap the the next line.
@@ -50,7 +50,7 @@ func (term *TerminalDisplay) WriteParagraphStyle(x int, y int, width int, style 
 			xOffset = 0
 		} else {
 			// Otherwise, print the character.
-			term.screen.SetCell(x+xOffset, y+xOffset, style, char)
+			term.screen.SetCell(x+xOffset, y+yOffset, style, char)
 		}
 	}
 }

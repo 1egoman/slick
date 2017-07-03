@@ -2,6 +2,7 @@ package frontend
 
 import (
 	// "log"
+	"fmt"
 	"github.com/gdamore/tcell"
 )
 
@@ -30,9 +31,13 @@ func (term *TerminalDisplay) DrawModal(title string, body string) {
 	modalUpperLeftX := (width - modalWidth) / 2
 	modalUpperLeftY := (height - modalHeight) / 2
 
+	// ----------------------------------------------------------------------------
+	//	Render frame
+	// ------------------------------------------------------------------------------
+
 	// Top header
 	closeModalMessagePosition := modalWidth - len(closeModalMessage)
-	for i := 0; i < closeModalMessagePosition ; i++ {
+	for i := 0; i < closeModalMessagePosition; i++ {
 		if i == 0 {
 			// Left side corner
 			term.WriteTextStyle(modalUpperLeftX+i, modalUpperLeftY, tcell.StyleDefault, "+")
@@ -40,11 +45,19 @@ func (term *TerminalDisplay) DrawModal(title string, body string) {
 			term.WriteTextStyle(modalUpperLeftX+i, modalUpperLeftY, tcell.StyleDefault, "-")
 		}
 	}
+	// Render hint to close modal in upper right
 	term.WriteTextStyle(
 		modalUpperLeftX+closeModalMessagePosition,
 		modalUpperLeftY,
 		tcell.StyleDefault,
 		closeModalMessage,
+	)
+	// Render title
+	term.WriteTextStyle(
+		modalUpperLeftX+1,
+		modalUpperLeftY,
+		tcell.StyleDefault,
+		fmt.Sprintf(" %s ", title),
 	)
 
 	// Sides
@@ -70,4 +83,16 @@ func (term *TerminalDisplay) DrawModal(title string, body string) {
 			term.WriteTextStyle(modalUpperLeftX+i, modalUpperLeftY+modalHeight, tcell.StyleDefault, "-")
 		}
 	}
+
+	// ----------------------------------------------------------------------------
+	// 	Render content
+	// ------------------------------------------------------------------------------
+
+	term.WriteParagraphStyle(
+		modalUpperLeftX+1,
+		modalUpperLeftY+1,
+		modalWidth,
+		tcell.StyleDefault,
+		body,
+	)
 }
