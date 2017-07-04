@@ -56,6 +56,14 @@ func InitialMessageHistoryState(initialSelectedIndex int, initialBottomItemIndex
 	return s
 }
 
+func InitialModalState(scrollPosition int) *State {
+	state := NewInitialStateMode("modl")
+	state.Modal.Title = "Modal Title"
+	state.Modal.Body = "one\ntwo\nthree\nfour\nfive\nsix"
+	state.Modal.ScrollPosition = scrollPosition
+	return state
+}
+
 //
 // ALL OTHER KEY EVENTS
 //
@@ -202,6 +210,47 @@ var keyEvents = []struct {
 		}(),
 		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyCtrlE, ' ', tcell.ModNone)},
 		func(state *State) bool { return state.CommandCursorPosition == len(state.Command) },
+	},
+
+	// Modal operations
+	{
+		"In modl mode, j moves down a line",
+		InitialModalState(0),
+		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyRune, 'j', tcell.ModNone)},
+		func(state *State) bool { return state.Modal.ScrollPosition == 1 },
+	},
+	{
+		"In modl mode, k moves up a line",
+		InitialModalState(1),
+		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyRune, 'k', tcell.ModNone)},
+		func(state *State) bool { return state.Modal.ScrollPosition == 0 },
+	},
+	{
+		"In modl mode, gg moves to the top",
+		InitialModalState(3),
+		[]*tcell.EventKey{
+			tcell.NewEventKey(tcell.KeyRune, 'g', tcell.ModNone),
+			tcell.NewEventKey(tcell.KeyRune, 'g', tcell.ModNone),
+		},
+		func(state *State) bool { return state.Modal.ScrollPosition == 0 },
+	},
+	{
+		"In modl mode, G moves to the bottom",
+		InitialModalState(0),
+		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyRune, 'G', tcell.ModNone)},
+		func(state *State) bool { return state.Modal.ScrollPosition == 5 },
+	},
+	{
+		"In modl mode, Ctrl+U moves up a bunch of lines",
+		InitialModalState(4),
+		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyCtrlU, ' ', tcell.ModNone)},
+		func(state *State) bool { return state.Modal.ScrollPosition == 0 },
+	},
+	{
+		"In modl mode, Ctrl+D moves down a bunch of lines",
+		InitialModalState(0),
+		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyCtrlD, ' ', tcell.ModNone)},
+		func(state *State) bool { return state.Modal.ScrollPosition == 5 },
 	},
 }
 

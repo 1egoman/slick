@@ -19,7 +19,7 @@ func NewTypingUsers() *TypingUsers {
 func (t *TypingUsers) Users() []string {
 	var users []string
 	for user, timestamp := range t.users {
-		if timestamp.Add(TYPING_PERSIST_SECONDS*time.Second).Unix() > time.Now().Unix() { // If a typing indicator is < 20s old...
+		if timestamp.Add(TYPING_PERSIST_SECONDS*time.Second).Unix() > time.Now().Unix() { // If a typing indicator is < 5s old...
 			users = append(users, user) // THe user is "still" typing.
 		} else {
 			delete(t.users, user) // Remove the user if it's too old.

@@ -671,7 +671,6 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		}
 
 		resetKeyStack(state)
-
 	// `k` moves up a line.
 	case state.Mode == "modl" && len(keystackCommand) == 1 && keystackCommand[0] == 'k':
 		state.Modal.ScrollPosition -= quantity
@@ -679,6 +678,46 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		// Make sure that the scroll position never becomes negative.
 		if state.Modal.ScrollPosition < 0 {
 			state.Modal.ScrollPosition = 0
+		}
+
+		resetKeyStack(state)
+
+	// Scroll to the top and bottom of the modal
+	case state.Mode == "modl" && len(keystackCommand) == 2 && string(keystackCommand) == "gg":
+		state.Modal.ScrollPosition = 0
+		resetKeyStack(state)
+	case state.Mode == "modl" && len(keystackCommand) == 1 && keystackCommand[0] == 'G':
+		state.Modal.ScrollPosition = len(strings.Split(state.Modal.Body, "\n")) - 1
+		resetKeyStack(state)
+
+	case state.Mode == "modl" && ev.Key() == tcell.KeyCtrlU: // Up a message page
+		pageAmount, err := strconv.Atoi(state.Configuration["Message.PageAmount"])
+		if err != nil {
+			state.Status.Errorf("Cannot parse Message.PageAmount as int: %s", state.Configuration["Message.PageAmount"])
+			return nil
+		}
+
+		state.Modal.ScrollPosition -= pageAmount
+
+		// Make sure that the scroll position never becomes negative.
+		if state.Modal.ScrollPosition < 0 {
+			state.Modal.ScrollPosition = 0
+		}
+
+		resetKeyStack(state)
+	case state.Mode == "modl" && ev.Key() == tcell.KeyCtrlD: // Down a message page
+		pageAmount, err := strconv.Atoi(state.Configuration["Message.PageAmount"])
+		if err != nil {
+			state.Status.Errorf("Cannot parse Message.PageAmount as int: %s", state.Configuration["Message.PageAmount"])
+			return nil
+		}
+
+		state.Modal.ScrollPosition += pageAmount
+
+		// Make sure that the scroll position never becomes negative.
+		bodyLines := len(strings.Split(state.Modal.Body, "\n")) - 1
+		if state.Modal.ScrollPosition > bodyLines {
+			state.Modal.ScrollPosition = bodyLines
 		}
 
 		resetKeyStack(state)
