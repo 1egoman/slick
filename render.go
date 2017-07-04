@@ -102,7 +102,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 	}
 
 	if state.Mode == "modl" {
-		term.DrawModal("foo", "bar")
+		term.DrawModal(state.Modal.Title, state.Modal.Body)
 	}
 
 	term.Render()

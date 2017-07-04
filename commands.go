@@ -478,6 +478,45 @@ var COMMANDS = []Command{
 			return nil
 		},
 	},
+	{
+		Name:         "ExpandAttachment",
+		Type:         NATIVE,
+		Description:  "Expand an attachment into a modal to view the full content.",
+		Arguments:    "<attachment index>",
+		Permutations: []string{"expandattachment", "expattach", "exat"},
+		Handler: func(args []string, state *State) error {
+			var attachmentIndex int
+			var err error
+			if len(args) == 2 {
+				attachmentIndex, err = strconv.Atoi(args[1])
+				if err != nil {
+					return err
+				}
+			} else {
+				return errors.New("Please use more arguments. /expandattachment <attachment index>")
+			}
+
+			selectedMessageIndex := len(state.ActiveConnection().MessageHistory()) - 1 - state.SelectedMessageIndex
+			selectedMessage := state.ActiveConnection().MessageHistory()[selectedMessageIndex]
+
+			if selectedMessage.Attachments == nil || len(*selectedMessage.Attachments) == 0 {
+				return errors.New("Selected message has no attachments!")
+			}
+
+			if (attachmentIndex - 1) >= len(*selectedMessage.Attachments) {
+				return errors.New(fmt.Sprintf("Attachment index %d is too large!", attachmentIndex))
+			} else if attachment := (*selectedMessage.Attachments)[attachmentIndex-1]; len(attachment.Body) > 0 {
+				// Open a modal with the atatchment content.
+				state.Modal.Title = attachment.Title
+				state.Modal.Body = attachment.Body
+				state.Mode = "modl"
+			} else {
+				return errors.New("Selected message and attachment doesn't have a link that can be opened.")
+			}
+
+			return nil
+		},
+	},
 
 	//
 	// MOVE FORWARD / BACKWARD MESSAGES

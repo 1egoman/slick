@@ -235,3 +235,42 @@ func TestCommandPickBadArgs(t *testing.T) {
 		t.Errorf("Bad pick command args didn't emit right error: %s", err)
 	}
 }
+
+func TestCommandExpandAttachment(t *testing.T) {
+	// Create initial state
+	state := NewInitialStateMode("writ")
+	state.Connections = []gateway.Connection{
+		gatewaySlack.NewWithName("team name", "token"),
+	}
+	channels := []gateway.Channel{gateway.Channel{Name: "channel name", Id: "channel-id"}}
+
+	state.ActiveConnection().SetChannels(channels)
+	state.ActiveConnection().SetSelectedChannel(&channels[0])
+	state.ActiveConnection().SetMessageHistory([]gateway.Message{
+		gateway.Message{
+			Text: "My Message",
+			Attachments: &[]gateway.Attachment{
+				gateway.Attachment{
+					Title: "title",
+					Body: "body",
+				},
+			},
+		},
+	})
+
+	// Execute the command, with
+	command := *GetCommand("ExpandAttachment")
+	err := RunCommand(command, []string{"expandattachment", "1"}, state)
+
+	// Verify the output
+	if err != nil {
+		t.Errorf("Failed to open modal for expanding attachment: %s", err)
+	}
+
+	if state.Mode != "modl" {
+		t.Errorf("Mode not set to `modl`: %s", state.Mode)
+	}
+	if state.Modal.Title != "title" || state.Modal.Body != "body" {
+		t.Errorf("Modal title and body not set to the right values: %+v", state.Modal)
+	}
+}

@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/1egoman/slick/gateway" // The thing to interface with slack
 	"github.com/1egoman/slick/status"
+	"github.com/1egoman/slick/modal"
 )
 
 // This struct contains the main application state. I have fluxy intentions.
@@ -33,6 +34,9 @@ type State struct {
 
 	// Status message
 	Status status.Status
+
+	// Modal
+	Modal modal.Modal
 
 	// Handlers to bind to specific actions. For example, when the user presses some keys,  when we
 	// switch connections, etc...
@@ -73,6 +77,9 @@ func NewInitialStateMode(mode string) *State {
 
 		// Status message
 		Status: status.Status{},
+
+		// Modal
+		Modal: modal.Modal{},
 
 		// Configuration options
 		Configuration: map[string]string{

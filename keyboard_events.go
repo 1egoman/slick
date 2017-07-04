@@ -126,6 +126,14 @@ func OnMessageInteraction(state *State, key rune, quantity int) {
 			if err != nil {
 				state.Status.Errorf(err.Error())
 			}
+		case 'x': // Expand message in modal.
+			err := GetCommand("ExpandAttachment").Handler(
+				[]string{"__INTERNAL__", fmt.Sprintf("%d", quantity)},
+				state,
+			)
+			if err != nil {
+				state.Status.Errorf(err.Error())
+			}
 		}
 	} else {
 		state.Status.Printf("No message selected.")
@@ -635,7 +643,8 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 	case state.Mode == "chat" && (string(keystackCommand) == "o" ||
 		string(keystackCommand) == "c" ||
 		string(keystackCommand) == "l" ||
-		string(keystackCommand) == "m"): // Message interaction
+		string(keystackCommand) == "m" ||
+		string(keystackCommand) == "x"): // Message interaction
 		// When a user presses a key to interact with a message, handle it.
 		OnMessageInteraction(state, keystackCommand[0], quantity)
 		resetKeyStack(state)
@@ -725,8 +734,12 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		state.Command = []rune{}
 		state.CommandCursorPosition = 0
 		EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "chat"})
-		state.Mode = "chat"
 		state.FuzzyPicker.Hide()
+		// Reset to chat mode only if a command hasn't intentionally switched the mode to something
+		// special.
+		if state.Mode == "pick" || state.Mode == "writ" {
+			state.Mode = "chat"
+		}
 
 	case state.Mode == "pick" && state.FuzzyPicker.Visible && len(state.FuzzyPicker.StringItems) > 0 && ev.Key() == tcell.KeyTab:
 		// Pressing tab when in the fuzzy picker takes the displayed item and updates the command
