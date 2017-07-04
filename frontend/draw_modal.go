@@ -3,15 +3,50 @@ package frontend
 import (
 	// "log"
 	"fmt"
+	"math"
 	"strings"
+
 	"github.com/gdamore/tcell"
 )
 
 const idealModalWidth = 120
 const idealModalHeight = 40
 const horizontalGutter = 2;
+const showModalScrollBar = true
+const modalScrollBarCharacter = '='
 
 const closeModalMessage = "[ Esc to close ]"
+
+var headerStyle tcell.Style = tcell.StyleDefault.
+	Foreground(tcell.ColorWhite).
+	Background(tcell.ColorRed)
+
+var scrollBarHandleStyle tcell.Style = tcell.StyleDefault.
+	Foreground(tcell.ColorRed).
+	Background(tcell.ColorRed)
+var scrollBarTrackStyle tcell.Style = tcell.StyleDefault.
+	Foreground(tcell.ColorSilver).
+	Background(tcell.ColorSilver)
+
+
+func calculateScrollBarProperties(currentLine int, totalLines int, modalHeight int) []rune {
+	scrollBarHeight := int(math.Ceil(float64(totalLines) / float64(modalHeight)))
+	scrollBarPosition := int((float32(currentLine) / float32(totalLines + (2 * scrollBarHeight))) * float32(modalHeight))
+
+	// Create an array of bits indicating whether a given item is part of the scroll bar or not.
+	scrollBarEnabledForCharacter := make([]rune, modalHeight)
+	for i := 0; i < modalHeight; i++ {
+		if i >= scrollBarPosition && i <= scrollBarPosition + scrollBarHeight {
+			// Makes up the handle of the scroll bar
+			scrollBarEnabledForCharacter[i] = modalScrollBarCharacter
+		} else {
+			// Makes up the scroll bar handle's "track"
+			scrollBarEnabledForCharacter[i] = '|'
+		}
+	}
+
+	return scrollBarEnabledForCharacter
+}
 
 func (term *TerminalDisplay) DrawModal(title string, body string, scrollPosition int) {
 	width, height := term.screen.Size()
@@ -54,11 +89,6 @@ func (term *TerminalDisplay) DrawModal(title string, body string, scrollPosition
 		closeModalMessage, // Hint on how to close the modal
 	)
 
-	// TODO: swap out for configuration color
-	headerStyle := tcell.StyleDefault.
-		Foreground(tcell.ColorWhite).
-		Background(tcell.ColorRed)
-
 	// Top header
 	modalHintMessagePosition := modalWidth - len(modalHint)
 	for i := 0; i < modalHintMessagePosition; i++ {
@@ -85,6 +115,7 @@ func (term *TerminalDisplay) DrawModal(title string, body string, scrollPosition
 	)
 
 	// Sides
+	scrollBarCharacter := calculateScrollBarProperties(scrollPosition, len(bodyLines), modalHeight)
 	for i := 1; i < modalHeight; i++ {
 		// Left side
 		term.screen.SetCell(modalUpperLeftX, modalUpperLeftY+i, tcell.StyleDefault, '|')
@@ -95,7 +126,18 @@ func (term *TerminalDisplay) DrawModal(title string, body string, scrollPosition
 		}
 
 		// Right side
-		term.screen.SetCell(modalUpperLeftX+modalWidth-1, modalUpperLeftY+i, tcell.StyleDefault, '|')
+		var scrollBarStyle tcell.Style
+		if scrollBarCharacter[i-1] == modalScrollBarCharacter {
+			scrollBarStyle = scrollBarHandleStyle
+		} else {
+			scrollBarStyle = scrollBarTrackStyle
+		}
+		term.screen.SetCell(
+			modalUpperLeftX+modalWidth-1,
+			modalUpperLeftY+i,
+			scrollBarStyle,
+			scrollBarCharacter[i-1],
+		)
 	}
 
 	// Bottom header

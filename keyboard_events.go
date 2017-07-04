@@ -665,8 +665,9 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		state.Modal.ScrollPosition += quantity
 
 		// Make sure that the scroll position never becomes negative.
-		if state.Modal.ScrollPosition > len(state.Modal.Body) - 1 {
-			state.Modal.ScrollPosition = len(state.Modal.Body) - 1
+		bodyLines := len(strings.Split(state.Modal.Body, "\n")) - 1
+		if state.Modal.ScrollPosition > bodyLines {
+			state.Modal.ScrollPosition = bodyLines
 		}
 
 		resetKeyStack(state)
