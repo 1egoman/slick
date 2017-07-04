@@ -17,6 +17,8 @@ const (
 	PRINTABLE_MESSAGE_CONNECTION       // (like "my custom slack team")
 	PRINTABLE_MESSAGE_LINK             // (like http://example.com)
 	PRINTABLE_MESSAGE_NEWLINE
+	PRINTABLE_MESSAGE_FORMATTING_CODE
+	PRINTABLE_MESSAGE_FORMATTING_PREFORMATTED
 )
 
 type PrintableMessagePart struct {
