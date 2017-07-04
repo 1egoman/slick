@@ -507,9 +507,10 @@ var COMMANDS = []Command{
 				return errors.New(fmt.Sprintf("Attachment index %d is too large!", attachmentIndex))
 			} else if attachment := (*selectedMessage.Attachments)[attachmentIndex-1]; len(attachment.Body) > 0 {
 				// Open a modal with the atatchment content.
+				state.Mode = "modl"
+				state.Modal.Reset()
 				state.Modal.Title = attachment.Title
 				state.Modal.Body = attachment.Body
-				state.Mode = "modl"
 			} else {
 				return errors.New("Selected message and attachment doesn't have a link that can be opened.")
 			}
