@@ -89,7 +89,7 @@ func (term *TerminalDisplay) DrawStatusBar(
 			} else if item.Status() == gateway.CONNECTED {
 				style = color.DeSerializeStyleTcell(config["StatusBar.GatewayConnectedColor"])
 			} else {
-				// SOme weird case has no coloring.
+				// Some weird case has no coloring.
 				style = tcell.StyleDefault
 			}
 

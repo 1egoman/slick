@@ -64,7 +64,7 @@ func TestStatusbarTypingUsers(t *testing.T) {
 	str := status.Status{Type: status.STATUS_LOG, Message: "", Show: false}
 
 	activeConnection := gatewaySlack.NewWithName("helloworld", "token")
-	activeConnection.TypingUsers().Add("foo", time.Now())
+	activeConnection.TypingUsers().Add("foo", time.Now().Add(-1 * time.Second))
 	activeConnection.TypingUsers().Add("bar", time.Now())
 
 	term.DrawStatusBar("chat", []gateway.Connection{

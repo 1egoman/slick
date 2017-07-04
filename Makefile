@@ -24,7 +24,9 @@ fmt: is-clean
 # ===
 
 test:
-	go test -v ./...
+	time for dir in `go list ./... | grep -v vendor`; do \
+		go test $$dir; \
+	done
 
 test-cov:
 	mkdir -p coverage/
