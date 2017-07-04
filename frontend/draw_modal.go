@@ -9,10 +9,19 @@ import (
 
 const idealModalWidth = 120
 const idealModalHeight = 40
-const closeModalMessage = "[ Esc to close ] +"
+const horizontalGutter = 2;
+
+const closeModalMessage = "[ Esc to close ]"
 
 func (term *TerminalDisplay) DrawModal(title string, body string, scrollPosition int) {
 	width, height := term.screen.Size()
+
+	// Given the scroll position and the body, trim away `scrollPosition` lines at the start of the
+	// body.
+	bodyLines := strings.Split(body, "\n")
+	if len(bodyLines) > scrollPosition {
+		body = strings.Join(bodyLines[scrollPosition:], "\n")
+	}
 
 	// Calculate the modal width and height
 	var modalWidth int
@@ -25,7 +34,7 @@ func (term *TerminalDisplay) DrawModal(title string, body string, scrollPosition
 	if height > idealModalHeight {
 		modalHeight = idealModalHeight
 	} else {
-		modalHeight = height - 2
+		modalHeight = height - horizontalGutter
 	}
 
 	// Caculate the upper left x/y position for the modal
@@ -38,34 +47,40 @@ func (term *TerminalDisplay) DrawModal(title string, body string, scrollPosition
 
 	// Assemble modal hint
 	modalHint := fmt.Sprintf(
-		" %d/%d %s",
-		scrollPosition+1, // Current line
-		len(strings.Split(body, "\n")), // Total lines
+		" %d/%d (%d%%) %s +",
+		scrollPosition, // Current line
+		len(bodyLines), // Total lines
+		int(float32(scrollPosition) / float32(len(bodyLines)) * 100), // Percent
 		closeModalMessage, // Hint on how to close the modal
 	)
+
+	// TODO: swap out for configuration color
+	headerStyle := tcell.StyleDefault.
+		Foreground(tcell.ColorWhite).
+		Background(tcell.ColorRed)
 
 	// Top header
 	modalHintMessagePosition := modalWidth - len(modalHint)
 	for i := 0; i < modalHintMessagePosition; i++ {
 		if i == 0 {
 			// Left side corner
-			term.WriteTextStyle(modalUpperLeftX+i, modalUpperLeftY, tcell.StyleDefault, "+")
+			term.WriteTextStyle(modalUpperLeftX+i, modalUpperLeftY, headerStyle, "+")
 		} else {
-			term.WriteTextStyle(modalUpperLeftX+i, modalUpperLeftY, tcell.StyleDefault, "-")
+			term.WriteTextStyle(modalUpperLeftX+i, modalUpperLeftY, headerStyle, "-")
 		}
 	}
 	// Render modal hint
 	term.WriteTextStyle(
 		modalUpperLeftX+modalHintMessagePosition,
 		modalUpperLeftY,
-		tcell.StyleDefault,
+		headerStyle,
 		modalHint,
 	)
 	// Render title
 	term.WriteTextStyle(
 		modalUpperLeftX+1,
 		modalUpperLeftY,
-		tcell.StyleDefault,
+		headerStyle,
 		fmt.Sprintf(" %s ", title),
 	)
 
@@ -100,8 +115,8 @@ func (term *TerminalDisplay) DrawModal(title string, body string, scrollPosition
 	term.WriteParagraphStyle(
 		modalUpperLeftX+1,
 		modalUpperLeftY+1,
-		modalWidth,
-		modalHeight,
+		modalWidth - horizontalGutter - horizontalGutter,
+		modalHeight - 2,
 		tcell.StyleDefault,
 		body,
 	)

@@ -46,6 +46,7 @@ func (term *TerminalDisplay) WriteParagraphStyle(x int, y int, width int, height
 			yOffset += 1
 			xOffset = 0
 		} else if xOffset > width { // If we go over the window width, then wrap to the next line.
+			term.screen.SetCell(x+xOffset, y+yOffset, style, char)
 			yOffset += 1
 			xOffset = 0
 		} else {

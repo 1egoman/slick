@@ -318,7 +318,7 @@ func FetchMessageHistoryScrollback(state *State) error {
 // Break out function to handle only keyboard events. Called by `keyboardEvents`.
 func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.TerminalDisplay, quit chan struct{}) error {
 	// Did the user press a key in the keymap?
-	if state.Mode == "chat" && ev.Key() == tcell.KeyRune {
+	if state.Mode != "writ" && ev.Key() == tcell.KeyRune {
 		// Add pressed key to the stack of keys
 		state.KeyStack = append(state.KeyStack, ev.Rune())
 
@@ -656,6 +656,31 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		state.SetPrevActiveConnection()
 	case ev.Key() == tcell.KeyCtrlX:
 		state.SetNextActiveConnection()
+
+	//
+	// MODAL SHORTCUTS
+	//
+	// `j` moves down a line.
+	case state.Mode == "modl" && len(keystackCommand) == 1 && keystackCommand[0] == 'j':
+		state.Modal.ScrollPosition += quantity
+
+		// Make sure that the scroll position never becomes negative.
+		if state.Modal.ScrollPosition > len(state.Modal.Body) - 1 {
+			state.Modal.ScrollPosition = len(state.Modal.Body) - 1
+		}
+
+		resetKeyStack(state)
+
+	// `k` moves up a line.
+	case state.Mode == "modl" && len(keystackCommand) == 1 && keystackCommand[0] == 'k':
+		state.Modal.ScrollPosition -= quantity
+
+		// Make sure that the scroll position never becomes negative.
+		if state.Modal.ScrollPosition < 0 {
+			state.Modal.ScrollPosition = 0
+		}
+
+		resetKeyStack(state)
 
 	//
 	// MOVEMENT BETWEEN ITEMS IN THE FUZZY PICKER
