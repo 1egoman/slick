@@ -37,7 +37,7 @@ func (term *TerminalDisplay) WriteTextStyle(x int, y int, style tcell.Style, tex
 		term.screen.SetCell(x+ct, y, style, char)
 	}
 }
-func (term *TerminalDisplay) WriteParagraphStyle(x int, y int, width int, style tcell.Style, text string) {
+func (term *TerminalDisplay) WriteParagraphStyle(x int, y int, width int, height int, style tcell.Style, text string) {
 	xOffset := 0
 	yOffset := 0
 	for _, char := range text {
@@ -51,6 +51,11 @@ func (term *TerminalDisplay) WriteParagraphStyle(x int, y int, width int, style 
 		} else {
 			// Otherwise, print the character.
 			term.screen.SetCell(x+xOffset, y+yOffset, style, char)
+		}
+
+		// Never render more content then will fit in the box.
+		if yOffset > height {
+			break;
 		}
 	}
 }

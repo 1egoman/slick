@@ -102,7 +102,11 @@ func render(state *State, term *frontend.TerminalDisplay) {
 	}
 
 	if state.Mode == "modl" {
-		term.DrawModal(state.Modal.Title, state.Modal.Body)
+		term.DrawModal(
+			state.Modal.Title,
+			state.Modal.Body,
+			state.Modal.ScrollPosition,
+		)
 	}
 
 	term.Render()

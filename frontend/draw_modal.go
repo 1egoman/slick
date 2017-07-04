@@ -3,14 +3,15 @@ package frontend
 import (
 	// "log"
 	"fmt"
+	"strings"
 	"github.com/gdamore/tcell"
 )
 
 const idealModalWidth = 120
 const idealModalHeight = 40
-const closeModalMessage = " [ Esc to close ] +"
+const closeModalMessage = "[ Esc to close ] +"
 
-func (term *TerminalDisplay) DrawModal(title string, body string) {
+func (term *TerminalDisplay) DrawModal(title string, body string, scrollPosition int) {
 	width, height := term.screen.Size()
 
 	// Calculate the modal width and height
@@ -35,9 +36,17 @@ func (term *TerminalDisplay) DrawModal(title string, body string) {
 	//	Render frame
 	// ------------------------------------------------------------------------------
 
+	// Assemble modal hint
+	modalHint := fmt.Sprintf(
+		" %d/%d %s",
+		scrollPosition+1, // Current line
+		len(strings.Split(body, "\n")), // Total lines
+		closeModalMessage, // Hint on how to close the modal
+	)
+
 	// Top header
-	closeModalMessagePosition := modalWidth - len(closeModalMessage)
-	for i := 0; i < closeModalMessagePosition; i++ {
+	modalHintMessagePosition := modalWidth - len(modalHint)
+	for i := 0; i < modalHintMessagePosition; i++ {
 		if i == 0 {
 			// Left side corner
 			term.WriteTextStyle(modalUpperLeftX+i, modalUpperLeftY, tcell.StyleDefault, "+")
@@ -45,12 +54,12 @@ func (term *TerminalDisplay) DrawModal(title string, body string) {
 			term.WriteTextStyle(modalUpperLeftX+i, modalUpperLeftY, tcell.StyleDefault, "-")
 		}
 	}
-	// Render hint to close modal in upper right
+	// Render modal hint
 	term.WriteTextStyle(
-		modalUpperLeftX+closeModalMessagePosition,
+		modalUpperLeftX+modalHintMessagePosition,
 		modalUpperLeftY,
 		tcell.StyleDefault,
-		closeModalMessage,
+		modalHint,
 	)
 	// Render title
 	term.WriteTextStyle(
@@ -92,6 +101,7 @@ func (term *TerminalDisplay) DrawModal(title string, body string) {
 		modalUpperLeftX+1,
 		modalUpperLeftY+1,
 		modalWidth,
+		modalHeight,
 		tcell.StyleDefault,
 		body,
 	)
