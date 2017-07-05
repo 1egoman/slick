@@ -13,7 +13,7 @@ import (
 	"github.com/1egoman/slick/gateway" // The thing to interface with slack
 )
 
-const ATTACHMENT_BODY_PREVIEW_LINES = 4;
+const attachmentBodyPreviewLines = 4;
 
 // Given an array of reactions and a row to render them on, render them.
 func renderReactions(
@@ -78,7 +78,7 @@ func getAttachmentHeight(attachment gateway.Attachment) int {
 
 	// If there's a body, show a couple lines of preview
 	if len(attachment.Body) > 0 {
-		lines += ATTACHMENT_BODY_PREVIEW_LINES
+		lines += attachmentBodyPreviewLines
 	}
 
 	return lines
@@ -169,7 +169,7 @@ func renderAttachment(
 	// Render a preview of the body
 	if len(attachment.Body) > 0 {
 		bodyLines := strings.Split(attachment.Body, "\n")
-		for i := 0; i < ATTACHMENT_BODY_PREVIEW_LINES; i++ {
+		for i := 0; i < attachmentBodyPreviewLines; i++ {
 			if len(bodyLines) > i {
 				row += 1
 				term.WriteTextStyle(

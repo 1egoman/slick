@@ -124,6 +124,38 @@ func TestParseMarkdown(t *testing.T) {
 			},
 		),
 	) {
-		t.Errorf("The markdown 'I :heart: emoji!' wasn't parsed properly: %+v", markdownEight)
+		t.Errorf("The markdown 'foo\\nbar\\nbaz' wasn't parsed properly: %+v", markdownEight)
+	}
+
+	// There was a bug where newlines after formatting would screw things up.
+	markdownNine := ParseMarkdown("hello *world*\nfoo bar baz")
+	if !reflect.DeepEqual(
+		markdownNine,
+		gateway.NewPrintableMessage(
+			[]gateway.PrintableMessagePart{
+				gateway.PrintableMessagePart{Type: gateway.PRINTABLE_MESSAGE_PLAIN_TEXT, Content: "hello "},
+				gateway.PrintableMessagePart{Type: gateway.PRINTABLE_MESSAGE_FORMATTING_BOLD, Content: "world"},
+				gateway.PrintableMessagePart{Type: gateway.PRINTABLE_MESSAGE_NEWLINE},
+				gateway.PrintableMessagePart{Type: gateway.PRINTABLE_MESSAGE_PLAIN_TEXT, Content: "foo bar baz"},
+			},
+		),
+	) {
+		t.Errorf("The markdown 'hello *world*\\nfoo bar baz' wasn't parsed properly: %+v", markdownNine)
+	}
+
+	markdownTen := ParseMarkdown("hello *world* bar\nfoo bar baz")
+	if !reflect.DeepEqual(
+		markdownTen,
+		gateway.NewPrintableMessage(
+			[]gateway.PrintableMessagePart{
+				gateway.PrintableMessagePart{Type: gateway.PRINTABLE_MESSAGE_PLAIN_TEXT, Content: "hello "},
+				gateway.PrintableMessagePart{Type: gateway.PRINTABLE_MESSAGE_FORMATTING_BOLD, Content: "world"},
+				gateway.PrintableMessagePart{Type: gateway.PRINTABLE_MESSAGE_PLAIN_TEXT, Content: " bar"},
+				gateway.PrintableMessagePart{Type: gateway.PRINTABLE_MESSAGE_NEWLINE},
+				gateway.PrintableMessagePart{Type: gateway.PRINTABLE_MESSAGE_PLAIN_TEXT, Content: "foo bar baz"},
+			},
+		),
+	) {
+		t.Errorf("The markdown 'hello *world* bar\\nfoo bar baz' wasn't parsed properly: %+v", markdownTen)
 	}
 }

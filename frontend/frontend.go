@@ -2,6 +2,7 @@ package frontend
 
 import (
 	"github.com/gdamore/tcell"
+	"github.com/1egoman/slick/gateway"
 	// "log"
 )
 
@@ -43,7 +44,31 @@ func (term *TerminalDisplay) WriteParagraphStyle(x int, y int, width int, height
 	for yOffset, line := range printableMessage.Lines(width) {
 		xOffset := 0
 		for _, part := range line {
-			term.WriteTextStyle(x+xOffset, y+yOffset, style, part.Content)
+
+			switch part.Type {
+			case gateway.PRINTABLE_MESSAGE_FORMATTING_BOLD:
+				term.WriteTextStyle(x+xOffset, y+yOffset, style.Bold(true), part.Content)
+			case gateway.PRINTABLE_MESSAGE_FORMATTING_ITALIC:
+				term.WriteTextStyle(x+xOffset, y+yOffset, style.Foreground(tcell.ColorSilver), part.Content)
+			case gateway.PRINTABLE_MESSAGE_FORMATTING_CODE:
+				term.WriteTextStyle(
+					x+xOffset,
+					y+yOffset,
+					style.Foreground(tcell.ColorBlack).Background(tcell.ColorSilver),
+					part.Content,
+				)
+			case gateway.PRINTABLE_MESSAGE_FORMATTING_PREFORMATTED:
+				term.WriteTextStyle(
+					x+xOffset,
+					y+yOffset,
+					style.Foreground(tcell.ColorBlack).Background(tcell.ColorSilver),
+					part.Content,
+				)
+			default:
+				// Normal text
+				term.WriteTextStyle(x+xOffset, y+yOffset, style, part.Content)
+			}
+
 			xOffset += len(part.Content)
 		}
 

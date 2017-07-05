@@ -26,10 +26,12 @@ func ParseMarkdown(text string) gateway.PrintableMessage {
 			// Enforce newlines.
 
 			// Add any text before the newline to the printable message slice.
-			parts = append(parts, gateway.PrintableMessagePart{
-				Type:    gateway.PRINTABLE_MESSAGE_PLAIN_TEXT,
-				Content: text[startIndex:index],
-			})
+			if lastTagEndIndex < index {
+				parts = append(parts, gateway.PrintableMessagePart{
+					Type:    gateway.PRINTABLE_MESSAGE_PLAIN_TEXT,
+					Content: text[lastTagEndIndex:index],
+				})
+			}
 			startIndex = index + 1
 			lastTagEndIndex = index+1
 
