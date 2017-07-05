@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"time"
+	"sort"
 )
 
 // How many seconds after getting a user typing event does the user no longer show as typing?
@@ -25,6 +26,12 @@ func (t *TypingUsers) Users() []string {
 			delete(t.users, user) // Remove the user if it's too old.
 		}
 	}
+
+	// Sort output by timestamp to ensure that the order is deterministic (really here for tests)
+	sort.Slice(users, func (i, j int) bool {
+		return t.users[users[i]].Before(t.users[users[j]])
+	})
+
 	return users
 }
 

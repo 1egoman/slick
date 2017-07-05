@@ -2,7 +2,7 @@ package frontend_test
 
 import (
 	"testing"
-	// "time"
+	"time"
 	"github.com/1egoman/slick/status"
 	"github.com/1egoman/slick/gateway"
 	"github.com/1egoman/slick/frontend"
