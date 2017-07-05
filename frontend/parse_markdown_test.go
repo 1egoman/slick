@@ -110,4 +110,20 @@ func TestParseMarkdown(t *testing.T) {
 	) {
 		t.Errorf("The markdown 'I :heart: emoji!' wasn't parsed properly: %+v", markdownSeven)
 	}
+
+	markdownEight := ParseMarkdown("foo\nbar\nbaz")
+	if !reflect.DeepEqual(
+		markdownEight,
+		gateway.NewPrintableMessage(
+			[]gateway.PrintableMessagePart{
+				gateway.PrintableMessagePart{Type: gateway.PRINTABLE_MESSAGE_PLAIN_TEXT, Content: "foo"},
+				gateway.PrintableMessagePart{Type: gateway.PRINTABLE_MESSAGE_NEWLINE},
+				gateway.PrintableMessagePart{Type: gateway.PRINTABLE_MESSAGE_PLAIN_TEXT, Content: "bar"},
+				gateway.PrintableMessagePart{Type: gateway.PRINTABLE_MESSAGE_NEWLINE},
+				gateway.PrintableMessagePart{Type: gateway.PRINTABLE_MESSAGE_PLAIN_TEXT, Content: "baz"},
+			},
+		),
+	) {
+		t.Errorf("The markdown 'I :heart: emoji!' wasn't parsed properly: %+v", markdownEight)
+	}
 }

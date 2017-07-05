@@ -12,7 +12,7 @@ func ParseMarkdown(text string) gateway.PrintableMessage {
 	text = emoji.Sprintf(text) // Emojis
 	text = strings.Replace(text, "&amp;", "&", -1)
 	text = strings.Replace(text, "&gt;", ">", -1)
-	text = strings.Replace(text, "&gt;", "<", -1)
+	text = strings.Replace(text, "&lt;", "<", -1)
 
 	var parts []gateway.PrintableMessagePart
 
@@ -31,6 +31,7 @@ func ParseMarkdown(text string) gateway.PrintableMessage {
 				Content: text[startIndex:index],
 			})
 			startIndex = index + 1
+			lastTagEndIndex = index+1
 
 			// Add the newline.
 			parts = append(parts, gateway.PrintableMessagePart{Type: gateway.PRINTABLE_MESSAGE_NEWLINE})

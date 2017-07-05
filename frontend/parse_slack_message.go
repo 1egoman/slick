@@ -13,7 +13,7 @@ func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, 
 	text = emoji.Sprintf(text) // Emojis
 	text = strings.Replace(text, "&amp;", "&", -1)
 	text = strings.Replace(text, "&gt;", ">", -1)
-	text = strings.Replace(text, "&gt;", "<", -1)
+	text = strings.Replace(text, "&lt;", "<", -1)
 
 	var parts []gateway.PrintableMessagePart
 

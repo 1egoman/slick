@@ -2,6 +2,7 @@ package frontend
 
 import (
 	"github.com/gdamore/tcell"
+	// "log"
 )
 
 // The amount of lines at the bottom of the window to leave available for status bars.
@@ -38,24 +39,16 @@ func (term *TerminalDisplay) WriteTextStyle(x int, y int, style tcell.Style, tex
 	}
 }
 func (term *TerminalDisplay) WriteParagraphStyle(x int, y int, width int, height int, style tcell.Style, text string) {
-	xOffset := 0
-	yOffset := 0
-	for _, char := range text {
-		xOffset += 1
-		if char == '\n' { // If we hit a newline, then wrap the the next line.
-			yOffset += 1
-			xOffset = 0
-		} else if xOffset > width { // If we go over the window width, then wrap to the next line.
-			term.screen.SetCell(x+xOffset, y+yOffset, style, char)
-			yOffset += 1
-			xOffset = 0
-		} else {
-			// Otherwise, print the character.
-			term.screen.SetCell(x+xOffset, y+yOffset, style, char)
+	printableMessage := ParseMarkdown(text)
+	for yOffset, line := range printableMessage.Lines(width) {
+		xOffset := 0
+		for _, part := range line {
+			term.WriteTextStyle(x+xOffset, y+yOffset, style, part.Content)
+			xOffset += len(part.Content)
 		}
 
 		// Never render more content then will fit in the box.
-		if yOffset > height {
+		if yOffset > height - 1 {
 			break;
 		}
 	}

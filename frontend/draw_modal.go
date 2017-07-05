@@ -12,6 +12,7 @@ import (
 const idealModalWidth = 120
 const idealModalHeight = 40
 const horizontalGutter = 2;
+const verticalGutter = 1;
 const showModalScrollBar = true
 const modalScrollBarCharacter = '='
 
@@ -50,6 +51,9 @@ func calculateScrollBarProperties(currentLine int, totalLines int, modalHeight i
 
 func (term *TerminalDisplay) DrawModal(title string, body string, scrollPosition int) {
 	width, height := term.screen.Size()
+
+	// Remove leading and trailing whitespace.
+	body = strings.Trim(body, "\n\t ")
 
 	// Given the scroll position and the body, trim away `scrollPosition` lines at the start of the
 	// body.
@@ -155,10 +159,10 @@ func (term *TerminalDisplay) DrawModal(title string, body string, scrollPosition
 	// ------------------------------------------------------------------------------
 
 	term.WriteParagraphStyle(
-		modalUpperLeftX+1,
-		modalUpperLeftY+1,
+		modalUpperLeftX+horizontalGutter,
+		modalUpperLeftY+verticalGutter,
 		modalWidth - horizontalGutter - horizontalGutter,
-		modalHeight - 2,
+		modalHeight - verticalGutter - verticalGutter,
 		tcell.StyleDefault,
 		body,
 	)
