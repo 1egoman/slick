@@ -787,7 +787,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 			)
 
 			if err != nil {
-				return err
+				state.Status.Errorf("Error sending message: %s", err)
 			} else if responseMessage != nil {
 				// Got a response command? Append it to the message history.
 				state.ActiveConnection().AppendMessageHistory(*responseMessage)

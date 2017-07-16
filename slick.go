@@ -8,6 +8,7 @@ import (
 	"path"
 
 	"github.com/1egoman/slick/frontend" // The thing to draw to the screen
+	"github.com/1egoman/slick/gateway"
 	"github.com/1egoman/slick/version"
 	"github.com/gdamore/tcell"
 )
@@ -148,7 +149,10 @@ func main() {
 				continue
 			}
 
-			connection.Disconnect()
+			// Close the connection if the connection is open
+			if connection.Status() == gateway.CONNECTED {
+				connection.Disconnect()
+			}
 		}
 	}
 }

@@ -87,6 +87,10 @@ var COMMANDS = []Command{
 				connection = gatewaySlack.New(token)
 			}
 
+			// Store the connection
+			state.Connections = append(state.Connections, connection)
+			state.SetActiveConnection(len(state.Connections) - 1)
+
 			// Initialize the connection
 			err := connection.Connect()
 			log.Printf("Connection response: %s", err)
@@ -102,9 +106,6 @@ var COMMANDS = []Command{
 				}
 			}()
 
-			// Store the connection
-			state.Connections = append(state.Connections, connection)
-			state.SetActiveConnection(len(state.Connections) - 1)
 			return nil
 		},
 	},

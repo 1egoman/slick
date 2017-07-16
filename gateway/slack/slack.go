@@ -25,6 +25,7 @@ func NewWithName(nickname string, token string) *SlackConnection {
 		token:     token,
 		nickname:  &nickname,
 		userCache: make(map[string]gateway.User),
+		connectionStatus: gateway.DISCONNECTED,
 
 		// Which users are typing?
 		typingUsers: gateway.NewTypingUsers(),

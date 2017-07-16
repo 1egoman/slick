@@ -28,6 +28,7 @@ func (c *SlackConnection) Connect() error {
 	err = c.requestConnectionUrl()
 	if err != nil {
 		log.Println("Error getting connection url", err)
+		c.connectionStatus = gateway.DISCONNECTED
 		return err
 	}
 	log.Printf("Got slack connection url for team %s: %s", c.Team().Name, c.url)
@@ -38,6 +39,7 @@ func (c *SlackConnection) Connect() error {
 	// Create a connection to the websocket
 	c.conn, err = websocket.Dial(c.url, "", origin)
 	if err != nil {
+		c.connectionStatus = gateway.DISCONNECTED
 		return err // Panic when cannot talk to messaging servers
 	}
 	log.Printf("Slack connection %s made!", c.Team().Name)
