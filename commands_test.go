@@ -309,3 +309,45 @@ func TestCommandExpandAttachment(t *testing.T) {
 		t.Errorf("Modal title and body not set to the right values: %+v", state.Modal)
 	}
 }
+
+// Test `/disconnect`ing from an already disconnected connection
+func TestCommandDisconnectFromAlreadyDisconnectedConnection(t *testing.T) {
+	defer httpmock.DeactivateAndReset()
+
+	// Listen for command response
+	// FIXME: we should spin up a local websocket server here and not use one on the internet.
+	httpmock.Activate()
+	httpmock.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
+
+	// Create initial state
+	state := NewInitialStateMode("writ")
+	state.Connections = []gateway.Connection{
+		gatewaySlack.New("token"),
+	}
+	state.ActiveConnection().SetSelectedChannel(&gateway.Channel{Id: "channel-id"})
+
+	// Execute the command
+	command := *GetCommand("Connect")
+	err := RunCommand(command, []string{"connect", "team name", "token"}, state)
+
+	// Verify the connection failed (ie, connection is DISCONNECTED)
+	if err == nil {
+		t.Errorf("Connected to mock slack succesfully, should have failed")
+	}
+
+	if name := state.ActiveConnection().Name(); name != "team name" {
+		t.Errorf("Invalid name for slack team: %s", name)
+	}
+
+	// Now, disconnect
+	command = *GetCommand("Disconnect")
+	err = RunCommand(command, []string{"disconnect"}, state)
+
+	if err != nil {
+		t.Errorf("Couldn't disconnect from mock slack: %s", err)
+	}
+
+	if state.ActiveConnection().Status() != gateway.DISCONNECTED {
+		t.Errorf("Connection status isn't DISCONNECTED: %v", state.ActiveConnection().Status())
+	}
+}

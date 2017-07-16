@@ -5,7 +5,9 @@ import (
 )
 
 func (c *SlackConnection) Disconnect() error {
-	c.conn.Close()
+	if c.Status() == gateway.CONNECTED {
+		c.conn.Close()
+	}
 	c.connectionStatus = gateway.DISCONNECTED
 	return nil
 }
