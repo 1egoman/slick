@@ -485,7 +485,26 @@ func (term *TerminalDisplay) DrawMessages(
 
 				totalWidth += len(part.Content)
 			}
+
+			// On the last line of the selected message, render actions for that message (attachment
+			// and file actions are done separately)
+			if selectedMessageIndex == index && lineIndex == len(*msg.Tokens) - 1 {
+				var messageActions []string
+
+				if msg.Confirmed == false {
+					messageActions = append(messageActions, "Send again")
+				}
+
+				renderActions(
+					term,
+					config,
+					messageActions,
+					messageOffset + totalWidth + 2, // At the end of the message line
+					row-messageRows+lineIndex+1, // On the last line
+				)
+			}
 		}
+
 
 		// Subtract the message's height.
 		row -= messageRows

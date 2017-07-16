@@ -519,6 +519,38 @@ var COMMANDS = []Command{
 			return nil
 		},
 	},
+	{
+		Name:         "ResendMessage",
+		Type:         NATIVE,
+		Description:  "Resend an unconfirmed message (ie, a message that only exists locally.)",
+		Arguments:    "",
+		Permutations: []string{"resendmessage", "resend"},
+		Handler: func(args []string, state *State) error {
+			selectedMessageIndex := len(state.ActiveConnection().MessageHistory()) - 1 - state.SelectedMessageIndex
+			selectedMessage := state.ActiveConnection().MessageHistory()[selectedMessageIndex]
+
+			if selectedMessage.Confirmed == true {
+				return errors.New("Message is already confirmed (ie, has already been sent to the server.)")
+			}
+
+			responseMessage, err := state.ActiveConnection().SendMessage(
+				selectedMessage,
+				state.ActiveConnection().SelectedChannel(),
+			)
+
+			if err != nil {
+				state.Status.Errorf("Error sending message: %s", err)
+			} else {
+				// Mark message as confirmed
+				selectedMessage.Confirmed = true
+
+				// Got a response command? Append it to the message history.
+				state.ActiveConnection().AppendMessageHistory(*responseMessage)
+			}
+
+			return nil
+		},
+	},
 
 	//
 	// MOVE FORWARD / BACKWARD MESSAGES

@@ -134,6 +134,15 @@ func OnMessageInteraction(state *State, key rune, quantity int) {
 			if err != nil {
 				state.Status.Errorf(err.Error())
 			}
+		case 's': // Resend the message
+			state.Status.Printf("Foo")
+			err := GetCommand("ResendMessage").Handler(
+				[]string{"__INTERNAL__"},
+				state,
+			)
+			if err != nil {
+				state.Status.Errorf(err.Error())
+			}
 		}
 	} else {
 		state.Status.Printf("No message selected.")
@@ -644,7 +653,8 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		string(keystackCommand) == "c" ||
 		string(keystackCommand) == "l" ||
 		string(keystackCommand) == "m" ||
-		string(keystackCommand) == "x"): // Message interaction
+		string(keystackCommand) == "x" ||
+		string(keystackCommand) == "s"): // Message interaction
 		// When a user presses a key to interact with a message, handle it.
 		OnMessageInteraction(state, keystackCommand[0], quantity)
 		resetKeyStack(state)
