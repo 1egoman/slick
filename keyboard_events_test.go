@@ -530,6 +530,41 @@ func TestEmojiStartingMessageWontMeTreatedAsCommand(t *testing.T) {
 	}
 }
 
+func TestSendingMessageWhileOfflineWillFailButMessageWillStillBeInHistory(t *testing.T) {
+	// Mock slack
+	httpmock.Activate()
+	httpmock.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
+	defer httpmock.DeactivateAndReset()
+
+	quit := make(chan struct{}, 1)
+
+	// Create fresh state for the test.
+	state := NewInitialStateMode("writ")
+	state.Command = []rune("foo bar baz")
+	state.CommandCursorPosition = 0
+
+	state.Connections = append(state.Connections, gatewaySlack.New("token"))
+	state.SetActiveConnection(len(state.Connections) - 1)
+	state.ActiveConnection().SetSelectedChannel(&gateway.Channel{Id: "channel-id", Name: "general"}) // Set a channel
+
+	initialMessageHistoryLength := len(state.ActiveConnection().MessageHistory())
+
+	// Run the test.
+	HandleKeyboardEvent(
+		tcell.NewEventKey(tcell.KeyEnter, ' ', tcell.ModNone),
+		state,
+		nil,
+		quit,
+	)
+
+	// Verify it passed - a message should have been posted, not a command run.
+	messageHistory := state.ActiveConnection().MessageHistory()
+	lastMessage := messageHistory[len(messageHistory)-1]
+	if !(len(messageHistory) != initialMessageHistoryLength && lastMessage.Confirmed == false && lastMessage.Text == "foo bar baz") {
+		t.Errorf("Test failed. %s %s %s", len(messageHistory) != initialMessageHistoryLength, lastMessage.Confirmed == false, lastMessage.Text == "foo bar baz")
+	}
+}
+
 // Path auto complete:
 // This is the functionality that lets users hit tab after typing a slash and get auto complete for
 // those paths, ie I type / and hit tab, I'll see `etc`, `var`, `tmp`, etc...

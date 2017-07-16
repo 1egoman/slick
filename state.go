@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/1egoman/slick/gateway" // The thing to interface with slack
-	"github.com/1egoman/slick/status"
 	"github.com/1egoman/slick/modal"
+	"github.com/1egoman/slick/status"
 )
 
 // This struct contains the main application state. I have fluxy intentions.

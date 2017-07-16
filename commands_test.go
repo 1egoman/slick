@@ -192,6 +192,41 @@ func TestCommandConnectWithName(t *testing.T) {
 	}
 }
 
+// Test `/connect "team name" token-here` when the internet is disconnected.
+// A new connection should be added, but it should be diconnected.
+func TestCommandConnectWithInternetDisconnected(t *testing.T) {
+	defer httpmock.DeactivateAndReset()
+
+	// Listen for command response
+	httpmock.Activate()
+	httpmock.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
+
+	// Create initial state
+	state := NewInitialStateMode("writ")
+	state.Connections = []gateway.Connection{
+		gatewaySlack.New("token"),
+	}
+	state.ActiveConnection().SetSelectedChannel(&gateway.Channel{Id: "channel-id"})
+
+	// Execute the command
+	command := *GetCommand("Connect")
+	err := RunCommand(command, []string{"connect", "team name", "token"}, state)
+
+	// Expect an error, since we are "offline"
+	if err == nil {
+		t.Errorf("Error expected, should have failed to connect since we are 'offline'")
+	}
+
+	if name := state.ActiveConnection().Name(); name != "team name" {
+		t.Errorf("Invalid name for slack team: %s", name)
+	}
+
+	// Status should be disconnected, because we are offline
+	if status := state.ActiveConnection().Status(); status != gateway.DISCONNECTED {
+		t.Errorf("Invalid connection status: %v", status)
+	}
+}
+
 func TestCommandPick(t *testing.T) {
 	// Create initial state
 	state := NewInitialStateMode("writ")
@@ -252,7 +287,7 @@ func TestCommandExpandAttachment(t *testing.T) {
 			Attachments: &[]gateway.Attachment{
 				gateway.Attachment{
 					Title: "title",
-					Body: "body",
+					Body:  "body",
 				},
 			},
 		},
