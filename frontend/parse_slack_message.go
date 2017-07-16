@@ -3,6 +3,7 @@ package frontend
 import (
 	"github.com/kyokomi/emoji" // convert :smile: to unicode
 	"strings"
+	"fmt"
 
 	"github.com/1egoman/slick/gateway" // The thing to interface with slack
 )
@@ -77,7 +78,9 @@ func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, 
 				if len(contentParts) == 1 { // content = ABCDEFGHI
 					user, err := UserById(content)
 					if err != nil {
-						return err
+						// Couldn't fetch user info, instead of exploding just render the user id.
+						// FIXME: better way to do this? A bit of a compromise.
+						content = fmt.Sprintf("@<%s>", content)
 					} else {
 						content = "@" + user.Name
 					}

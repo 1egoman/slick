@@ -309,24 +309,24 @@ func (term *TerminalDisplay) DrawMessages(
 			selectedStyle = tcell.StyleDefault
 		}
 
-		// Take our message text and convert it to message parts
-		// TODO: cache this somehow. It's slow as hell.
-		var parsedMessage gateway.PrintableMessage
-		err := ParseSlackMessage(msg.Text, &parsedMessage, userById)
-		if err != nil {
-			// FIXME: Probably should return an error here? And not return 0?
-			log.Println("Error making message print-worthy (probably because fetching user id => user name failed):", err)
-			return 0, false
-		}
-
 		// Calculate how many rows the message requires to render.
 		messageColumnWidth := width - prefixWidth - 1
 
-		// Fetch message lines. If they weren't previously cached on the message, cache them.
+		// Take our message text and convert it to message parts
 		if msg.Tokens == nil {
+			var parsedMessage gateway.PrintableMessage
+			err := ParseSlackMessage(msg.Text, &parsedMessage, userById)
+			if err != nil {
+				// FIXME: Probably should return an error here? And not return 0?
+				log.Println("Error making message print-worthy:", err)
+				return 0, false
+			}
+
+			// Fetch message lines. Cache a pointer to the lines to use for further renders.
 			parsedMessageLines := parsedMessage.Lines(messageColumnWidth)
 			msg.Tokens = &parsedMessageLines
 		}
+
 		messageRows := len(*msg.Tokens)
 		accessoryRow := row // The row to start rendering "message accessories" on
 		if len(msg.Text) == 0 {
@@ -488,7 +488,7 @@ func (term *TerminalDisplay) DrawMessages(
 
 			// On the last line of the selected message, render actions for that message (attachment
 			// and file actions are done separately)
-			if selectedMessageIndex == index && lineIndex == len(*msg.Tokens) - 1 {
+			if selectedMessageIndex == index && lineIndex == len(*msg.Tokens) - 1 && len(line) > 0 {
 				var messageActions []string
 
 				if msg.Confirmed == false {
