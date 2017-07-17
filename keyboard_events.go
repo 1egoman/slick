@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -31,8 +30,6 @@ func sendTypingIndicator(state *State) error {
 					"channel": state.ActiveConnection().SelectedChannel().Id,
 				},
 			}
-		} else {
-			return errors.New("No room in outgoing channel to send typing event!")
 		}
 	}
 	return nil
@@ -135,7 +132,6 @@ func OnMessageInteraction(state *State, key rune, quantity int) {
 				state.Status.Errorf(err.Error())
 			}
 		case 's': // Resend the message
-			state.Status.Printf("Foo")
 			err := GetCommand("ResendMessage").Handler(
 				[]string{"__INTERNAL__"},
 				state,

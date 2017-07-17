@@ -52,7 +52,7 @@ var COMMANDS = []Command{
 		Type:         NATIVE,
 		Description:  "Run a lua file.",
 		Arguments:    "<path to lua file>",
-		Permutations: []string{"require", "r", "source"},
+		Permutations: []string{"require", "req", "source"},
 		/* NO HANDLER, SPECIAL CASE */
 	},
 
