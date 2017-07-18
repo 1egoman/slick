@@ -8,14 +8,21 @@ import (
 	"github.com/1egoman/slick/gateway" // The thing to interface with slack
 )
 
-// Given a string to be displayed in the ui, tokenize the message and return a *PrintableMessage
-// that contains each part as a token.
-func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, UserById func(string) (*gateway.User, error)) error {
-	text = emoji.Sprintf(text) // Emojis
+// Given a parsed message part, unescape all the symbols within
+func unEscape(text string) string {
+	// Parse emojis in messages
+	text = emoji.Sprintf(text)
+
+	// Unescape escaped xml sequences
 	text = strings.Replace(text, "&amp;", "&", -1)
 	text = strings.Replace(text, "&gt;", ">", -1)
 	text = strings.Replace(text, "&lt;", "<", -1)
+	return text
+}
 
+// Given a string to be displayed in the ui, tokenize the message and return a *PrintableMessage
+// that contains each part as a token.
+func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, UserById func(string) (*gateway.User, error)) error {
 	var parts []gateway.PrintableMessagePart
 
 	// Iterate through each character in the message.
@@ -39,7 +46,7 @@ func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, 
 			// Add any text before the newline to the printable message slice.
 			parts = append(parts, gateway.PrintableMessagePart{
 				Type:    gateway.PRINTABLE_MESSAGE_PLAIN_TEXT,
-				Content: text[startIndex:index],
+				Content: unEscape(text[startIndex:index]),
 			})
 			startIndex = index + 1
 
@@ -51,7 +58,7 @@ func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, 
 			if index > 0 {
 				parts = append(parts, gateway.PrintableMessagePart{
 					Type:    gateway.PRINTABLE_MESSAGE_PLAIN_TEXT,
-					Content: text[startIndex:index],
+					Content: unEscape(text[startIndex:index]),
 				})
 			}
 
@@ -107,7 +114,7 @@ func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, 
 
 			parts = append(parts, gateway.PrintableMessagePart{
 				Type:     tagType,
-				Content:  content,
+				Content:  unEscape(content),
 				Metadata: metadata,
 			})
 
@@ -123,7 +130,7 @@ func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, 
 	if len(text) > 0 {
 		parts = append(parts, gateway.PrintableMessagePart{
 			Type:    gateway.PRINTABLE_MESSAGE_PLAIN_TEXT,
-			Content: text[startIndex:],
+			Content: unEscape(text[startIndex:]),
 		})
 	}
 

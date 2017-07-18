@@ -42,6 +42,12 @@
 			"revisionTime": "2016-12-10T15:13:36Z"
 		},
 		{
+			"checksumSHA1": "ED154c1vFO2UMbFwdOZZ9KdfAzw=",
+			"path": "github.com/kylelemons/godebug/pretty",
+			"revision": "a616ab194758ae0a11290d87ca46ee8c440117b0",
+			"revisionTime": "2017-02-24T01:00:52Z"
+		},
+		{
 			"checksumSHA1": "2h9/1s0YvXI0QPDwSYxgxbCuhU4=",
 			"path": "github.com/kyokomi/emoji",
 			"revision": "567e12a938225a2e97bb02fe8194bb8271871307",
