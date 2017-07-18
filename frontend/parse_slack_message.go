@@ -66,7 +66,7 @@ func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, 
 			startContentIndex = index + 2
 			if nextChar == '@' { // ie, <@U5FR33U4R> for @foo
 				tagType = gateway.PRINTABLE_MESSAGE_AT_MENTION_USER
-			} else if nextChar == '!' { // ie, <!UDOU3ENS> for @channel
+			} else if nextChar == '!' { // ie, <!channel> for @channel
 				tagType = gateway.PRINTABLE_MESSAGE_AT_MENTION_GROUP
 			} else if nextChar == '#' { // ie, <#3IDU62ER> for #channel
 				tagType = gateway.PRINTABLE_MESSAGE_CHANNEL
@@ -95,7 +95,10 @@ func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, 
 					content = "@" + contentParts[1]
 				}
 			} else if tagType == gateway.PRINTABLE_MESSAGE_AT_MENTION_GROUP { // content = here / channel / everyone (a group name)
-				content = "@" + content
+				// Sometimes, the group can be like <!here|here>, so always pull the first bit.
+				// Also, it can sometimes look like this: <!here>
+				contentParts := strings.Split(content, "|")
+				content = "@" + contentParts[0]
 			} else if tagType == gateway.PRINTABLE_MESSAGE_CHANNEL {
 				contentParts := strings.Split(content, "|")
 				if len(contentParts) == 1 { // content = general
@@ -127,7 +130,7 @@ func ParseSlackMessage(text string, printableMessage *gateway.PrintableMessage, 
 	// Add the final plain text part to the message.
 	// bla bla #general foo bar
 	//                  ^^^^^^ = This bit
-	if len(text) > 0 {
+	if len(text[startIndex:]) > 0 {
 		parts = append(parts, gateway.PrintableMessagePart{
 			Type:    gateway.PRINTABLE_MESSAGE_PLAIN_TEXT,
 			Content: unEscape(text[startIndex:]),
