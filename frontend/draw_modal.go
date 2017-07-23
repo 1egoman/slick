@@ -49,11 +49,8 @@ func calculateScrollBarProperties(currentLine int, totalLines int, modalHeight i
 	return scrollBarEnabledForCharacter
 }
 
-func (term *TerminalDisplay) DrawModal(title string, body string, scrollPosition int) {
+func (term *TerminalDisplay) DrawModal(title string, body string, scrollPosition int, editable bool) {
 	width, height := term.screen.Size()
-
-	// Remove leading and trailing whitespace.
-	body = strings.Trim(body, "\n\t ")
 
 	// Given the scroll position and the body, trim away `scrollPosition` lines at the start of the
 	// body.
@@ -158,7 +155,7 @@ func (term *TerminalDisplay) DrawModal(title string, body string, scrollPosition
 	// 	Render content
 	// ------------------------------------------------------------------------------
 
-	term.WriteParagraphStyle(
+	lastRenderedX, lastRenderedY := term.WriteParagraphStyle(
 		modalUpperLeftX+horizontalGutter,
 		modalUpperLeftY+verticalGutter,
 		modalWidth - horizontalGutter - horizontalGutter,
@@ -166,4 +163,8 @@ func (term *TerminalDisplay) DrawModal(title string, body string, scrollPosition
 		tcell.StyleDefault,
 		body,
 	)
+
+	if editable {
+		term.screen.ShowCursor(lastRenderedX, lastRenderedY)
+	}
 }

@@ -39,12 +39,21 @@ func (term *TerminalDisplay) WriteTextStyle(x int, y int, style tcell.Style, tex
 		term.screen.SetCell(x+ct, y, style, char)
 	}
 }
-func (term *TerminalDisplay) WriteParagraphStyle(x int, y int, width int, height int, style tcell.Style, text string) {
+func (term *TerminalDisplay) WriteParagraphStyle(
+	x int,
+	y int,
+	width int,
+	height int,
+	style tcell.Style,
+	text string,
+) (int, int) {
 	printableMessage := ParseMarkdown(text)
+	lastRenderedX := 0
+	lastRenderedY := 0
+
 	for yOffset, line := range printableMessage.Lines(width) {
 		xOffset := 0
 		for _, part := range line {
-
 			switch part.Type {
 			case gateway.PRINTABLE_MESSAGE_FORMATTING_BOLD:
 				term.WriteTextStyle(x+xOffset, y+yOffset, style.Bold(true), part.Content)
@@ -72,11 +81,18 @@ func (term *TerminalDisplay) WriteParagraphStyle(x int, y int, width int, height
 			xOffset += len(part.Content)
 		}
 
+		// Store the last x and y position ot be rendered.
+		lastRenderedX = xOffset
+		lastRenderedY = yOffset
+
 		// Never render more content then will fit in the box.
 		if yOffset > height - 1 {
-			break;
+			break
 		}
 	}
+
+	// Return the last coordinates that were rendered. These are used for math, etc by the caller.
+	return x+lastRenderedX, y+lastRenderedY
 }
 
 // Given a line number, reset it to the default style and erase it.

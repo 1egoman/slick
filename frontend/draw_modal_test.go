@@ -9,7 +9,7 @@ func TestRenderEmptyModal(t *testing.T) {
 	screen := frontend.NewAsciiScreen()
 	term := frontend.NewTerminalDisplay(screen)
 
-	term.DrawModal("title", "", 0)
+	term.DrawModal("title", "", 0, false)
 	// term.DrawModal("title", "body text\ngoes here\nfoo bar baz")
 
 	result, ok := screen.Compare("./tests/draw_modal_test/modal_empty.txt")
@@ -22,7 +22,7 @@ func TestRenderModalWithContent(t *testing.T) {
 	screen := frontend.NewAsciiScreen()
 	term := frontend.NewTerminalDisplay(screen)
 
-	term.DrawModal("title", "body text\ngoes here\nfoo bar baz", 0)
+	term.DrawModal("title", "body text\ngoes here\nfoo bar baz", 0, false)
 
 	result, ok := screen.Compare("./tests/draw_modal_test/modal_with_content.txt")
 	if !ok {
@@ -34,7 +34,7 @@ func TestRenderModalWithContentScroll(t *testing.T) {
 	screen := frontend.NewAsciiScreen()
 	term := frontend.NewTerminalDisplay(screen)
 
-	term.DrawModal("title", "body text\ngoes here\nfoo bar baz", 1)
+	term.DrawModal("title", "body text\ngoes here\nfoo bar baz", 1, false)
 
 	result, ok := screen.Compare("./tests/draw_modal_test/modal_with_content_scroll.txt")
 	if !ok {

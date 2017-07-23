@@ -61,6 +61,7 @@ func InitialModalState(scrollPosition int) *State {
 	state.Modal.Title = "Modal Title"
 	state.Modal.Body = "one\ntwo\nthree\nfour\nfive\nsix"
 	state.Modal.ScrollPosition = scrollPosition
+	state.Modal.Editable = false
 	return state
 }
 
@@ -214,32 +215,32 @@ var keyEvents = []struct {
 
 	// Modal operations
 	{
-		"In modl mode, j moves down a line",
+		"In modl mode, ctrl+j moves down a line",
 		InitialModalState(0),
-		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyRune, 'j', tcell.ModNone)},
-		func(state *State) bool { return state.Modal.ScrollPosition == 1 },
-	},
-	{
-		"In modl mode, k moves up a line",
-		InitialModalState(1),
-		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyRune, 'k', tcell.ModNone)},
-		func(state *State) bool { return state.Modal.ScrollPosition == 0 },
-	},
-	{
-		"In modl mode, gg moves to the top",
-		InitialModalState(3),
-		[]*tcell.EventKey{
-			tcell.NewEventKey(tcell.KeyRune, 'g', tcell.ModNone),
-			tcell.NewEventKey(tcell.KeyRune, 'g', tcell.ModNone),
+		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyCtrlJ, ' ', tcell.ModNone)},
+		func(state *State) bool {
+			fmt.Println("J TEST", state.Modal.Editable)
+			return state.Modal.ScrollPosition == 1
 		},
+	},
+	{
+		"In modl mode, ctrl+k moves up a line",
+		InitialModalState(1),
+		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyCtrlK, ' ', tcell.ModNone)},
 		func(state *State) bool { return state.Modal.ScrollPosition == 0 },
 	},
 	{
-		"In modl mode, G moves to the bottom",
-		InitialModalState(0),
-		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyRune, 'G', tcell.ModNone)},
-		func(state *State) bool { return state.Modal.ScrollPosition == 5 },
+		"In modl mode, ctrl+g moves to the top",
+		InitialModalState(3),
+		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyCtrlG, ' ', tcell.ModNone)},
+		func(state *State) bool { return state.Modal.ScrollPosition == 0 },
 	},
+	// {
+	// 	"In modl mode, G moves to the bottom",
+	// 	InitialModalState(0),
+	// 	[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyRune, 'G', tcell.ModNone)},
+	// 	func(state *State) bool { return state.Modal.ScrollPosition == 5 },
+	// },
 	{
 		"In modl mode, Ctrl+U moves up a bunch of lines",
 		InitialModalState(4),

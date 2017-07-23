@@ -139,6 +139,14 @@ func OnMessageInteraction(state *State, key rune, quantity int) {
 			if err != nil {
 				state.Status.Errorf(err.Error())
 			}
+		case 'e': // Edit a message
+			err := GetCommand("EditMessage").Handler(
+				[]string{"__INTERNAL__"},
+				state,
+			)
+			if err != nil {
+				state.Status.Errorf(err.Error())
+			}
 		}
 	} else {
 		state.Status.Printf("No message selected.")
@@ -323,7 +331,7 @@ func FetchMessageHistoryScrollback(state *State) error {
 // Break out function to handle only keyboard events. Called by `keyboardEvents`.
 func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.TerminalDisplay, quit chan struct{}) error {
 	// Did the user press a key in the keymap?
-	if state.Mode != "writ" && ev.Key() == tcell.KeyRune {
+	if state.Mode != "writ" && state.Mode != "modl" && ev.Key() == tcell.KeyRune {
 		// Add pressed key to the stack of keys
 		state.KeyStack = append(state.KeyStack, ev.Rune())
 
@@ -354,6 +362,33 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		state.FuzzyPicker.Hide()
 		resetKeyStack(state)
 		state.Status.Clear()
+
+	// If an editable modal is active, suck up all key events into it.
+	case state.Mode == "modl" && state.Modal.Editable && ev.Key() == tcell.KeyRune:
+		state.Modal.Body = fmt.Sprintf(
+			"%s%s%s",
+			state.Modal.Body[:state.Modal.CursorPosition+1],
+			string(ev.Rune()),
+			state.Modal.Body[state.Modal.CursorPosition+1:],
+		)
+		state.Modal.CursorPosition += 1
+	case state.Mode == "modl" && state.Modal.Editable && ev.Key() == tcell.KeyDEL:
+		if state.Modal.CursorPosition >= 0 {
+			state.Modal.Body = fmt.Sprintf(
+				"%s%s",
+				state.Modal.Body[:state.Modal.CursorPosition],
+				state.Modal.Body[state.Modal.CursorPosition+1:],
+			)
+			state.Modal.CursorPosition -= 1
+		}
+	case state.Mode == "modl" && state.Modal.Editable && ev.Key() == tcell.KeyEnter:
+		state.Modal.Body = fmt.Sprintf(
+			"%s\n%s",
+			state.Modal.Body[:state.Modal.CursorPosition+1],
+			state.Modal.Body[state.Modal.CursorPosition+1:],
+		)
+		state.Modal.CursorPosition += 1
+
 
 	// 'p' moves to a channel picker, which is a mode for switching teams and channels
 	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == 'p':
@@ -650,7 +685,8 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		string(keystackCommand) == "l" ||
 		string(keystackCommand) == "m" ||
 		string(keystackCommand) == "x" ||
-		string(keystackCommand) == "s"): // Message interaction
+		string(keystackCommand) == "s" ||
+		string(keystackCommand) == "e"): // Message interaction
 		// When a user presses a key to interact with a message, handle it.
 		OnMessageInteraction(state, keystackCommand[0], quantity)
 		resetKeyStack(state)
@@ -667,7 +703,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 	// MODAL SHORTCUTS
 	//
 	// `j` moves down a line.
-	case state.Mode == "modl" && len(keystackCommand) == 1 && keystackCommand[0] == 'j':
+	case state.Mode == "modl" && ev.Key() == tcell.KeyCtrlJ:
 		state.Modal.ScrollPosition += quantity
 
 		// Make sure that the scroll position never becomes negative.
@@ -678,7 +714,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 
 		resetKeyStack(state)
 	// `k` moves up a line.
-	case state.Mode == "modl" && len(keystackCommand) == 1 && keystackCommand[0] == 'k':
+	case state.Mode == "modl" && ev.Key() == tcell.KeyCtrlK:
 		state.Modal.ScrollPosition -= quantity
 
 		// Make sure that the scroll position never becomes negative.
@@ -689,10 +725,10 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		resetKeyStack(state)
 
 	// Scroll to the top and bottom of the modal
-	case state.Mode == "modl" && len(keystackCommand) == 2 && string(keystackCommand) == "gg":
+	case state.Mode == "modl" && ev.Key() == tcell.KeyCtrlG && ev.Modifiers() != tcell.ModShift:
 		state.Modal.ScrollPosition = 0
 		resetKeyStack(state)
-	case state.Mode == "modl" && len(keystackCommand) == 1 && keystackCommand[0] == 'G':
+	case state.Mode == "modl" && ev.Key() == tcell.KeyCtrlG:
 		state.Modal.ScrollPosition = len(strings.Split(state.Modal.Body, "\n")) - 1
 		resetKeyStack(state)
 

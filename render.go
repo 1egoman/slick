@@ -106,6 +106,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 			state.Modal.Title,
 			state.Modal.Body,
 			state.Modal.ScrollPosition,
+			state.Modal.Editable,
 		)
 	}
 

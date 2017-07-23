@@ -545,10 +545,39 @@ var COMMANDS = []Command{
 				selectedMessage.Confirmed = true
 
 				// Got a response command? Append it to the message history.
-				state.ActiveConnection().AppendMessageHistory(*responseMessage)
+				if responseMessage != nil {
+					state.ActiveConnection().AppendMessageHistory(*responseMessage)
+				}
 			}
 
 			return nil
+		},
+	},
+	{
+		Name:         "EditMessage",
+		Type:         NATIVE,
+		Description:  "Open a modal to let the user edit the given message.",
+		Arguments:    "",
+		Permutations: []string{"editmessage", "edit"},
+		Handler: func(args []string, state *State) error {
+			selectedMessageIndex := len(state.ActiveConnection().MessageHistory()) - 1 - state.SelectedMessageIndex
+			selectedMessage := state.ActiveConnection().MessageHistory()[selectedMessageIndex]
+
+			if selectedMessage.Confirmed == true && len(state.ActiveConnection().Self().Name) == 0 {
+				// When offline, .ActiveConnection().Self().Name is an empty string.
+				// TODO: Does this happen in other cases (ie, the user is online?)
+				return errors.New("Offline, cannot edit messages that have already been sent.")
+			} else if selectedMessage.Sender != nil && selectedMessage.Sender.Name == state.ActiveConnection().Self().Name {
+				// Open a modal with the message content.
+				state.Mode = "modl"
+				state.Modal.Reset()
+				state.Modal.Title = fmt.Sprintf("Edit message %d", selectedMessage.Timestamp)
+				state.Modal.SetContent(selectedMessage.Text)
+				state.Modal.Editable = true
+				return nil
+			} else {
+				return errors.New("Given message was not created by you, and therefore cannot be edited.")
+			}
 		},
 	},
 
