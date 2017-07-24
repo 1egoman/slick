@@ -491,8 +491,8 @@ func (term *TerminalDisplay) DrawMessages(
 			if selectedMessageIndex == index && lineIndex == len(*msg.Tokens) - 1 && len(line) > 0 {
 				var messageActions []string
 
-				// Delete the active message
-				messageActions = append(messageActions, "Delete")
+				// Edit the active message
+				messageActions = append(messageActions, "Edit")
 
 				if msg.Confirmed == false {
 					messageActions = append(messageActions, "Send again")
