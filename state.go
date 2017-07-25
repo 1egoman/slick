@@ -28,9 +28,9 @@ type State struct {
 	RenderedAllMessages   bool
 
 	// Fuzzy picker
-	FuzzyPicker                    FuzzySorter
-	fuzzyPickerSelectedItem        int
-	fuzzyPickerBottomDisplayedItem int
+	SelectionInput                    SelectionInput
+	SelectionInputSelectedItem        int
+	SelectionInputBottomDisplayedItem int
 
 	// Status message
 	Status status.Status
@@ -72,8 +72,8 @@ func NewInitialStateMode(mode string) *State {
 		RenderedMessageNumber: -1, // A render loop hasn't run yet.
 		RenderedAllMessages:   false,
 
-		// Fuzzy picker data
-		FuzzyPicker: FuzzySorter{},
+		// Selection Input data
+		SelectionInput: SelectionInput{},
 
 		// Status message
 		Status: status.Status{},

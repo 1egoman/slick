@@ -7,7 +7,7 @@ import (
 /*/ / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /
 // EXAMPLE USAGE
 
-fuzzyPicker := FuzzySorter{} // (state.FuzzyPicker is an instance of `FuzzySorter`, fyi)
+fuzzyPicker := SelectionInput{} // (state.FuzzyPicker is an instance of `SelectionInput`, fyi)
 fuzzyPicker.StringItems = []string{}
 fuzzyPicker.Items = []interface{}
 
@@ -28,7 +28,7 @@ fuzzyPicker.Show(func(state *State) {
 
 // A struct that wraps a collection of string items and norma items, and sorts both based on the
 // closeness of each of `StringItems` to `Needle`.
-type FuzzySorter struct {
+type SelectionInput struct {
 	Visible bool
 
 	Items       []interface{}
@@ -44,22 +44,22 @@ type FuzzySorter struct {
 	ThrowAwayPrefix int
 }
 
-func (p FuzzySorter) Len() int {
+func (p SelectionInput) Len() int {
 	return len(p.StringItems)
 }
 
-func (p FuzzySorter) Less(i, j int) bool {
+func (p SelectionInput) Less(i, j int) bool {
 	iItem := p.StringItems[i]
 	jItem := p.StringItems[j]
 	return p.Rank(iItem) > p.Rank(jItem)
 }
 
-func (p FuzzySorter) Swap(i, j int) {
+func (p SelectionInput) Swap(i, j int) {
 	p.Items[i], p.Items[j] = p.Items[j], p.Items[i]
 	p.StringItems[i], p.StringItems[j] = p.StringItems[j], p.StringItems[i]
 }
 
-func (p FuzzySorter) Rank(item string) int {
+func (p SelectionInput) Rank(item string) int {
 	var delta int = 0
 	if len(item) > 0 && item[0] == '.' {
 		delta -= 20
@@ -73,18 +73,18 @@ func (p FuzzySorter) Rank(item string) int {
 }
 
 // Show the fuzzy picker
-func (p *FuzzySorter) Show(callbackOnSelected func(*State)) {
+func (p *SelectionInput) Show(callbackOnSelected func(*State)) {
 	p.Visible = true
 	p.OnSelected = callbackOnSelected
 	p.SelectedItem = 0
 	p.BottomItem = 0
 }
-func (p *FuzzySorter) Resort(callbackOnResort func(*State)) {
+func (p *SelectionInput) Resort(callbackOnResort func(*State)) {
 	p.OnResort = callbackOnResort
 }
 
 // Hide the fuzzy picker and reset to initial state
-func (p *FuzzySorter) Hide() {
+func (p *SelectionInput) Hide() {
 	p.Visible = false
 	p.Items = []interface{}{}
 	p.StringItems = []string{}
@@ -93,7 +93,7 @@ func (p *FuzzySorter) Hide() {
 	p.OnResort = nil
 }
 
-type FuzzyPickerConnectionChannelItem struct {
+type SelectionInputConnectionChannelItem struct {
 	Channel    string
 	Connection string
 }

@@ -4,12 +4,13 @@ import (
 	"github.com/1egoman/slick/color"
 	"github.com/gdamore/tcell"
 	"strings"
+	// "fmt"
 )
 
-// The amount of rows at max that can be in the fuzzy picker.
-const FuzzyPickerMaxSize = 10
+// The amount of rows at max that can be in the selection input
+const SelectionInputMaxSize = 10
 
-func (term *TerminalDisplay) DrawFuzzyPicker(
+func (term *TerminalDisplay) DrawSelectionInput(
 	preItems []string,
 	selectedIndex int,
 	bottomDisplayedItem int,
@@ -27,8 +28,8 @@ func (term *TerminalDisplay) DrawFuzzyPicker(
 	}
 
 	// If there's more than one page of items, only show one page's worth.
-	if len(items) > FuzzyPickerMaxSize {
-		items = items[bottomDisplayedItem : bottomDisplayedItem+FuzzyPickerMaxSize]
+	if len(items) > SelectionInputMaxSize {
+		items = items[bottomDisplayedItem : bottomDisplayedItem+SelectionInputMaxSize]
 	}
 	projectedSelectedIndex := selectedIndex - bottomDisplayedItem
 	startingRow := height - len(items) - BottomPadding // The top row of the fuzzy picker

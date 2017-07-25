@@ -39,10 +39,10 @@ func sendTypingIndicator(state *State) error {
 func enableCommandAutocompletion(state *State, term *frontend.TerminalDisplay, quit chan struct{}) {
 	// Also, take care of autocomplete of slash commands
 	// As the user types, show them above the command bar in a fuzzy picker.
-	if !state.FuzzyPicker.Visible {
+	if !state.SelectionInput.Visible {
 		// When the user presses enter, run the slash command the user typed.
-		state.FuzzyPicker.Hide()
-		state.FuzzyPicker.Show(func(state *State) {
+		state.SelectionInput.Hide()
+		state.SelectionInput.Show(func(state *State) {
 			err := OnCommandExecuted(state, term, quit)
 			if err != nil {
 				log.Fatalf(err.Error())
@@ -52,9 +52,9 @@ func enableCommandAutocompletion(state *State, term *frontend.TerminalDisplay, q
 		// Assemble add the items to the fuzzy sorter.
 		for _, command := range COMMANDS {
 			if len(command.Permutations) > 0 { // Only autocomplete commands that have slash commands
-				state.FuzzyPicker.Items = append(state.FuzzyPicker.Items, command)
-				state.FuzzyPicker.StringItems = append(
-					state.FuzzyPicker.StringItems,
+				state.SelectionInput.Items = append(state.SelectionInput.Items, command)
+				state.SelectionInput.StringItems = append(
+					state.SelectionInput.StringItems,
 					fmt.Sprintf(
 						"%s%s %s\t%s - %s", // ie: "/quit (/q)        Quit - quits slick"
 						string(state.Command[0]),
@@ -156,7 +156,7 @@ func OnMessageInteraction(state *State, key rune, quantity int) {
 // When a user picks a connection / channel in the fuzzy picker
 func OnPickConnectionChannel(state *State) {
 	// Assert that the fuzzy picker that's active is of the right type
-	if selectedItem, ok := state.FuzzyPicker.Items[state.FuzzyPicker.SelectedItem].(FuzzyPickerConnectionChannelItem); ok {
+	if selectedItem, ok := state.SelectionInput.Items[state.SelectionInput.SelectedItem].(SelectionInputConnectionChannelItem); ok {
 		// We want to choose the selected option.
 		selectedConnectionName := selectedItem.Connection
 		selectedChannelName := selectedItem.Channel
@@ -199,9 +199,9 @@ func OnPickConnectionChannel(state *State) {
 		state.Mode = "chat"
 		state.SelectedMessageIndex = 0
 		state.BottomDisplayedItem = 0
-		state.FuzzyPicker.Hide()
+		state.SelectionInput.Hide()
 	} else {
-		log.Fatalf("In pick mode, the fuzzy picker doesn't contain FuzzyPickerConnectionChannelItem's.")
+		log.Fatalf("In pick mode, the fuzzy picker doesn't contain SelectionInputConnectionChannelItem's.")
 	}
 }
 
@@ -359,7 +359,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 	case ev.Key() == tcell.KeyEscape:
 		EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "chat"})
 		state.Mode = "chat"
-		state.FuzzyPicker.Hide()
+		state.SelectionInput.Hide()
 		resetKeyStack(state)
 		state.Status.Clear()
 
@@ -395,8 +395,8 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		if state.Mode != "pick" {
 			EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "pick"})
 			state.Mode = "pick"
-			state.FuzzyPicker.Hide()
-			state.FuzzyPicker.Show(OnPickConnectionChannel)
+			state.SelectionInput.Hide()
+			state.SelectionInput.Show(OnPickConnectionChannel)
 
 			var items []interface{}
 			stringItems := []string{}
@@ -423,7 +423,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 					))
 
 					// Add backing representation of item to `item`
-					items = append(items, FuzzyPickerConnectionChannelItem{
+					items = append(items, SelectionInputConnectionChannelItem{
 						Channel:    channel.Name,
 						Connection: connection.Name(),
 					})
@@ -431,12 +431,12 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 			}
 
 			// Fuzzy sort the items
-			state.FuzzyPicker.Items = items
-			state.FuzzyPicker.StringItems = stringItems
+			state.SelectionInput.Items = items
+			state.SelectionInput.StringItems = stringItems
 		} else {
 			EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "chat"})
 			state.Mode = "chat"
-			state.FuzzyPicker.Hide()
+			state.SelectionInput.Hide()
 		}
 		resetKeyStack(state)
 
@@ -468,27 +468,27 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		state.Mode = "pick"
 
 		// Open the fuzzy picker
-		state.FuzzyPicker.Hide()
-		state.FuzzyPicker.Show(func(state *State) {
+		state.SelectionInput.Hide()
+		state.SelectionInput.Show(func(state *State) {
 			render(state, term)
 		})
-		state.FuzzyPicker.Resort(func(state *State) {
+		state.SelectionInput.Resort(func(state *State) {
 			// If the command moves before the starting point, hide the fuzzy picker.
-			if len(state.Command) <= state.FuzzyPicker.ThrowAwayPrefix-1 {
+			if len(state.Command) <= state.SelectionInput.ThrowAwayPrefix-1 {
 				log.Println("User moved into already chosen path, aborting...")
-				state.FuzzyPicker.Hide()
+				state.SelectionInput.Hide()
 				EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "writ"})
 				state.Mode = "writ"
 				return
 			}
 
 			// Once we get to a new path segment, update with new values.
-			if len(state.Command)-1 > state.FuzzyPicker.ThrowAwayPrefix-1 && state.Command[len(state.Command)-1] == '/' {
+			if len(state.Command)-1 > state.SelectionInput.ThrowAwayPrefix-1 && state.Command[len(state.Command)-1] == '/' {
 				// Clear items, and recalculate
-				state.FuzzyPicker.Items = []interface{}{}
-				state.FuzzyPicker.StringItems = []string{}
-				state.FuzzyPicker.SelectedItem = 0
-				state.FuzzyPicker.BottomItem = 0
+				state.SelectionInput.Items = []interface{}{}
+				state.SelectionInput.StringItems = []string{}
+				state.SelectionInput.SelectedItem = 0
+				state.SelectionInput.BottomItem = 0
 				pathCommand := string(state.Command)
 				for {
 					beginningOfPath := strings.LastIndex(pathCommand, " ")
@@ -499,7 +499,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 					// Make sure that we didn't go through all spaces in the command
 					// If we did, then the slash isn't in a good spot. Cancel the fuzzy picker.
 					if beginningOfPath == -1 {
-						state.FuzzyPicker.Hide()
+						state.SelectionInput.Hide()
 						EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "writ"})
 						state.Mode = "writ"
 						break
@@ -526,20 +526,20 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 						path = os.Getenv("HOME") + path[1:]
 					}
 
-					state.FuzzyPicker.ThrowAwayPrefix = beginningOfPath + 1
+					state.SelectionInput.ThrowAwayPrefix = beginningOfPath + 1
 
 					// Construct a list of items to show in the fuzzy picker
 					files, err := ioutil.ReadDir(path)
 					if err != nil {
 						state.Status.Errorf("Error fetching path items: %s", err.Error())
-						state.FuzzyPicker.Hide()
+						state.SelectionInput.Hide()
 						EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "writ"})
 						state.Mode = "writ"
 						return
 					}
 
 					for _, file := range files {
-						state.FuzzyPicker.Items = append(state.FuzzyPicker.Items, file.Name())
+						state.SelectionInput.Items = append(state.SelectionInput.Items, file.Name())
 
 						var displayName string
 						if file.IsDir() {
@@ -547,21 +547,21 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 						} else {
 							displayName = file.Name()
 						}
-						state.FuzzyPicker.StringItems = append(
-							state.FuzzyPicker.StringItems,
+						state.SelectionInput.StringItems = append(
+							state.SelectionInput.StringItems,
 							displayName,
 						)
 					}
 
-					state.FuzzyPicker.ThrowAwayPrefix = state.CommandCursorPosition
-					log.Printf("Got contents of new directory %s", string(state.Command[state.FuzzyPicker.ThrowAwayPrefix:]))
+					state.SelectionInput.ThrowAwayPrefix = state.CommandCursorPosition
+					log.Printf("Got contents of new directory %s", string(state.Command[state.SelectionInput.ThrowAwayPrefix:]))
 					break
 				}
 			}
 
 			// User just typed a space? Then close the fuzzy picker.
 			if state.Command[len(state.Command)-1] == ' ' {
-				state.FuzzyPicker.Hide()
+				state.SelectionInput.Hide()
 				EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "writ"})
 				state.Mode = "writ"
 			}
@@ -767,23 +767,23 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 	//
 	// MOVEMENT BETWEEN ITEMS IN THE FUZZY PICKER
 	//
-	case state.FuzzyPicker.Visible && ev.Key() == tcell.KeyCtrlJ:
-		if state.FuzzyPicker.SelectedItem > 0 {
-			state.FuzzyPicker.SelectedItem -= 1
+	case state.SelectionInput.Visible && ev.Key() == tcell.KeyCtrlJ:
+		if state.SelectionInput.SelectedItem > 0 {
+			state.SelectionInput.SelectedItem -= 1
 			// If we select an item off the screen, show it on the screen by changing the bottommost
 			// item.
-			if state.FuzzyPicker.SelectedItem < state.FuzzyPicker.BottomItem {
-				state.FuzzyPicker.BottomItem -= 1
+			if state.SelectionInput.SelectedItem < state.SelectionInput.BottomItem {
+				state.SelectionInput.BottomItem -= 1
 			}
 		}
-	case state.FuzzyPicker.Visible && ev.Key() == tcell.KeyCtrlK:
-		topDisplayedItem := state.FuzzyPicker.BottomItem + frontend.FuzzyPickerMaxSize - 1
-		if state.FuzzyPicker.SelectedItem < len(state.FuzzyPicker.Items)-1 {
-			state.FuzzyPicker.SelectedItem += 1
+	case state.SelectionInput.Visible && ev.Key() == tcell.KeyCtrlK:
+		topDisplayedItem := state.SelectionInput.BottomItem + frontend.SelectionInputMaxSize - 1
+		if state.SelectionInput.SelectedItem < len(state.SelectionInput.Items)-1 {
+			state.SelectionInput.SelectedItem += 1
 			// If we select an item off the screen, show it on the screen by changing the bottommost
 			// item.
-			if state.FuzzyPicker.SelectedItem > topDisplayedItem {
-				state.FuzzyPicker.BottomItem += 1
+			if state.SelectionInput.SelectedItem > topDisplayedItem {
+				state.SelectionInput.BottomItem += 1
 			}
 		}
 
@@ -793,8 +793,8 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 
 	case (state.Mode == "writ" || state.Mode == "pick") && ev.Key() == tcell.KeyEnter:
 		log.Println("Enter pressed")
-		if state.FuzzyPicker.Visible {
-			state.FuzzyPicker.OnSelected(state)
+		if state.SelectionInput.Visible {
+			state.SelectionInput.OnSelected(state)
 
 			// If the command starts with a slash or colon, then run it.
 		} else if state.Command[0] == '/' ||
@@ -841,18 +841,18 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		state.Command = []rune{}
 		state.CommandCursorPosition = 0
 		EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "chat"})
-		state.FuzzyPicker.Hide()
+		state.SelectionInput.Hide()
 		// Reset to chat mode only if a command hasn't intentionally switched the mode to something
 		// special.
 		if state.Mode == "pick" || state.Mode == "writ" {
 			state.Mode = "chat"
 		}
 
-	case state.Mode == "pick" && state.FuzzyPicker.Visible && len(state.FuzzyPicker.StringItems) > 0 && ev.Key() == tcell.KeyTab:
+	case state.Mode == "pick" && state.SelectionInput.Visible && len(state.SelectionInput.StringItems) > 0 && ev.Key() == tcell.KeyTab:
 		// Pressing tab when in the fuzzy picker takes the displayed item and updates the command
 		// bar with its contents
-		displayItem := state.FuzzyPicker.StringItems[state.FuzzyPicker.SelectedItem]
-		state.Command = append(state.Command[:state.FuzzyPicker.ThrowAwayPrefix], []rune(displayItem)...)
+		displayItem := state.SelectionInput.StringItems[state.SelectionInput.SelectedItem]
+		state.Command = append(state.Command[:state.SelectionInput.ThrowAwayPrefix], []rune(displayItem)...)
 		state.CommandCursorPosition = len(state.Command)
 
 	//
@@ -877,7 +877,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 
 		// Send a message on the outgoing channel that the user is typing.
 		// (Only send events when the user is typing a message, not when they try to send a command)
-		if state.Mode == "writ" && !state.FuzzyPicker.Visible {
+		if state.Mode == "writ" && !state.SelectionInput.Visible {
 			err := sendTypingIndicator(state)
 			if err != nil {
 				state.Status.Errorf(err.Error())
@@ -898,7 +898,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 			// Backspacing in an empty command box brings the user back to chat mode
 			EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "chat"})
 			state.Mode = "chat"
-			state.FuzzyPicker.Hide()
+			state.SelectionInput.Hide()
 		}
 
 	// Arrows right and left move the cursor

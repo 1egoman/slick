@@ -17,10 +17,22 @@
 			"revisionTime": "2016-12-14T07:49:16Z"
 		},
 		{
+			"checksumSHA1": "SNSgdp5ShDZ57VZqBkQ0PXJCJIM=",
+			"path": "github.com/atotto/clipboard",
+			"revision": "bb272b845f1112e10117e3e45ce39f690c0001ad",
+			"revisionTime": "2016-02-19T03:44:21Z"
+		},
+		{
 			"checksumSHA1": "a6NifIaomYe/FKneLi6f1OZawyQ=",
 			"path": "github.com/cjoudrey/gluahttp",
 			"revision": "b4bfe0c50fea948dcbf3966e120996d6607bbd89",
 			"revisionTime": "2016-10-27T10:20:59Z"
+		},
+		{
+			"checksumSHA1": "AANTVr9CVVyzsgviODY6Wi2thuM=",
+			"path": "github.com/fatih/color",
+			"revision": "62e9147c64a1ed519147b62a56a14e83e2be02c1",
+			"revisionTime": "2017-05-23T20:24:04Z"
 		},
 		{
 			"checksumSHA1": "WuPOA1T+6qG/al2wgOzeJnAMkhE=",
@@ -42,6 +54,12 @@
 			"revisionTime": "2016-12-10T15:13:36Z"
 		},
 		{
+			"checksumSHA1": "0xjvz/KGzXhAFsnDRvzofE0xNzI=",
+			"path": "github.com/kylelemons/godebug/diff",
+			"revision": "a616ab194758ae0a11290d87ca46ee8c440117b0",
+			"revisionTime": "2017-02-24T01:00:52Z"
+		},
+		{
 			"checksumSHA1": "ED154c1vFO2UMbFwdOZZ9KdfAzw=",
 			"path": "github.com/kylelemons/godebug/pretty",
 			"revision": "a616ab194758ae0a11290d87ca46ee8c440117b0",
@@ -58,6 +76,20 @@
 			"path": "github.com/lucasb-eyer/go-colorful",
 			"revision": "c900de9dbbc73129068f5af6a823068fc5f2308c",
 			"revisionTime": "2017-02-23T22:10:28Z"
+		},
+		{
+			"checksumSHA1": "MrqRXuqj5suGXqcRUUwi+YA7PmE=",
+			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-colorable",
+			"path": "github.com/mattn/go-colorable",
+			"revision": "62e9147c64a1ed519147b62a56a14e83e2be02c1",
+			"revisionTime": "2017-05-23T20:24:04Z"
+		},
+		{
+			"checksumSHA1": "a/chskqRYBBHS8lDTpB3FQqgHb8=",
+			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-isatty",
+			"path": "github.com/mattn/go-isatty",
+			"revision": "62e9147c64a1ed519147b62a56a14e83e2be02c1",
+			"revisionTime": "2017-05-23T20:24:04Z"
 		},
 		{
 			"checksumSHA1": "cJE7dphDlam/i7PhnsyosNWtbd4=",
@@ -106,6 +138,13 @@
 			"path": "golang.org/x/net/websocket",
 			"revision": "0b588ed7a0cd59c271d128ec8c429c1c1607e8ab",
 			"revisionTime": "2017-04-21T11:32:07Z"
+		},
+		{
+			"checksumSHA1": "oBjdFvDUZpioGsB6URqe16hDQUg=",
+			"origin": "github.com/fatih/color/vendor/golang.org/x/sys/unix",
+			"path": "golang.org/x/sys/unix",
+			"revision": "62e9147c64a1ed519147b62a56a14e83e2be02c1",
+			"revisionTime": "2017-05-23T20:24:04Z"
 		},
 		{
 			"checksumSHA1": "Mr4ur60bgQJnQFfJY0dGtwWwMPE=",
