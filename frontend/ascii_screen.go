@@ -8,6 +8,22 @@ import (
 	"github.com/fatih/color"
 )
 
+/*
+This screen implements the `tcell.Screen` interface, which means that it can be drawn to instead of
+the actual screen for tests. In addition, it also has both a `.Compare` and `.Print` method.
+
+The `.Compare` method takes the path to a test file, and returnns a diff between the screen contents
+and the text file. For example:
+diff, ok := screen.Compare("foo.txt")
+if ok {
+	fmt.Println("Diff is empty!")
+} else {
+	fmt.Println("There are differences:\n", diff)
+}
+
+The `.Print` method logs the current contents of the screen to stdout, via `fmt.Println`. It takes
+no arguments.
+*/
 type AsciiScreen struct {
 	Content [][]rune
 	Width int
@@ -38,10 +54,8 @@ func (screen AsciiScreen) Init() error {
 	return nil
 }
 func (screen AsciiScreen) Fini() {}
-func (screen AsciiScreen) Clear() {
-}
-func (screen AsciiScreen) Fill(r rune, s tcell.Style) {
-}
+func (screen AsciiScreen) Clear() {}
+func (screen AsciiScreen) Fill(r rune, s tcell.Style) {}
 func (screen AsciiScreen) SetStyle(style tcell.Style) {}
 func (screen AsciiScreen) ShowCursor(x int, y int) {}
 func (screen AsciiScreen) HideCursor() {}
@@ -63,15 +77,13 @@ func (screen AsciiScreen) DisableMouse() {}
 func (screen AsciiScreen) Colors() int {
 	return 0
 }
-func (screen AsciiScreen) Show() {
-}
+func (screen AsciiScreen) Show() {}
 func (screen AsciiScreen) CharacterSet() string {
 	return "" // TODO: is this the right value?
 }
 func (screen AsciiScreen) RegisterRuneFallback(r rune, substr string) {
 }
-func (screen AsciiScreen) UnregisterRuneFallback(r rune) {
-}
+func (screen AsciiScreen) UnregisterRuneFallback(r rune) {}
 func (screen AsciiScreen) CanDisplay(r rune, checksFallback bool) bool {
 	return true
 }

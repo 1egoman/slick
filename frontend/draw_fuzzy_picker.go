@@ -40,7 +40,7 @@ func (term *TerminalDisplay) DrawFuzzyPicker(
 
 	// Above the top of the picker, draw a border.
 	for i := 0; i < width; i++ {
-		term.screen.SetCell(i, startingRow-1, color.DeSerializeStyleTcell(config["FuzzyPicker.TopBorderColor"]), ' ')
+		term.screen.SetCell(i, startingRow-1, color.DeSerializeStyleTcell(config["FuzzyPicker.TopBorderColor"]), '=')
 	}
 
 	for ct, item := range items {
