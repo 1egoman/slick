@@ -26,8 +26,8 @@ func (c *SlackConnection) Refresh(force bool) error {
 		c.self = *user
 	}
 
-	// Fetch Message history, if the message history is empty.
-	if force || len(c.messageHistory) == 0 {
+	// Fetch message history, if the message history is empty.
+	if (force || len(c.messageHistory) == 0) && c.Team() != nil && c.SelectedChannel() != nil {
 		log.Printf(
 			"Fetching message history for team %s and channel %s",
 			c.Team().Name,
