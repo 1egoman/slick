@@ -17,15 +17,15 @@ func NewRuneEvent(char rune) *tcell.EventKey {
 	return tcell.NewEventKey(tcell.KeyRune, char, tcell.ModNone)
 }
 
-func InitialFuzzyPickerState(initialSelectedIndex int, initialBottomItemIndex int) *State {
+func InitialSelectionInputState(initialSelectedIndex int, initialBottomItemIndex int) *State {
 	s := NewInitialStateMode("pick")
-	s.FuzzyPicker.SelectedItem = initialSelectedIndex
-	s.FuzzyPicker.BottomItem = initialBottomItemIndex
+	s.SelectionInput.SelectedItem = initialSelectedIndex
+	s.SelectionInput.BottomItem = initialBottomItemIndex
 	for i := 1; i <= 15; i++ {
-		s.FuzzyPicker.Items = append(s.FuzzyPicker.Items, interface{}(i))
+		s.SelectionInput.Items = append(s.SelectionInput.Items, interface{}(i))
 	}
-	s.FuzzyPicker.StringItems = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"}
-	s.FuzzyPicker.Visible = true
+	s.SelectionInput.StringItems = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"}
+	s.SelectionInput.Visible = true
 	return s
 }
 
@@ -126,45 +126,45 @@ var keyEvents = []struct {
 	// Fuzzy picker movement
 	{
 		"In pick mode, ctrl+j moves down",
-		InitialFuzzyPickerState(1, 0), // Selecting index 1, and item 0 is on the bottom
+		InitialSelectionInputState(1, 0), // Selecting index 1, and item 0 is on the bottom
 		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyCtrlJ, ' ', tcell.ModNone)},
-		func(state *State) bool { return state.FuzzyPicker.SelectedItem == 0 },
+		func(state *State) bool { return state.SelectionInput.SelectedItem == 0 },
 	},
 	{
 		"In pick mode, ctrl+k moves down",
-		InitialFuzzyPickerState(1, 0), // Selecting index 1, and item 0 is on the bottom
+		InitialSelectionInputState(1, 0), // Selecting index 1, and item 0 is on the bottom
 		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyCtrlK, ' ', tcell.ModNone)},
-		func(state *State) bool { return state.FuzzyPicker.SelectedItem == 2 },
+		func(state *State) bool { return state.SelectionInput.SelectedItem == 2 },
 	},
 	{
 		"In pick mode, a user can force the fuzzy picker to scroll up to show off-screen items.",
-		InitialFuzzyPickerState(9, 0), // Selecting index 9, and item 0 is on the bottom
+		InitialSelectionInputState(9, 0), // Selecting index 9, and item 0 is on the bottom
 		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyCtrlK, ' ', tcell.ModNone)},
 		func(state *State) bool {
-			return state.FuzzyPicker.SelectedItem == 10 &&
-				state.FuzzyPicker.BottomItem == 1
+			return state.SelectionInput.SelectedItem == 10 &&
+				state.SelectionInput.BottomItem == 1
 		},
 	},
 	{
 		"In pick mode, a user can force the fuzzy picker to scroll down to show off-screen items.",
-		InitialFuzzyPickerState(3, 3), // Selecting index 3, and item 3 is on the bottom
+		InitialSelectionInputState(3, 3), // Selecting index 3, and item 3 is on the bottom
 		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyCtrlJ, ' ', tcell.ModNone)},
 		func(state *State) bool {
-			return state.FuzzyPicker.SelectedItem == 2 &&
-				state.FuzzyPicker.BottomItem == 2
+			return state.SelectionInput.SelectedItem == 2 &&
+				state.SelectionInput.BottomItem == 2
 		},
 	},
 	{
 		"In pick mode, the fuzzy picker can't scroll higher than the number of items",
-		InitialFuzzyPickerState(14, 4), // Selecting index 14, and item 4 is on the bottom
+		InitialSelectionInputState(14, 4), // Selecting index 14, and item 4 is on the bottom
 		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyCtrlK, ' ', tcell.ModNone)},
-		func(state *State) bool { return state.FuzzyPicker.SelectedItem == 14 },
+		func(state *State) bool { return state.SelectionInput.SelectedItem == 14 },
 	},
 	{
 		"In pick mode, the fuzzy picker can't scroll below the last item",
-		InitialFuzzyPickerState(0, 0), // Selecting index 14, and item 4 is on the bottom
+		InitialSelectionInputState(0, 0), // Selecting index 14, and item 4 is on the bottom
 		[]*tcell.EventKey{tcell.NewEventKey(tcell.KeyCtrlJ, ' ', tcell.ModNone)},
-		func(state *State) bool { return state.FuzzyPicker.SelectedItem == 0 },
+		func(state *State) bool { return state.SelectionInput.SelectedItem == 0 },
 	},
 
 	// Editing operations
@@ -588,7 +588,7 @@ func TestPathAutoComplete(t *testing.T) {
 		nil,
 		quit,
 	)
-	state.FuzzyPicker.OnResort(state)
+	state.SelectionInput.OnResort(state)
 
 	if state.Mode != "pick" {
 		t.Errorf("Not picking file path after presing / and tab")
@@ -605,8 +605,8 @@ func TestPathAutoComplete(t *testing.T) {
 	}
 
 	// Verify that's what's in the fuzzy picker right now
-	if !reflect.DeepEqual(state.FuzzyPicker.Items, fileItems) {
-		t.Errorf("%+v != %+v", state.FuzzyPicker.Items, fileItems)
+	if !reflect.DeepEqual(state.SelectionInput.Items, fileItems) {
+		t.Errorf("%+v != %+v", state.SelectionInput.Items, fileItems)
 	}
 
 	// Type out that directory name
@@ -617,7 +617,7 @@ func TestPathAutoComplete(t *testing.T) {
 			nil,
 			quit,
 		)
-		state.FuzzyPicker.OnResort(state)
+		state.SelectionInput.OnResort(state)
 	}
 
 	// Then type a slash
@@ -627,7 +627,7 @@ func TestPathAutoComplete(t *testing.T) {
 		nil,
 		quit,
 	)
-	state.FuzzyPicker.OnResort(state)
+	state.SelectionInput.OnResort(state)
 
 	// Then verify that the fuzzy picker has everything in that directory
 	files, err = ioutil.ReadDir("/" + directory)
@@ -638,8 +638,8 @@ func TestPathAutoComplete(t *testing.T) {
 	for _, file := range files {
 		fileItems = append(fileItems, file.Name())
 	}
-	if !reflect.DeepEqual(state.FuzzyPicker.Items, fileItems) {
-		t.Errorf("%+v != %+v", state.FuzzyPicker.Items, fileItems)
+	if !reflect.DeepEqual(state.SelectionInput.Items, fileItems) {
+		t.Errorf("%+v != %+v", state.SelectionInput.Items, fileItems)
 	}
 
 	// Press tab to autocomplete the selected item
@@ -650,7 +650,7 @@ func TestPathAutoComplete(t *testing.T) {
 		nil,
 		quit,
 	)
-	state.FuzzyPicker.OnResort(state)
+	state.SelectionInput.OnResort(state)
 
 	if commandLength >= len(state.Command) {
 		t.Errorf("Tab to autocomplete file path did nothing")
@@ -672,7 +672,7 @@ func TestPathAutoCompleteWithDotSlash(t *testing.T) {
 		nil,
 		quit,
 	)
-	state.FuzzyPicker.OnResort(state)
+	state.SelectionInput.OnResort(state)
 
 	// Move into `./color`
 	for _, char := range "color" {
@@ -682,19 +682,19 @@ func TestPathAutoCompleteWithDotSlash(t *testing.T) {
 			nil,
 			quit,
 		)
-		state.FuzzyPicker.OnResort(state)
+		state.SelectionInput.OnResort(state)
 	}
 
 	// Press slash
 	HandleKeyboardEvent(tcell.NewEventKey(tcell.KeyRune, '/', tcell.ModNone), state, nil, quit)
-	state.FuzzyPicker.OnResort(state)
+	state.SelectionInput.OnResort(state)
 
 	// Press tab to autocomplete
 	HandleKeyboardEvent(tcell.NewEventKey(tcell.KeyTab, ' ', tcell.ModNone), state, nil, quit)
-	state.FuzzyPicker.OnResort(state)
+	state.SelectionInput.OnResort(state)
 
 	// Verify that there are items in `./color`
-	if len(state.FuzzyPicker.Items) == 0 {
+	if len(state.SelectionInput.Items) == 0 {
 		t.Errorf("Fuzzy picker items empty")
 	}
 
@@ -705,7 +705,7 @@ func TestPathAutoCompleteWithDotSlash(t *testing.T) {
 		nil,
 		quit,
 	)
-	state.FuzzyPicker.OnResort(state)
+	state.SelectionInput.OnResort(state)
 
 	// Make sure fuzzy picker is gone
 	if state.Mode != "writ" {
@@ -728,7 +728,7 @@ func TestPathAutoCompleteWithBadPrefix(t *testing.T) {
 		nil,
 		quit,
 	)
-	state.FuzzyPicker.OnResort(state)
+	state.SelectionInput.OnResort(state)
 
 	// Make sure fuzzy picker didn't pop up with bad prefix.
 	if state.Mode != "writ" {
