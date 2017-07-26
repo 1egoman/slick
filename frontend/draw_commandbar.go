@@ -21,6 +21,13 @@ func (term *TerminalDisplay) DrawCommandBar(
 	prefix := currentTeamName
 	if currentChannel != nil {
 		prefix += "#" + currentChannel.Name
+
+		if currentChannel.IsMember == false {
+			prefix += " (not a member)"
+		}
+		if currentChannel.IsArchived {
+			prefix += " (archived)"
+		}
 	}
 	prefix += " >"
 

@@ -189,10 +189,9 @@ func OnPickConnectionChannel(state *State) {
 			)
 		}
 
-		log.Printf("Selecting connection %s and channel %s", selectedConnectionName, selectedChannel.Name)
-
 		// Set the active connection with the discovered index, and also set a new selected
 		// channel.
+		log.Printf("Selecting connection %s and channel %s", selectedConnectionName, selectedChannel.Name)
 		state.SetActiveConnection(selectedConnectionIndex)
 		state.Connections[selectedConnectionIndex].SetSelectedChannel(selectedChannel)
 		EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "chat"})
@@ -200,6 +199,16 @@ func OnPickConnectionChannel(state *State) {
 		state.SelectedMessageIndex = 0
 		state.BottomDisplayedItem = 0
 		state.SelectionInput.Hide()
+
+		// After selecting a channel, log if we aren't a member of the channel.
+		// FIXME: the log goes away after the channel is loaded, when the data comes in. Fix this.
+		if selectedChannel.IsMember == false {
+			state.Status.Printf(
+				"You are not a member of channel %s. If you'd like to join, run `/join`.",
+				selectedChannel.Name,
+			)
+		}
+
 	} else {
 		log.Fatalf("In pick mode, the fuzzy picker doesn't contain SelectionInputConnectionChannelItem's.")
 	}
