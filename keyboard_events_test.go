@@ -85,6 +85,17 @@ var keyEvents = []struct {
 		func(state *State) bool { return state.Mode == "writ" },
 	},
 	{
+		"Pressing w in chat mode when the selected channel is archived or the user isn't a member does nothing.",
+		func() *State {
+			s := NewInitialStateMode("writ")
+			s.Connections = append(s.Connections, gatewaySlack.New("token"))
+			s.SetActiveConnection(len(s.Connections) - 1)
+			s.ActiveConnection().SetSelectedChannel(&gateway.Channel{Id: "channel-id", Name: "general", IsMember: false, IsArchived: false}) // Set a channel
+			return s
+		}(), []*tcell.EventKey{tcell.NewEventKey(tcell.KeyRune, 'w', tcell.ModNone)},
+		func(state *State) bool { return state.Mode == "writ" },
+	},
+	{
 		"Pressing esc in writ mode brings user to chat mode.",
 		NewInitialStateMode("writ"), []*tcell.EventKey{tcell.NewEventKey(tcell.KeyEscape, ' ', tcell.ModNone)},
 		func(state *State) bool { return state.Mode == "chat" },

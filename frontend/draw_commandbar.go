@@ -23,13 +23,18 @@ func (term *TerminalDisplay) DrawCommandBar(
 		prefix += "#" + currentChannel.Name
 
 		if currentChannel.IsMember == false {
-			prefix += " (not a member)"
+			prefix += " (not a member, join with /join)"
 		}
 		if currentChannel.IsArchived {
 			prefix += " (archived)"
 		}
 	}
-	prefix += " >"
+
+	// If the user is a member of the active channel and that channel isn't archived, then allow
+	// them to type.
+	if currentChannel != nil && currentChannel.IsMember && currentChannel.IsArchived == false {
+		prefix += " >"
+	}
 
 	// How many chars at max can be in a line?
 	maxLineWidth := width - 2 - len(prefix) - 1

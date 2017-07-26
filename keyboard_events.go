@@ -451,9 +451,21 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 
 	// 'e' moves to write mode. So does ':' and '/'
 	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == 'w':
-		EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "writ"})
-		state.Mode = "writ"
-		resetKeyStack(state)
+		if state.ActiveConnection() != nil {
+			selectedChannel := state.ActiveConnection().SelectedChannel()
+
+			// If the selected channel is archived or the user isn't a member, then don't let them go
+			// into `writ` mode, since they can't send messages on that channel anyway. However, slash
+			// commands should still be able to be entered.
+			if selectedChannel == nil || (selectedChannel != nil && (!selectedChannel.IsMember || selectedChannel.IsArchived)) {
+				state.Status.Printf("Can't go into `writ` mode on a channel that you aren't a member of or that is archived.")
+			} else {
+				// Go into `writ` mode.
+				EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "writ"})
+				state.Mode = "writ"
+				resetKeyStack(state)
+			}
+		}
 	case state.Mode == "chat" && len(keystackCommand) == 1 && keystackCommand[0] == ':':
 		EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "writ"})
 		state.Mode = "writ"
