@@ -355,6 +355,9 @@ func (c *SlackConnection) Outgoing() chan gateway.Event {
 func (c *SlackConnection) Team() *gateway.Team {
 	return &c.team
 }
+func (c *SlackConnection) SetTeam(t gateway.Team) {
+	c.team = t
+}
 func (c *SlackConnection) Channels() []gateway.Channel {
 	return c.channels
 }
@@ -363,6 +366,9 @@ func (c *SlackConnection) SetChannels(channels []gateway.Channel) {
 }
 func (c *SlackConnection) Self() *gateway.User {
 	return &c.self
+}
+func (c *SlackConnection) SetSelf(u gateway.User) {
+	c.self = u
 }
 
 type RawSlackMessage struct {

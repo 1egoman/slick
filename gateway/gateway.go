@@ -36,9 +36,11 @@ type Connection interface {
 
 	// Fetch the team associated with this connection.
 	Team() *Team
+	SetTeam(Team)
 
 	// Fetch user that is authenticated
 	Self() *User
+	SetSelf(User)
 
 	// Given a channel, fetch the message history for that channel. Optionally, provide a timestamp
 	// to fetch all messages after.

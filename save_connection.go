@@ -57,6 +57,8 @@ type SerializedConnection struct {
 	MessageHistory  []gateway.Message
 	Channels        []gateway.Channel
 	SelectedChannel gateway.Channel
+	Self            gateway.User
+	Team            gateway.Team
 }
 
 func PathToSavedConnections() string {
@@ -74,6 +76,8 @@ func SaveConnection(conn gateway.Connection) error {
 		MessageHistory:  conn.MessageHistory(),
 		Channels:        conn.Channels(),
 		SelectedChannel: *conn.SelectedChannel(),
+		Self:            *conn.Self(),
+		Team:            *conn.Team(),
 	})
 
 	if err != nil {
@@ -112,6 +116,8 @@ func ApplySaveToConnection(name string, conn *gateway.Connection) error {
 	(*conn).SetSelectedChannel(&serialized.SelectedChannel)
 	(*conn).SetChannels(serialized.Channels)
 	(*conn).SetMessageHistory(serialized.MessageHistory)
+	(*conn).SetSelf(serialized.Self)
+	(*conn).SetTeam(serialized.Team)
 
 	return nil
 }
