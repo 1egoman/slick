@@ -93,7 +93,7 @@ func NewInitialStateMode(mode string) *State {
 
 			// The format for the tiemstamp in front of each message.
 			// Reference date: `Mon Jan 2 15:04:05 MST 2006`
-			"Message.TimestampFormat": " 15:04:05",
+			"Message.TimestampFormat": " Jan 2 15:04:05",
 
 			// How many messages should Ctrl-U / Ctrl-D page by?
 			"Message.PageAmount": "12",

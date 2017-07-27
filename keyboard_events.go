@@ -458,7 +458,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 			// into `writ` mode, since they can't send messages on that channel anyway. However, slash
 			// commands should still be able to be entered.
 			if selectedChannel == nil || (selectedChannel != nil && (!selectedChannel.IsMember || selectedChannel.IsArchived)) {
-				state.Status.Printf("Can't go into `writ` mode on a channel that you aren't a member of or that is archived.")
+				state.Status.Errorf("Can't go into `writ` mode on a channel that you aren't a member of or that is archived.")
 			} else {
 				// Go into `writ` mode.
 				EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "writ"})
@@ -816,6 +816,8 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		log.Println("Enter pressed")
 		if state.SelectionInput.Visible {
 			state.SelectionInput.OnSelected(state)
+			// Clear the letters the user typed in order to search through the list
+			resetKeyStack(state)
 
 			// If the command starts with a slash or colon, then run it.
 		} else if state.Command[0] == '/' ||
