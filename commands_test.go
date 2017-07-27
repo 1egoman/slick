@@ -384,6 +384,44 @@ func TestCommandResendMessageMessageWasntSentByUser(t *testing.T) {
 	}
 }
 
+func TestCommandJoin(t *testing.T) {
+	// Mock the http response
+	httpmock.Activate()
+	// "Join" the channel
+	httpmock.RegisterResponder(
+		"GET",
+		"https://slack.com/api/channels.join?token=token&name=channel&validate=true",
+		httpmock.NewStringResponder(200, `{
+			"ok": true,
+			"channel": {"name": "channel", "is_member": true, "creator_id": "useridhere"}
+		}`),
+	)
+	defer httpmock.DeactivateAndReset()
+
+	// Create initial statez
+	state := NewInitialStateMode("writ")
+	state.Connections = []gateway.Connection{
+		gatewaySlack.NewWithName("team name", "token"),
+	}
+	channels := []gateway.Channel{gateway.Channel{Name: "channel", Id: "channel-id"}}
+
+	state.ActiveConnection().SetChannels(channels)
+	state.ActiveConnection().SetSelectedChannel(&channels[0])
+
+	// Execute the command
+	command := *GetCommand("Join")
+	err := RunCommand(command, []string{"join"}, state)
+
+	// Verify the output
+	if err != nil {
+		t.Errorf("Failed to join channel", err)
+	}
+
+	if state.ActiveConnection().Channels()[0].IsMember == false {
+		t.Errorf("Channel under test wasn't joined!")
+	}
+}
+
 // Test `/disconnect`ing from an already disconnected connection
 func TestCommandDisconnectFromAlreadyDisconnectedConnection(t *testing.T) {
 	defer httpmock.DeactivateAndReset()

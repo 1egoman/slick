@@ -32,6 +32,7 @@ type Connection interface {
 	FetchChannels() ([]Channel, error)
 	SelectedChannel() *Channel
 	SetSelectedChannel(*Channel)
+	JoinChannel(*Channel) (*Channel, error)
 
 	// Fetch the team associated with this connection.
 	Team() *Team

@@ -598,3 +598,61 @@ func (c *SlackConnection) Status() gateway.ConnectionStatus {
 func (c *SlackConnection) TypingUsers() *gateway.TypingUsers {
 	return c.typingUsers
 }
+
+// Join the passed channel.
+func (c *SlackConnection) JoinChannel(inChannel *gateway.Channel) (*gateway.Channel, error) {
+	if inChannel == nil {
+		return nil, errors.New("Cannot join nil channel!")
+	}
+
+	log.Printf("Joining channel %s", inChannel.Name)
+
+	url := "https://slack.com/api/channels.join?token=" + c.token
+	url += "&name=" + inChannel.Name
+	url += "&validate=true"
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	var joinChannelBuffer struct {
+		Channel struct {
+			Id         string `json:"id"`
+			Name       string `json:"name"`
+			CreatorId  string `json:"creator"`
+			Created    int    `json:"created"`
+			IsMember   bool   `json:"is_member"`
+			IsArchived bool   `json:"is_archived"`
+		} `json:"channel"`
+	}
+	json.Unmarshal(body, &joinChannelBuffer)
+
+	// Convert to more generic message format
+	channel := gateway.Channel{
+		Id:         joinChannelBuffer.Channel.Id,
+		SubType:    gateway.TYPE_CHANNEL,
+		Name:       joinChannelBuffer.Channel.Name,
+		Creator:    inChannel.Creator,
+		Created:    joinChannelBuffer.Channel.Created,
+		IsMember:   joinChannelBuffer.Channel.IsMember,
+		IsArchived: joinChannelBuffer.Channel.IsArchived,
+	}
+
+	// Update the channel in the locally stored channels collection
+	if c.selectedChannel != nil && c.selectedChannel.Name == inChannel.Name {
+		c.selectedChannel = inChannel
+	}
+	for index, ch := range c.channels {
+		if ch.Name == channel.Name {
+			// Replace the channel in the collection with our new channel
+			c.channels[index] = channel
+			return &channel, nil
+		}
+	}
+
+	// Didn't return in the loop? The channel must be new.
+	c.channels = append(c.channels, channel)
+	return &channel, nil
+}
