@@ -6,6 +6,7 @@ import (
 	"github.com/1egoman/slick/gateway"
 	"github.com/1egoman/slick/gateway/slack"
 	"github.com/jarcoal/httpmock"
+	"net/http"
 	"testing"
 )
 
@@ -307,6 +308,79 @@ func TestCommandExpandAttachment(t *testing.T) {
 	}
 	if state.Modal.Title != "title" || state.Modal.Body != "body" {
 		t.Errorf("Modal title and body not set to the right values: %+v", state.Modal)
+	}
+}
+
+func TestCommandResendMessage(t *testing.T) {
+	// Mock the http request
+	userSentMessage := false
+	httpmock.Activate()
+	httpmock.RegisterResponder(
+		"GET",
+		"https://slack.com/api/chat.postMessage?token=token&channel=channel-id&text=foo&link_names=true&parse=full&unfurl_links=true&as_user=true",
+		func(req *http.Request) (*http.Response, error) {
+			userSentMessage = true
+			return httpmock.NewStringResponse(200, `{"ok": true}`), nil
+		},
+	)
+	defer httpmock.DeactivateAndReset()
+
+	// Create initial statez
+	state := NewInitialStateMode("writ")
+	state.Connections = []gateway.Connection{
+		gatewaySlack.NewWithName("team name", "token"),
+	}
+	channels := []gateway.Channel{gateway.Channel{Name: "channel name", Id: "channel-id"}}
+
+	state.ActiveConnection().SetChannels(channels)
+	state.ActiveConnection().SetSelectedChannel(&channels[0])
+	state.ActiveConnection().SetMessageHistory([]gateway.Message{
+		gateway.Message{Text: "foo", Confirmed: false},
+	})
+
+	// Execute the command
+	command := *GetCommand("ResendMessage")
+	err := RunCommand(command, []string{"resendmessage"}, state)
+
+	// Verify the output
+	if err != nil {
+		t.Errorf("Failed to resend message", err)
+	}
+
+	if !userSentMessage {
+		t.Errorf("Message wasn't resent!")
+	}
+}
+func TestCommandResendMessageMessageWasntSentByUser(t *testing.T) {
+	// Mock the http request
+	httpmock.Activate()
+	httpmock.RegisterResponder(
+		"GET",
+		"https://slack.com/api/rtm.start?token=token",
+		httpmock.NewStringResponder(200, `{"ok": true, "self": {"name": "username"}}`),
+	)
+	defer httpmock.DeactivateAndReset()
+
+	// Create initial state
+	state := NewInitialStateMode("writ")
+	state.Connections = []gateway.Connection{
+		gatewaySlack.NewWithName("team name", "token"),
+	}
+	channels := []gateway.Channel{gateway.Channel{Name: "channel name", Id: "channel-id"}}
+
+	state.ActiveConnection().SetChannels(channels)
+	state.ActiveConnection().SetSelectedChannel(&channels[0])
+	state.ActiveConnection().SetMessageHistory([]gateway.Message{
+		gateway.Message{Text: "foo", Sender: &gateway.User{Name: "otheruser"}, Confirmed: false},
+	})
+
+	// Execute the command
+	command := *GetCommand("ResendMessage")
+	err := RunCommand(command, []string{"resendmessage"}, state)
+
+	// Verify the output
+	if err == nil || err.Error() != "Message was not originally sent by you." {
+		t.Errorf("Resent message that wasn't meant to be resent", err)
 	}
 }
 

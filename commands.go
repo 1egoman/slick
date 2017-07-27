@@ -533,6 +533,11 @@ var COMMANDS = []Command{
 				return errors.New("Message is already confirmed (ie, has already been sent to the server.)")
 			}
 
+			// Can only resend messages that originally were sent by the logged in user.
+			if self := state.ActiveConnection().Self(); selectedMessage.Sender != nil && self != nil && selectedMessage.Sender.Name != self.Name {
+				return errors.New("Message was not originally sent by you.")
+			}
+
 			responseMessage, err := state.ActiveConnection().SendMessage(
 				selectedMessage,
 				state.ActiveConnection().SelectedChannel(),
