@@ -95,6 +95,9 @@ func main() {
 		}
 	}
 
+	// Apply saved global state to state
+	ApplyGlobalStateToState(state)
+
 	// GOROUTINE: On start, check for a new release and if found update to it.
 	go func() {
 		if _, ok := state.Configuration["AutoUpdate"]; ok {
@@ -134,6 +137,9 @@ func main() {
 
 	<-quit
 	log.Println("Quitting gracefully...")
+
+	// Save global state
+	SaveGlobalState(state)
 
 	// Save each connection and close it in turn.
 	if _, ok := state.Configuration["Connection.Cache"]; ok {

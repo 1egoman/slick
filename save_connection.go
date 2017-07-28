@@ -61,7 +61,16 @@ type SerializedConnection struct {
 	Team            gateway.Team
 }
 
+type SerializedGlobalState struct {
+	ActiveConnectionIndex int
+	SelectedMessageIndex int
+	BottomDisplayedItem int
+}
+
 func PathToSavedConnections() string {
+	return PathToCache() + "connections/"
+}
+func PathToCache() string {
 	return os.Getenv("HOME") + "/.slickcache/"
 }
 
@@ -119,5 +128,67 @@ func ApplySaveToConnection(name string, conn *gateway.Connection) error {
 	(*conn).SetSelf(serialized.Self)
 	(*conn).SetTeam(serialized.Team)
 
+	return nil
+}
+
+func SaveGlobalState(state *State) error {
+	// Get the index of the active connection
+	var activeConnectionIndex int = 0
+	activeConnection := state.ActiveConnection()
+	for ct, i := range state.Connections {
+		if i == activeConnection {
+			activeConnectionIndex = ct
+			break
+		}
+	}
+
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(SerializedGlobalState{
+		ActiveConnectionIndex: activeConnectionIndex,
+		SelectedMessageIndex: state.SelectedMessageIndex,
+		BottomDisplayedItem: state.BottomDisplayedItem,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(PathToCache()+"globalstate", buf.Bytes(), 0777)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ApplyGlobalStateToState(state *State) error {
+	byt, err := ioutil.ReadFile(PathToCache()+"globalstate")
+	if err != nil {
+		return err
+	}
+
+	var serialized SerializedGlobalState
+
+	buf := bytes.NewBuffer(byt)
+	dec := gob.NewDecoder(buf)
+
+	err = dec.Decode(&serialized)
+
+	if err != nil {
+		return err
+	}
+
+	if state == nil {
+		return errors.New("Passed state object was nil!")
+	}
+
+	// If the user added or removed connections and this connection index wouldn't work, then don't
+	// use it.
+	if serialized.ActiveConnectionIndex < len(state.Connections) {
+		state.SetActiveConnection(serialized.ActiveConnectionIndex)
+	}
+	state.SelectedMessageIndex = serialized.SelectedMessageIndex
+	state.BottomDisplayedItem = serialized.BottomDisplayedItem
 	return nil
 }
