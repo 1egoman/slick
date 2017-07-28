@@ -741,6 +741,59 @@ var COMMANDS = []Command{
 			return err
 		},
 	},
+	{
+		Name:         "Leave",
+		Type:         NATIVE,
+		Description:  "Leave a channel.",
+		Arguments:    "[connection name] [channel name]",
+		Permutations: []string{"leave"},
+		Handler: func(args []string, state *State) error {
+			var connectionName string
+			var channelName string
+			if len(args) == 3 { // /leave "connection name" "channel name"
+				connectionName = args[1]
+				channelName = args[2]
+			} else if len(args) == 2 { // /leave "channel name"
+				connectionName = state.ActiveConnection().Name()
+				channelName = args[1]
+			} else {
+				connectionName = state.ActiveConnection().Name()
+				if channel := state.ActiveConnection().SelectedChannel(); channel != nil {
+					channelName = channel.Name
+				} else {
+					return errors.New("Didn't pass a channel and no channel is selected. Explicitly pass a channel?")
+				}
+			}
+
+			// Get connection reference from name.
+			var connection *gateway.Connection
+			for _, conn := range state.Connections {
+				if conn.Name() == connectionName {
+					connection = &conn
+					break
+				}
+			}
+			if connection == nil {
+				return errors.New("No such connection: " + connectionName)
+			}
+
+			// Get channel reference from name inside the connection.
+			var channel *gateway.Channel
+			for _, ch := range state.ActiveConnection().Channels() {
+				if ch.Name == channelName {
+					channel = &ch
+					break
+				}
+			}
+			if channel == nil {
+				return errors.New("No such channel: " + channelName)
+			}
+
+			// Dereference gaurded above when looking for a connection.
+			_, err := (*connection).LeaveChannel(channel)
+			return err
+		},
+	},
 
 	//
 	// OPEN IN SLACK
@@ -805,12 +858,6 @@ var COMMANDS = []Command{
 		Permutations: []string{"invite_people"},
 		Arguments:    "[name@example.com, ...]",
 		Description:  "Invite people to your Slack team",
-	},
-	{
-		Type:         SLACK,
-		Name:         "Leave",
-		Permutations: []string{"leave", "close", "part"},
-		Description:  "Leave a channel",
 	},
 	{
 		Type:         SLACK,

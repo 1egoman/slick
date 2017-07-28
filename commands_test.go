@@ -422,6 +422,75 @@ func TestCommandJoin(t *testing.T) {
 	}
 }
 
+func TestCommandLeave(t *testing.T) {
+	// Mock the http response
+	httpmock.Activate()
+	// "Join" the channel
+	httpmock.RegisterResponder(
+		"GET",
+		"https://slack.com/api/channels.leave?token=token&channel=channel-id",
+		httpmock.NewStringResponder(200, `{"ok": true}`),
+	)
+	defer httpmock.DeactivateAndReset()
+
+	// Create initial statez
+	state := NewInitialStateMode("writ")
+	state.Connections = []gateway.Connection{
+		gatewaySlack.NewWithName("team name", "token"),
+	}
+	channels := []gateway.Channel{gateway.Channel{Name: "channel", Id: "channel-id"}}
+
+	state.ActiveConnection().SetChannels(channels)
+	state.ActiveConnection().SetSelectedChannel(&channels[0])
+
+	// Execute the command
+	command := *GetCommand("Leave")
+	err := RunCommand(command, []string{"leave"}, state)
+
+	// Verify the output
+	if err != nil {
+		t.Errorf("Failed to leave channel", err)
+	}
+
+	if state.ActiveConnection().Channels()[0].IsMember == true {
+		t.Errorf("Channel under test wasn't left, .IsMember was true!")
+	}
+}
+func TestCommandLeaveNotAMemberOfChannel(t *testing.T) {
+	// Mock the http response
+	httpmock.Activate()
+	// "Join" the channel
+	httpmock.RegisterResponder(
+		"GET",
+		"https://slack.com/api/channels.leave?token=token&channel=channel-id",
+		httpmock.NewStringResponder(200, `{"ok": true, "not_in_channel": true}`),
+	)
+	defer httpmock.DeactivateAndReset()
+
+	// Create initial statez
+	state := NewInitialStateMode("writ")
+	state.Connections = []gateway.Connection{
+		gatewaySlack.NewWithName("team name", "token"),
+	}
+	channels := []gateway.Channel{gateway.Channel{Name: "channel", Id: "channel-id"}}
+
+	state.ActiveConnection().SetChannels(channels)
+	state.ActiveConnection().SetSelectedChannel(&channels[0])
+
+	// Execute the command
+	command := *GetCommand("Leave")
+	err := RunCommand(command, []string{"leave"}, state)
+
+	// Verify the output
+	if err.Error() != "User isn't in channel channel, so cannot leave!" {
+		t.Errorf("Didn't return an error when the user wasn't a member of the channel!")
+	}
+
+	if state.ActiveConnection().Channels()[0].IsMember == true {
+		t.Errorf(".IsMember on the channel was true, should have been kept false.")
+	}
+}
+
 // Test `/disconnect`ing from an already disconnected connection
 func TestCommandDisconnectFromAlreadyDisconnectedConnection(t *testing.T) {
 	defer httpmock.DeactivateAndReset()

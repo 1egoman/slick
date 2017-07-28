@@ -648,7 +648,7 @@ func (c *SlackConnection) JoinChannel(inChannel *gateway.Channel) (*gateway.Chan
 
 	// Update the channel in the locally stored channels collection
 	if c.selectedChannel != nil && c.selectedChannel.Name == inChannel.Name {
-		c.selectedChannel = inChannel
+		c.selectedChannel = &channel
 	}
 	for index, ch := range c.channels {
 		if ch.Name == channel.Name {
@@ -661,4 +661,52 @@ func (c *SlackConnection) JoinChannel(inChannel *gateway.Channel) (*gateway.Chan
 	// Didn't return in the loop? The channel must be new.
 	c.channels = append(c.channels, channel)
 	return &channel, nil
+}
+
+// Leave the passed channel.
+func (c *SlackConnection) LeaveChannel(channel *gateway.Channel) (*gateway.Channel, error) {
+	if channel == nil {
+		return nil, errors.New("Cannot leave nil channel!")
+	}
+
+	log.Printf("Leaving channel %s", channel.Name)
+
+	url := "https://slack.com/api/channels.leave?token=" + c.token
+	url += "&channel=" + channel.Id
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	var leaveChannelBuffer struct {
+		NotInChannel bool `json:"not_in_channel"`
+	}
+	json.Unmarshal(body, &leaveChannelBuffer)
+
+	// If the user wasn't in the channel originally, then error.
+	if leaveChannelBuffer.NotInChannel {
+		return nil, errors.New(fmt.Sprintf("User isn't in channel %s, so cannot leave!", channel.Name))
+	}
+
+	// Update the channel
+	channel.IsMember = false
+
+	// Update the channel in the locally stored channels collection
+	if c.selectedChannel != nil && c.selectedChannel.Name == channel.Name {
+		c.selectedChannel = channel
+	}
+	for index, ch := range c.channels {
+		if ch.Name == channel.Name {
+			// Replace the channel in the collection with our new channel. Dereference guarded
+			// above.
+			c.channels[index] = *channel
+			return channel, nil
+		}
+	}
+
+	// Didn't return in the loop? The channel must be new. Dereference guarded above.
+	c.channels = append(c.channels, *channel)
+	return channel, nil
 }
