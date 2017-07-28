@@ -8,6 +8,9 @@ import (
 	"github.com/jarcoal/httpmock"
 	"net/http"
 	"testing"
+
+    "io"
+    "golang.org/x/net/websocket"
 )
 
 func TestRunCommand(t *testing.T) {
@@ -132,11 +135,19 @@ func TestHttpBasedCommands(t *testing.T) {
 func TestCommandConnectDisconnect(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
+	// Create a local websocket server for this test.
+	go func() {
+		http.Handle("/echo", websocket.Handler(func (ws *websocket.Conn) { io.Copy(ws, ws) }))
+		err := http.ListenAndServe(":12345", nil)
+		if err != nil {
+			panic("ListenAndServe: " + err.Error())
+		}
+	}()
+
 	// Listen for command response
-	// FIXME: we should spin up a local websocket server here and not use one on the internet.
 	httpmock.Activate()
 	httpmock.RegisterResponder("GET", "https://slack.com/api/rtm.start?token=token",
-		httpmock.NewStringResponder(200, `{"ok": true, "url": "wss://echo.websocket.org/?encoding=text"}`))
+		httpmock.NewStringResponder(200, `{"ok": true, "url": "ws://localhost:12345/echo"}`))
 
 	// Create initial state
 	state := NewInitialStateMode("writ")
