@@ -179,7 +179,10 @@ var COMMANDS = []Command{
 			err = state.Connections[index].Refresh(true)
 			log.Printf("Refresh response: %s", err)
 			if err != nil {
+				state.Offline = false // Currently offline, since we couldn't refresh the channel
 				return errors.New(fmt.Sprintf("Error in reconnecting (refresh): %s", err))
+			} else {
+				state.Offline = false
 			}
 
 			return nil

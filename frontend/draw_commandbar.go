@@ -13,6 +13,7 @@ func (term *TerminalDisplay) DrawCommandBar(
 	cursorPosition int,
 	currentChannel *gateway.Channel,
 	currentTeamName string,
+	isOffline bool,
 	config map[string]string,
 ) {
 	width, height := term.screen.Size()
@@ -23,7 +24,14 @@ func (term *TerminalDisplay) DrawCommandBar(
 		prefix += "#" + currentChannel.Name
 
 		if currentChannel.IsMember == false {
-			prefix += " (not a member, join with /join)"
+			if isOffline {
+				prefix += " (not a member)"
+			} else {
+				prefix += " (not a member, join with /join)"
+			}
+		}
+		if isOffline {
+			prefix += " (offline, connect with /recon)"
 		}
 		if currentChannel.IsArchived {
 			prefix += " (archived)"

@@ -13,6 +13,9 @@ type State struct {
 	Command               []rune
 	CommandCursorPosition int
 
+	// Is the current session of the client offline?
+	Offline bool
+
 	// A list of all keys that have been pressed to make up the current command.
 	KeyStack []rune
 
@@ -54,6 +57,9 @@ func NewInitialStateMode(mode string) *State {
 	return &State{
 		// The mode the client is in
 		Mode: mode,
+
+		// Starts online
+		Offline: false,
 
 		// The command the user is typing
 		Command:               []rune{},

@@ -26,7 +26,10 @@ func render(state *State, term *frontend.TerminalDisplay) {
 			render(state, term)
 
 			if err := state.ActiveConnection().Refresh(false); err != nil {
+				state.Offline = true // Currently offline, since we couldn't refresh the channel
 				state.Status.Errorf(err.Error())
+			} else {
+				state.Offline = false
 			}
 
 			state.Status.Clear()
@@ -60,6 +63,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 			state.CommandCursorPosition, // The cursor position
 			nil,                  // The selected channel
 			"(no active connec)", // The selected team name
+			state.Offline,        // Is the client offline?
 			state.Configuration,
 		)
 	} else {
@@ -68,6 +72,7 @@ func render(state *State, term *frontend.TerminalDisplay) {
 			state.CommandCursorPosition,                // The cursor position
 			state.ActiveConnection().SelectedChannel(), // The selected channel
 			state.ActiveConnection().Name(),            // The selected team name
+			state.Offline,                              // Is the client offline?
 			state.Configuration,
 		)
 	}

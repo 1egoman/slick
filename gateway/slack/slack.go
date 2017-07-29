@@ -545,7 +545,7 @@ Outer:
 		if r.Name == reaction {
 			for _, user := range r.Users {
 				if c.Self().Name == user.Name {
-					// This messag has already been reacted to by this user.
+					// This message has already been reacted to by this user.
 					messageReactedTo = true
 					break Outer
 				}
