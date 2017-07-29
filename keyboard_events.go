@@ -719,6 +719,17 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 		state.SetPrevActiveConnection()
 	case ev.Key() == tcell.KeyCtrlX:
 		state.SetNextActiveConnection()
+	case ev.Key() == tcell.KeyRune && ev.Rune() >= '1' && ev.Rune() <= '9' && ev.Modifiers() == tcell.ModAlt:
+		index := int(ev.Rune() - '1')
+		if len(state.Connections) > index {
+			state.SetActiveConnection(index)
+			EmitEvent(state, EVENT_MODE_CHANGE, map[string]string{"from": state.Mode, "to": "chat"})
+			state.Mode = "chat"
+			state.CommandCursorPosition = 0
+			state.Command = []rune{}
+		} else {
+			state.Status.Errorf("No connection in place %d!", index+1)
+		}
 
 	//
 	// MODAL SHORTCUTS
