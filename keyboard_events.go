@@ -856,6 +856,7 @@ func HandleKeyboardEvent(ev *tcell.EventKey, state *State, term *frontend.Termin
 			} else if responseMessage != nil {
 				// Got a response command? Append it to the message history.
 				state.ActiveConnection().AppendMessageHistory(*responseMessage)
+				message.Confirmed = true
 			}
 		}
 
