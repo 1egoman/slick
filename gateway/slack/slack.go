@@ -14,6 +14,12 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+// Create a custom http client for use throughout the package.
+var httpClient *http.Client = &http.Client{
+	Timeout: 3000,
+}
+
+
 func New(token string) *SlackConnection {
 	return &SlackConnection{
 		token:    token,
@@ -83,7 +89,7 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 
 	// FETCH CHANNELs
 	log.Printf("Fetching list of channels for team %s", c.Team().Name)
-	resp, err := http.Get("https://slack.com/api/channels.list?token=" + c.token)
+	resp, err := httpClient.Get("https://slack.com/api/channels.list?token=" + c.token)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +127,7 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 
 	// FETCH IMs
 	log.Printf("Fetching list of ims for team %s", c.Team().Name)
-	resp, err = http.Get("https://slack.com/api/im.list?token=" + c.token)
+	resp, err = httpClient.Get("https://slack.com/api/im.list?token=" + c.token)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +161,7 @@ func (c *SlackConnection) FetchChannels() ([]gateway.Channel, error) {
 
 	// FETCH GROUPS
 	log.Printf("Fetching list of mp ims for team %s", c.Team().Name)
-	resp, err = http.Get("https://slack.com/api/groups.list?token=" + c.token)
+	resp, err = httpClient.Get("https://slack.com/api/groups.list?token=" + c.token)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +234,7 @@ func (c *SlackConnection) FetchChannelMessages(channel gateway.Channel, startTs 
 	}
 
 	log.Println("Fetching history from slack", url)
-	resp, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +272,7 @@ func (c *SlackConnection) UserById(id string) (*gateway.User, error) {
 	if user, ok := c.userCache[id]; ok {
 		return &user, nil
 	} else {
-		resp, err := http.Get("https://slack.com/api/users.info?token=" + c.token + "&user=" + id)
+		resp, err := httpClient.Get("https://slack.com/api/users.info?token=" + c.token + "&user=" + id)
 		if err != nil {
 			return nil, err
 		}
@@ -573,7 +579,7 @@ Outer:
 	}
 
 	// Make the request
-	resp, err := http.Get(reactionUrl)
+	resp, err := httpClient.Get(reactionUrl)
 	if err != nil {
 		return err
 	}
@@ -617,7 +623,7 @@ func (c *SlackConnection) JoinChannel(inChannel *gateway.Channel) (*gateway.Chan
 	url += "&name=" + inChannel.Name
 	url += "&validate=true"
 
-	resp, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -674,7 +680,7 @@ func (c *SlackConnection) LeaveChannel(channel *gateway.Channel) (*gateway.Chann
 	url := "https://slack.com/api/channels.leave?token=" + c.token
 	url += "&channel=" + channel.Id
 
-	resp, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
 		return nil, err
 	}

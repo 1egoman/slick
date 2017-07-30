@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"time"
 
 	"github.com/1egoman/slick/gateway"
@@ -183,7 +182,7 @@ func (c *SlackConnection) Connect() error {
 
 func (c *SlackConnection) requestConnectionUrl() error {
 	// Make request to slack's api to get websocket credentials
-	resp, err := http.Get("https://slack.com/api/rtm.start?token=" + c.token)
+	resp, err := httpClient.Get("https://slack.com/api/rtm.start?token=" + c.token)
 
 	if err != nil {
 		return err
