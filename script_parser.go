@@ -1,11 +1,12 @@
 package main
 
 import (
-	"errors"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"errors"
+	"reflect"
 
 	"github.com/1egoman/slick/frontend"
 	"github.com/1egoman/slick/gateway"
@@ -267,6 +268,49 @@ func AddSlickStandardLib(L *lua.LState, state *State, term *frontend.TerminalDis
 			}))
 		}(command)
 	}
+}
+
+// Given a struct, convert it to a lua table.
+func StructToTable(L *lua.LState, s interface{}) *lua.LTable {
+	tbl := L.NewTable()
+    v := reflect.ValueOf(s)
+
+	// For each field, try to add to the lua table
+	var luaValue lua.LValue
+	for i := 0; i < v.NumField(); i++ {
+		// Start value at nil for each iteration
+		luaValue = lua.LNil
+
+		key := v.Type().Field(i).Name
+		value := v.Field(i).Interface()
+
+		typ := v.Field(i).Type().Kind()
+
+		// Dereference pointers into their native types.
+		var deref reflect.Value = v.Field(i)
+		for typ == reflect.Ptr {
+			deref = reflect.Indirect(deref)
+			typ = deref.Type().Kind()
+			value = deref.Interface()
+		}
+
+		switch typ {
+		case reflect.String:
+			luaValue = lua.LString(value.(string))
+		case reflect.Int:
+			luaValue = lua.LNumber(value.(int))
+		case reflect.Bool:
+			luaValue = lua.LBool(value.(bool))
+		case reflect.Struct:
+			luaValue = StructToTable(L, value)
+		}
+
+		// Add the value to the lua table, if it could be successfully converted. Otherwise, use
+		// nil.
+		tbl.RawSetString(key, luaValue)
+	}
+
+	return tbl
 }
 
 func ParseScript(script string, state *State, term *frontend.TerminalDisplay) error {

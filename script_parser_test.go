@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"runtime"
 	"errors"
 	. "github.com/1egoman/slick"
 	"github.com/1egoman/slick/frontend"
@@ -102,3 +103,77 @@ func TestScriptEnvironmentConstruction(t *testing.T) {
 // 		}
 // 	}
 // }
+
+// A utility function used below in `TestStructToTable`
+func assertLuaEqual(t *testing.T, a lua.LValue, b lua.LValue) {
+	_, file, line, _ := runtime.Caller(1)
+	if a.String() != b.String() {
+		t.Errorf("Assertion failed %s:%d: %s != %s", file, line, a, b)
+	}
+}
+
+func TestStructToTable(t *testing.T) {
+	type MyStruct struct {
+		Foo int
+		Bar string
+		Baz bool
+		Quux int
+		Hello []int
+	}
+
+	instance := MyStruct{
+		Foo: 5,
+		Bar: "hello world",
+		Baz: false,
+		/* no Quux key */
+		Hello: []int{1, 2, 3}, // A complex key that can't be converted
+	}
+
+	L := lua.NewState()
+	defer L.Close()
+
+	table := StructToTable(L, instance)
+	assertLuaEqual(t, table.RawGet(lua.LString("Foo")), lua.LNumber(5))
+	assertLuaEqual(t, table.RawGet(lua.LString("Bar")), lua.LString("hello world"))
+	assertLuaEqual(t, table.RawGet(lua.LString("Baz")), lua.LBool(false))
+
+	// An unset key
+	assertLuaEqual(t, table.RawGet(lua.LString("Quux")), lua.LNumber(0))
+	// A complex value like a slice or map
+	assertLuaEqual(t, table.RawGet(lua.LString("Hello")), lua.LNil)
+}
+
+func TestStructToTableRecursiveStruct(t *testing.T) {
+	type Foo struct {
+		Hello string
+	}
+	type MyStruct struct {
+		Foo Foo
+		Bar *Foo
+	}
+
+	instance := MyStruct{
+		Foo: Foo{Hello: "world"},
+		Bar: &Foo{Hello: "Bob"},
+	}
+
+	L := lua.NewState()
+	defer L.Close()
+
+	table := StructToTable(L, instance)
+	assertLuaEqual(
+		t,
+		table.RawGet(lua.LString("Foo")).(*lua.LTable).RawGet(lua.LString("Hello")),
+		lua.LString("world"),
+	)
+	assertLuaEqual(
+		t,
+		table.RawGet(lua.LString("Bar")).(*lua.LTable).RawGet(lua.LString("Hello")),
+		lua.LString("Bob"),
+	)
+	assertLuaEqual(
+		t,
+		table.RawGet(lua.LString("Baz")),
+		lua.LNil,
+	)
+}
