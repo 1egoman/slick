@@ -177,3 +177,21 @@ func TestStructToTableRecursiveStruct(t *testing.T) {
 		lua.LNil,
 	)
 }
+
+// Ensure that a nil pointer is properly skipped over
+func TestStructToTableNilPointer(t *testing.T) {
+	type Foo struct {
+		Hello string
+	}
+	type MyStruct struct {
+		Foo *Foo
+	}
+
+	instance := MyStruct{ Foo: nil }
+
+	L := lua.NewState()
+	defer L.Close()
+
+	table := StructToTable(L, instance)
+	assertLuaEqual(t, table.RawGet(lua.LString("Foo")), lua.LNil)
+}

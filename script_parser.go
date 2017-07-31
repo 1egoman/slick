@@ -290,6 +290,11 @@ func StructToTable(L *lua.LState, s interface{}) *lua.LTable {
 		var deref reflect.Value = v.Field(i)
 		for typ == reflect.Ptr {
 			deref = reflect.Indirect(deref)
+
+			// If the pointer was dereferenced into `nil`, then we're done dereerencing.
+			if deref.IsValid() == false {
+				break
+			}
 			typ = deref.Type().Kind()
 			value = deref.Interface()
 		}
