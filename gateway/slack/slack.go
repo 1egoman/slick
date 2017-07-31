@@ -16,7 +16,7 @@ import (
 
 // Create a custom http client for use throughout the package.
 var httpClient *http.Client = &http.Client{
-	Timeout: 3000,
+	// Timeout: 3000,
 }
 
 
